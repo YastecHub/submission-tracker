@@ -118,7 +118,7 @@ export default function DashboardPage() {
                     required
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Assignment 1"
                   />
                 </div>
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                     required
                     value={form.courseCode}
                     onChange={(e) => setForm({ ...form, courseCode: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="CSC401"
                   />
                 </div>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
                   <select
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value as EventType })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {EVENT_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                     required
                     value={form.deadline}
                     onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={2}
                   placeholder="Any notes for students..."
                 />
@@ -182,7 +182,7 @@ export default function DashboardPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition disabled:opacity-60"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold px-6 py-3 rounded-lg transition disabled:opacity-60"
               >
                 {creating ? 'Creating...' : 'Create Event'}
               </button>

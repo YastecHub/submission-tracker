@@ -115,7 +115,8 @@ export default function SubmissionForm() {
                 required
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoComplete="name"
+                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g. Amina Bello"
               />
             </div>
@@ -129,7 +130,7 @@ export default function SubmissionForm() {
                 required
                 value={form.matricNumber}
                 onChange={(e) => setForm({ ...form, matricNumber: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                 placeholder="e.g. 2021/12345"
               />
             </div>
@@ -141,7 +142,7 @@ export default function SubmissionForm() {
               <select
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select level</option>
                 {LEVELS.map((l) => (
@@ -155,7 +156,7 @@ export default function SubmissionForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition text-sm disabled:opacity-60 mt-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-lg transition text-base disabled:opacity-60 mt-2"
             >
               {submitting ? 'Submitting...' : 'Confirm Submission'}
             </button>

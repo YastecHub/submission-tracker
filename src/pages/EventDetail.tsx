@@ -139,25 +139,25 @@ export default function EventDetail() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex flex-col gap-3 mb-4">
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or matric number..."
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2">
             <button
               onClick={() => setShowScanner(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-3 rounded-lg transition"
             >
               Scan QR
             </button>
             <button
               onClick={handleExport}
               disabled={exporting || submissions.length === 0}
-              className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition disabled:opacity-60"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-3 rounded-lg transition disabled:opacity-60"
             >
               {exporting ? 'Exporting...' : 'Export Excel'}
             </button>
