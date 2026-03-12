@@ -91,10 +91,12 @@ export default function EventDetail() {
       <Navbar />
       {showScanner && (
         <QRScanner
-          onClose={() => {
-            setShowScanner(false);
-            fetchData();
-          }}
+          onClose={() => setShowScanner(false)}
+          onConfirmed={(updated) =>
+            setSubmissions((prev) =>
+              prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s))
+            )
+          }
         />
       )}
 

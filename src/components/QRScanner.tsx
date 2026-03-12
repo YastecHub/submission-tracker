@@ -10,9 +10,10 @@ interface ScanResult {
 
 interface Props {
   onClose: () => void;
+  onConfirmed?: (submission: Submission) => void;
 }
 
-export default function QRScanner({ onClose }: Props) {
+export default function QRScanner({ onClose, onConfirmed }: Props) {
   const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState('');
@@ -54,6 +55,9 @@ export default function QRScanner({ onClose }: Props) {
         '/api/submissions/scan',
         { submissionId }
       );
+      if (!res.data.alreadyConfirmed && onConfirmed) {
+        onConfirmed(res.data.submission);
+      }
       setResult(
         res.data.alreadyConfirmed
           ? { type: 'warning', message: 'Already confirmed', submission: res.data.submission }
