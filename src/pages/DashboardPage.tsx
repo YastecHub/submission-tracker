@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import EventCard from '../components/EventCard';
+import ConfirmModal from '../components/ConfirmModal';
 import api from '../api/axios';
 import type { SubmissionEvent, EventType } from '../types';
 import { useToast } from '../context/ToastContext';
@@ -14,6 +15,11 @@ interface EventForm {
   type: EventType;
   description: string;
   deadline: string;
+}
+
+interface PendingAction {
+  type: 'delete' | 'close';
+  event: SubmissionEvent;
 }
 
 export default function DashboardPage() {
@@ -30,6 +36,8 @@ export default function DashboardPage() {
   });
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState('');
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -55,6 +63,7 @@ export default function DashboardPage() {
       setEvents([res.data, ...events]);
       setShowForm(false);
       setForm({ title: '', courseCode: '', type: 'assignment', description: '', deadline: '' });
+      toast('Event created successfully!', 'success');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setFormError(err.response?.data?.error ?? 'Failed to create event.');
@@ -66,22 +75,36 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleToggleClose(id: string): Promise<void> {
-    try {
-      const res = await api.patch<SubmissionEvent>(`/api/events/${id}/close`);
-      setEvents(events.map((e) => (e.id === id ? { ...e, isClosed: res.data.isClosed } : e)));
-    } catch {
-      toast('Failed to update event.', 'error');
-    }
+  function requestToggleClose(id: string): void {
+    const event = events.find((e) => e.id === id);
+    if (event) setPendingAction({ type: 'close', event });
   }
 
-  async function handleDelete(id: string): Promise<void> {
-    if (!confirm('Delete this event? The data will be kept but hidden.')) return;
+  function requestDelete(id: string): void {
+    const event = events.find((e) => e.id === id);
+    if (event) setPendingAction({ type: 'delete', event });
+  }
+
+  async function handleConfirmAction(): Promise<void> {
+    if (!pendingAction) return;
+    const { type, event } = pendingAction;
+    setActionLoading(true);
     try {
-      await api.delete(`/api/events/${id}`);
-      setEvents(events.filter((e) => e.id !== id));
+      if (type === 'delete') {
+        await api.delete(`/api/events/${event.id}`);
+        setEvents((prev) => prev.filter((e) => e.id !== event.id));
+      } else {
+        const res = await api.patch<SubmissionEvent>(`/api/events/${event.id}/close`);
+        setEvents((prev) =>
+          prev.map((e) => (e.id === event.id ? { ...e, isClosed: res.data.isClosed } : e))
+        );
+      }
+      setPendingAction(null);
     } catch {
-      toast('Failed to delete event.', 'error');
+      setPendingAction(null);
+      toast(type === 'delete' ? 'Failed to delete event.' : 'Failed to update event.', 'error');
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -208,13 +231,31 @@ export default function DashboardPage() {
               <EventCard
                 key={event.id}
                 event={event}
-                onToggleClose={handleToggleClose}
-                onDelete={handleDelete}
+                onToggleClose={requestToggleClose}
+                onDelete={requestDelete}
               />
             ))}
           </div>
         )}
       </main>
+
+      {pendingAction && (
+        <ConfirmModal
+          title={pendingAction.type === 'delete' ? 'Delete Event' : pendingAction.event.isClosed ? 'Re-open Event' : 'Close Event'}
+          message={
+            pendingAction.type === 'delete'
+              ? `Delete "${pendingAction.event.title}"? The data will be kept but hidden from your dashboard.`
+              : pendingAction.event.isClosed
+              ? `Re-open "${pendingAction.event.title}"? Students will be able to submit again.`
+              : `Close "${pendingAction.event.title}"? Students will no longer be able to submit.`
+          }
+          confirmLabel={pendingAction.type === 'delete' ? 'Delete' : pendingAction.event.isClosed ? 'Re-open' : 'Close'}
+          variant={pendingAction.type === 'delete' ? 'danger' : 'warning'}
+          loading={actionLoading}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
 export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +23,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
+      toast(`Welcome back, ${loggedInUser.name}!`, 'success');
       navigate('/dashboard');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
