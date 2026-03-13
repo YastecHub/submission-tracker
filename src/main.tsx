@@ -19,12 +19,14 @@ import EventDetail from './pages/EventDetail';
 import SubmissionForm from './pages/SubmissionForm';
 import SubmissionSuccess from './pages/SubmissionSuccess';
 import SubmissionClosed from './pages/SubmissionClosed';
+import InstallBanner from './components/InstallBanner';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ToastProvider>
+          <InstallBanner />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
