@@ -1,10 +1,15 @@
+// Network-first fetch handler (required for PWA installability)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+});
+
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(
     self.registration.showNotification(data.title || 'SubmitIt', {
       body: data.body || '',
-      icon: '/icon.png',
-      badge: '/icon.png',
+      icon: '/icon.svg',
+      badge: '/icon.svg',
       data: { url: data.url || '/' },
     })
   );
