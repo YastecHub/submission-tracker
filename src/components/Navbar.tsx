@@ -73,9 +73,11 @@ export default function Navbar() {
     }
   }
 
-  const roleLabel = user?.role === 'acr' ? 'Asst. CR' : 'Class Rep';
+  const roleLabel = user?.role === 'acr' ? 'Asst. CR' : user?.role === 'dev' ? 'Developer' : 'Class Rep';
   const roleBadgeClass = user?.role === 'acr'
     ? 'bg-purple-500 text-white'
+    : user?.role === 'dev'
+    ? 'bg-gray-600 text-white'
     : 'bg-yellow-400 text-yellow-900';
 
   return (
@@ -113,8 +115,8 @@ export default function Navbar() {
               <div className="px-4 py-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                <span className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${user.role === 'acr' ? 'bg-purple-100 text-purple-700' : 'bg-yellow-100 text-yellow-800'}`}>
-                  {user.role === 'acr' ? 'Assistant Class Rep' : 'Class Representative'}
+                <span className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${user.role === 'acr' ? 'bg-purple-100 text-purple-700' : user.role === 'dev' ? 'bg-gray-100 text-gray-700' : 'bg-yellow-100 text-yellow-800'}`}>
+                  {user.role === 'acr' ? 'Assistant Class Rep' : user.role === 'dev' ? 'Developer' : 'Class Representative'}
                 </span>
               </div>
 

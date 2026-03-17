@@ -75,9 +75,11 @@ export default function ProfilePage() {
     }
   }
 
-  const roleLabel = user?.role === 'acr' ? 'Assistant Class Rep' : 'Class Representative';
+  const roleLabel = user?.role === 'acr' ? 'Assistant Class Rep' : user?.role === 'dev' ? 'Developer' : 'Class Representative';
   const roleBadgeClass = user?.role === 'acr'
     ? 'bg-purple-100 text-purple-700'
+    : user?.role === 'dev'
+    ? 'bg-gray-100 text-gray-700'
     : 'bg-yellow-100 text-yellow-800';
 
   return (
