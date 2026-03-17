@@ -68,12 +68,17 @@ export default function Navbar() {
       </Link>
       {user && (
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end leading-tight">
-            <span className="text-sm font-medium">{user.name}</span>
-            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${user.role === 'acr' ? 'bg-purple-500 text-white' : 'bg-yellow-400 text-yellow-900'}`}>
-              {user.role === 'acr' ? 'Asst. CR' : 'Class Rep'}
-            </span>
-          </div>
+          <Link to="/profile" className="hidden sm:flex items-center gap-2 hover:opacity-80 transition">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-sm font-medium">{user.name}</span>
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${user.role === 'acr' ? 'bg-purple-500 text-white' : 'bg-yellow-400 text-yellow-900'}`}>
+                {user.role === 'acr' ? 'Asst. CR' : 'Class Rep'}
+              </span>
+            </div>
+          </Link>
           <button
             onClick={handleEnableNotifications}
             title="Enable push notifications"

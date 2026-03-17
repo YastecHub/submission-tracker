@@ -16,6 +16,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import EventDetail from './pages/EventDetail';
+import ProfilePage from './pages/ProfilePage';
 import SubmissionForm from './pages/SubmissionForm';
 import SubmissionSuccess from './pages/SubmissionSuccess';
 import SubmissionClosed from './pages/SubmissionClosed';
@@ -42,6 +43,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               element={
                 <ProtectedRoute>
                   <EventDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
