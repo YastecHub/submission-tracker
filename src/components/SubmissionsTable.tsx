@@ -4,9 +4,61 @@ import type { Submission } from '../types';
 interface Props {
   submissions: Submission[];
   onConfirmed: (updated: Submission) => void;
+  loading?: boolean;
+  pageOffset?: number;
 }
 
-export default function SubmissionsTable({ submissions, onConfirmed }: Props) {
+function SkeletonRows() {
+  return (
+    <>
+      {/* Mobile skeleton */}
+      <ul className="divide-y divide-gray-100 md:hidden">
+        {[...Array(5)].map((_, i) => (
+          <li key={i} className="px-4 py-4 flex items-start justify-between gap-3 animate-pulse">
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-2/3" />
+              <div className="h-3 bg-gray-100 rounded w-1/3" />
+              <div className="flex gap-2 mt-1">
+                <div className="h-5 w-12 bg-gray-100 rounded-full" />
+                <div className="h-5 w-16 bg-gray-100 rounded-full" />
+              </div>
+            </div>
+            <div className="h-8 w-20 bg-gray-200 rounded-lg flex-shrink-0" />
+          </li>
+        ))}
+      </ul>
+      {/* Desktop skeleton */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              {['#', 'Full Name', 'Matric No.', 'Level', 'Submitted At', 'Status', 'Action'].map((h) => (
+                <th key={h} className="text-left px-4 py-3 font-semibold text-gray-600">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[...Array(5)].map((_, i) => (
+              <tr key={i} className="border-b border-gray-100 animate-pulse">
+                <td className="px-4 py-3"><div className="h-3 w-4 bg-gray-200 rounded" /></td>
+                <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-36" /></td>
+                <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-24" /></td>
+                <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-10" /></td>
+                <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-20" /></td>
+                <td className="px-4 py-3"><div className="h-5 w-16 bg-gray-100 rounded-full" /></td>
+                <td className="px-4 py-3"><div className="h-8 w-20 bg-gray-200 rounded-lg" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+export default function SubmissionsTable({ submissions, onConfirmed, loading, pageOffset = 0 }: Props) {
+  if (loading) return <SkeletonRows />;
+
   if (submissions.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
@@ -31,7 +83,7 @@ export default function SubmissionsTable({ submissions, onConfirmed }: Props) {
             <li key={s.id} className="px-4 py-4 flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs text-gray-400 font-mono">{i + 1}.</span>
+                  <span className="text-xs text-gray-400 font-mono">{pageOffset + i + 1}.</span>
                   <p className="font-semibold text-gray-900 text-sm truncate">{s.fullName}</p>
                 </div>
                 <p className="text-xs text-gray-500 font-mono">{s.matricNumber}</p>
@@ -87,7 +139,7 @@ export default function SubmissionsTable({ submissions, onConfirmed }: Props) {
               });
               return (
                 <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 text-gray-400">{i + 1}</td>
+                  <td className="px-4 py-3 text-gray-400">{pageOffset + i + 1}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">{s.fullName}</td>
                   <td className="px-4 py-3 text-gray-600 font-mono text-xs">{s.matricNumber}</td>
                   <td className="px-4 py-3 text-gray-500">{s.level ?? '-'}</td>
