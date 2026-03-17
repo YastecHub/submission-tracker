@@ -68,7 +68,12 @@ export default function Navbar() {
       </Link>
       {user && (
         <div className="flex items-center gap-3">
-          <span className="text-sm opacity-80 hidden sm:block">{user.name}</span>
+          <div className="hidden sm:flex flex-col items-end leading-tight">
+            <span className="text-sm font-medium">{user.name}</span>
+            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${user.role === 'acr' ? 'bg-purple-500 text-white' : 'bg-yellow-400 text-yellow-900'}`}>
+              {user.role === 'acr' ? 'Asst. CR' : 'Class Rep'}
+            </span>
+          </div>
           <button
             onClick={handleEnableNotifications}
             title="Enable push notifications"

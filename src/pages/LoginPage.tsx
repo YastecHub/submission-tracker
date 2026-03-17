@@ -24,7 +24,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const loggedInUser = await login(email, password);
-      toast(`Welcome back, ${loggedInUser.name}!`, 'success');
+      const roleLabel = loggedInUser.role === 'acr' ? 'Assistant CR' : 'Class Rep';
+      toast(`Welcome back, ${loggedInUser.name} (${roleLabel})!`, 'success');
       navigate('/dashboard');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
