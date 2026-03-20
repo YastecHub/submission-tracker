@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { PaymentEvent } from '../types';
+import { useToast } from '../context/ToastContext';
 
 interface Props {
   event: PaymentEvent;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function PaymentEventCard({ event, onToggleClose, onDelete }: Props) {
+  const { toast } = useToast();
   const isExpired = new Date() > new Date(event.deadline);
   const isClosed = event.isClosed || isExpired;
 
@@ -95,29 +97,42 @@ export default function PaymentEventCard({ event, onToggleClose, onDelete }: Pro
 
       <p className="text-xs text-gray-400">Deadline: {deadline}</p>
 
-      {/* Actions */}
-      <div className="flex gap-2 mt-auto">
+      {/* Actions — 2-row grid so nothing gets cramped */}
+      <div className="grid grid-cols-2 gap-1.5 mt-auto">
         <Link
           to={`/dashboard/payments/${event.id}`}
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 rounded-lg text-center transition"
+          className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-1.5 rounded-lg text-center transition"
         >
           View Receipts
         </Link>
         <button
+          type="button"
+          onClick={async () => {
+            const url = `${window.location.origin}/pay/${event.slug}`;
+            try {
+              await navigator.clipboard.writeText(url);
+              toast('Link copied!', 'success');
+            } catch {
+              prompt('Copy this link:', url);
+            }
+          }}
+          className="border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold py-1.5 rounded-lg transition"
+        >
+          Copy Link
+        </button>
+        <button
+          type="button"
           onClick={() => onToggleClose(event.id)}
-          className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold py-2 rounded-lg transition"
+          className="border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold py-1.5 rounded-lg transition"
         >
           {event.isClosed ? 'Reopen' : 'Close'}
         </button>
         <button
+          type="button"
           onClick={() => onDelete(event.id)}
-          className="w-9 h-9 border border-red-100 text-red-400 hover:bg-red-50 rounded-lg flex items-center justify-center transition"
-          title="Delete"
+          className="border border-red-100 text-red-400 hover:bg-red-50 text-xs font-semibold py-1.5 rounded-lg transition"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          Delete
         </button>
       </div>
     </div>

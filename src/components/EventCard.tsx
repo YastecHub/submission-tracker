@@ -76,22 +76,24 @@ export default function EventCard({ event, onToggleClose, onDelete }: Props) {
 
       <p className="text-xs text-gray-400">Deadline: {deadlineStr}</p>
 
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="flex flex-wrap gap-1.5 pt-1">
         <Link
           to={`/dashboard/events/${event.id}`}
-          className="flex-1 text-center text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition"
+          className="flex-1 text-center text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg font-medium transition"
         >
           View
         </Link>
         <button
+          type="button"
           onClick={copyLink}
-          className="flex-1 text-sm border border-gray-300 hover:bg-gray-50 px-3 py-2 rounded-lg font-medium transition"
+          className="flex-1 text-xs border border-gray-300 hover:bg-gray-50 px-2 py-1.5 rounded-lg font-medium transition"
         >
           Copy Link
         </button>
         <button
+          type="button"
           onClick={() => onToggleClose(event.id)}
-          className={`flex-1 text-sm px-3 py-2 rounded-lg font-medium transition border ${
+          className={`flex-1 text-xs px-2 py-1.5 rounded-lg font-medium transition border ${
             event.isClosed
               ? 'border-green-300 text-green-700 hover:bg-green-50'
               : 'border-orange-300 text-orange-700 hover:bg-orange-50'
@@ -100,8 +102,9 @@ export default function EventCard({ event, onToggleClose, onDelete }: Props) {
           {event.isClosed ? 'Re-open' : 'Close'}
         </button>
         <button
+          type="button"
           onClick={() => onDelete(event.id)}
-          className="text-sm text-red-500 hover:text-red-700 px-2 py-2 rounded-lg transition"
+          className="text-xs text-red-500 hover:text-red-700 px-2 py-1.5 rounded-lg transition"
           title="Delete event"
         >
           Delete
