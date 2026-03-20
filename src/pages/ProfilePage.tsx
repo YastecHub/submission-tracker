@@ -75,12 +75,16 @@ export default function ProfilePage() {
     }
   }
 
-  const roleLabel = user?.role === 'acr' ? 'Assistant Class Rep' : user?.role === 'dev' ? 'Developer' : 'Class Representative';
-  const roleBadgeClass = user?.role === 'acr'
-    ? 'bg-purple-100 text-purple-700'
-    : user?.role === 'dev'
-    ? 'bg-gray-100 text-gray-700'
-    : 'bg-yellow-100 text-yellow-800';
+  const roleLabel =
+    user?.role === 'acr' ? 'Assistant Class Rep' :
+    user?.role === 'dev' ? 'Developer' :
+    user?.role === 'fin_sec' ? 'Financial Secretary' :
+    'Class Representative';
+  const roleBadgeClass =
+    user?.role === 'acr' ? 'bg-purple-100 text-purple-700' :
+    user?.role === 'dev' ? 'bg-gray-100 text-gray-700' :
+    user?.role === 'fin_sec' ? 'bg-green-100 text-green-700' :
+    'bg-yellow-100 text-yellow-800';
 
   return (
     <div className="min-h-screen bg-gray-50">

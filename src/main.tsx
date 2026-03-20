@@ -20,6 +20,10 @@ import ProfilePage from './pages/ProfilePage';
 import SubmissionForm from './pages/SubmissionForm';
 import SubmissionSuccess from './pages/SubmissionSuccess';
 import SubmissionClosed from './pages/SubmissionClosed';
+import PaymentSubmitForm from './pages/PaymentSubmitForm';
+import PaymentSubmitSuccess from './pages/PaymentSubmitSuccess';
+import PaymentSubmitClosed from './pages/PaymentSubmitClosed';
+import PaymentEventDetail from './pages/PaymentEventDetail';
 import InstallBanner from './components/InstallBanner';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -57,6 +61,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/submit/:slug" element={<SubmissionForm />} />
             <Route path="/submit/:slug/success" element={<SubmissionSuccess />} />
             <Route path="/submit/:slug/closed" element={<SubmissionClosed />} />
+            <Route path="/pay/:slug" element={<PaymentSubmitForm />} />
+            <Route path="/pay/:slug/success" element={<PaymentSubmitSuccess />} />
+            <Route path="/pay/:slug/closed" element={<PaymentSubmitClosed />} />
+            <Route
+              path="/dashboard/payments/:id"
+              element={
+                <ProtectedRoute>
+                  <PaymentEventDetail />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </ToastProvider>
