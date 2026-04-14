@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import EventCard from '../components/EventCard';
 import PaymentEventCard from '../components/PaymentEventCard';
 import ConfirmModal from '../components/ConfirmModal';
+import DashboardLedger from './DashboardLedger';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import type { SubmissionEvent, EventType, PaymentEvent } from '../types';
@@ -35,7 +36,7 @@ interface PendingAction {
   kind: 'submission' | 'payment';
 }
 
-type ActiveTab = 'submissions' | 'payments';
+type ActiveTab = 'submissions' | 'payments' | 'ledger';
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -246,6 +247,17 @@ export default function DashboardPage() {
                 {paymentEvents.length}
               </span>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('ledger')}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
+              activeTab === 'ledger'
+                ? 'bg-white text-emerald-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Ledger
           </button>
         </div>
 
@@ -516,6 +528,9 @@ export default function DashboardPage() {
             )}
           </>
         )}
+
+        {/* ── LEDGER TAB ── */}
+        {activeTab === 'ledger' && <DashboardLedger />}
       </main>
 
       {pendingAction && (

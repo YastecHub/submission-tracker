@@ -82,8 +82,9 @@ export default function Navbar() {
 
   return (
     <nav className="bg-blue-700 text-white px-4 py-3 flex items-center justify-between shadow">
-      <Link to="/dashboard" className="text-lg font-bold tracking-tight">
-        SubmitIt
+      <Link to="/dashboard" className="text-lg font-bold tracking-tight flex items-center gap-2">
+        <img src="/icon.svg" alt="" className="w-7 h-7 rounded-md shadow" />
+        NEXIUM
       </Link>
 
       {user && (

@@ -6,7 +6,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(
-    self.registration.showNotification(data.title || 'SubmitIt', {
+    self.registration.showNotification(data.title || 'NEXIUM', {
       body: data.body || '',
       icon: '/icon.svg',
       badge: '/icon.svg',

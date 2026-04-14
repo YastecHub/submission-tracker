@@ -76,3 +76,32 @@ export interface PaymentReceipt {
   confirmedBy?: string | null;
   note?: string | null;
 }
+
+export type TransactionType = 'credit' | 'debit';
+
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  amount: string;
+  description: string;
+  category?: string | null;
+  occurredAt: string;
+  proofUrl?: string | null;
+  recorderName?: string | null;
+  receiptId?: string | null;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  recordedBy?: string;
+}
+
+export interface Ledger {
+  balance: string;
+  totalCredits: string;
+  totalDebits: string;
+  transactionCount: number;
+  transactions: Transaction[];
+  page: number;
+  limit: number;
+  totalPages: number;
+}

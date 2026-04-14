@@ -24,6 +24,7 @@ import PaymentSubmitForm from './pages/PaymentSubmitForm';
 import PaymentSubmitSuccess from './pages/PaymentSubmitSuccess';
 import PaymentSubmitClosed from './pages/PaymentSubmitClosed';
 import PaymentEventDetail from './pages/PaymentEventDetail';
+import TransparencyPage from './pages/TransparencyPage';
 import InstallBanner from './components/InstallBanner';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -64,6 +65,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/pay/:slug" element={<PaymentSubmitForm />} />
             <Route path="/pay/:slug/success" element={<PaymentSubmitSuccess />} />
             <Route path="/pay/:slug/closed" element={<PaymentSubmitClosed />} />
+            <Route path="/transparency" element={<TransparencyPage />} />
             <Route
               path="/dashboard/payments/:id"
               element={

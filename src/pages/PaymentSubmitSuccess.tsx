@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useParams, Navigate } from 'react-router-dom';
+import { useLocation, useParams, Navigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import type { PaymentReceipt, PaymentEvent } from '../types';
 
@@ -173,6 +173,21 @@ export default function PaymentSubmitSuccess() {
 
           <p className="text-xs text-gray-400">Screenshot this page for your records</p>
         </div>
+
+        <Link
+          to="/transparency"
+          className="block bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-2xl p-4 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl">
+              ₦
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-emerald-800">See class account transparency</p>
+              <p className="text-xs text-emerald-700">View the current balance and all transactions →</p>
+            </div>
+          </div>
+        </Link>
       </div>
     </div>
   );

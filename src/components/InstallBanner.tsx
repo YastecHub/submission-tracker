@@ -39,24 +39,23 @@ export default function InstallBanner() {
   if (!prompt || dismissed) return null;
 
   return (
-    <div className="bg-blue-700 text-white px-4 py-3 flex items-center justify-between gap-3">
+    <div className="bg-gradient-to-r from-purple-900 via-purple-800 to-violet-800 text-white px-4 py-3 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2 text-sm">
-        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-        <span>Install SubmitIt for quick access</span>
+        <img src="/icon.svg" alt="" className="w-6 h-6 rounded shadow-md shrink-0" />
+        <span>Install <span className="font-bold text-amber-300">NEXIUM</span> for quick access</span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <button
+          type="button"
           onClick={handleInstall}
-          className="bg-white text-blue-700 font-semibold text-sm px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
+          className="bg-amber-400 text-purple-900 font-semibold text-sm px-3 py-1.5 rounded-lg hover:bg-amber-300 transition shadow"
         >
           Install
         </button>
         <button
+          type="button"
           onClick={handleDismiss}
-          className="text-blue-200 hover:text-white transition text-lg leading-none"
+          className="text-purple-200 hover:text-white transition text-lg leading-none"
           aria-label="Dismiss"
         >
           ×

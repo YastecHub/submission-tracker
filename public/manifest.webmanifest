@@ -1,11 +1,11 @@
 {
-  "name": "SubmitIt",
-  "short_name": "SubmitIt",
-  "description": "Track assignment submissions with QR code confirmation",
+  "name": "NEXIUM",
+  "short_name": "NEXIUM",
+  "description": "NEXIUM — class submissions, payments and account transparency",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#1d4ed8",
+  "background_color": "#4c1d95",
+  "theme_color": "#6b21a8",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -32,6 +32,11 @@
       "name": "Dashboard",
       "url": "/dashboard",
       "description": "View your events and submissions"
+    },
+    {
+      "name": "Transparency",
+      "url": "/transparency",
+      "description": "View class account balance and transactions"
     }
   ]
 }

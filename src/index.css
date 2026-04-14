@@ -7,3 +7,116 @@
     @apply bg-gray-50 text-gray-900 antialiased;
   }
 }
+
+@layer utilities {
+  /* ------- Animated grid & dot backgrounds (pure CSS, works anywhere) ------- */
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .bg-dots-dark {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .bg-radial-fade {
+    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+
+  /* ------- Aurora / blob glow blobs ------- */
+  .blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /* ------- Shimmer sweep (for buttons / borders) ------- */
+  @keyframes shimmer-sweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+  .animate-shimmer-sweep {
+    animation: shimmer-sweep 2.4s linear infinite;
+  }
+
+  /* ------- Aurora slow drift ------- */
+  @keyframes aurora-drift {
+    0%   { transform: translate(0, 0) scale(1); }
+    33%  { transform: translate(6%, -4%) scale(1.08); }
+    66%  { transform: translate(-5%, 5%) scale(0.95); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  .animate-aurora {
+    animation: aurora-drift 18s ease-in-out infinite;
+  }
+  .animate-aurora-slow {
+    animation: aurora-drift 26s ease-in-out infinite;
+  }
+
+  /* ------- Pulsing glow ring ------- */
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+    50%      { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+  }
+  .animate-pulse-ring {
+    animation: pulse-ring 2.4s ease-out infinite;
+  }
+  @keyframes pulse-ring-violet {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.35); }
+    50%      { box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); }
+  }
+  .animate-pulse-ring-violet {
+    animation: pulse-ring-violet 2.4s ease-out infinite;
+  }
+
+  /* ------- Fade / slide in (for cards on mount) ------- */
+  @keyframes fade-up {
+    0%   { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out both;
+  }
+
+  /* ------- Gradient text + gradient border helpers ------- */
+  .text-gradient-emerald {
+    background-image: linear-gradient(135deg, #34d399 0%, #10b981 50%, #5eead4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-indigo {
+    background-image: linear-gradient(135deg, #a5b4fc 0%, #818cf8 40%, #c4b5fd 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-nexium {
+    background-image: linear-gradient(135deg, #fde68a 0%, #fbbf24 35%, #d97706 70%, #fde68a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ------- One-shot bounce (kept from existing code) ------- */
+  @keyframes bounce-once {
+    0%, 100% { transform: translateY(0); }
+    30%      { transform: translateY(-8px); }
+    60%      { transform: translateY(-2px); }
+  }
+  .animate-bounce-once {
+    animation: bounce-once 0.8s ease-out 1;
+  }
+
+  /* ------- Card hover lift ------- */
+  .card-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+  }
+}

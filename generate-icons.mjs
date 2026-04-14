@@ -1,4 +1,5 @@
-// Generates icon-192.png and icon-512.png without any external dependencies
+// Generates icon-192.png and icon-512.png without any external dependencies.
+// NEXIUM brand: purple gradient background with a gold "N" mark.
 import { deflateSync } from 'zlib';
 import { writeFileSync } from 'fs';
 
@@ -24,40 +25,114 @@ function pngChunk(type, data) {
   return Buffer.concat([uint32BE(d.length), t, d, crc]);
 }
 
-function makePNG(size) {
-  // SubmitIt blue #1d4ed8 = 29,78,216
-  const BG = [29, 78, 216];
-  const FG = [255, 255, 255];
+// Linear interpolation between two RGB colors
+function lerp(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+}
 
-  // Paint solid blue, then draw a white "S" in the center
-  const px = (x, y) => {
-    // Simple "S" shape using a grid: roughly 40% width/height of the icon
-    const cx = size / 2, cy = size / 2;
-    const w = size * 0.22, h = size * 0.38;
-    const t = size * 0.055; // stroke thickness
-    const rx = (x - cx) / w, ry = (y - cy) / h;
-    // Top bar
-    if (Math.abs(ry + 0.85) < 0.15 && rx > -1 && rx < 1) return true;
-    // Bottom bar
-    if (Math.abs(ry - 0.85) < 0.15 && rx > -1 && rx < 1) return true;
-    // Middle bar
-    if (Math.abs(ry) < 0.15 && rx > -1 && rx < 1) return true;
-    // Top-left vertical
-    if (rx < -0.7 && ry > -1 && ry < 0) return true;
-    // Bottom-right vertical
-    if (rx > 0.7 && ry > 0 && ry < 1) return true;
+function makePNG(size) {
+  // NEXIUM palette
+  const BG_TOP = [124, 58, 237];   // violet-600 #7c3aed
+  const BG_MID = [107, 33, 168];   // purple-800 #6b21a8
+  const BG_BOT = [76, 29, 149];    // violet-900 #4c1d95
+  const GOLD_LIGHT = [253, 230, 138]; // amber-200 #fde68a
+  const GOLD_MID   = [251, 191, 36];  // amber-400 #fbbf24
+  const GOLD_DEEP  = [217, 119, 6];   // amber-600 #d97706
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size * 0.215; // rounded corner radius (matches SVG rx=110/512)
+
+  // "N" geometry — big gold N occupying the middle 50%
+  const nW = size * 0.44;
+  const nH = size * 0.5;
+  const nLeft = cx - nW / 2;
+  const nRight = cx + nW / 2;
+  const nTop = cy - nH / 2;
+  const nBot = cy + nH / 2;
+  const stroke = size * 0.095;
+
+  // Distance from point to line segment (for the diagonal of N)
+  function distSeg(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len2 = dx * dx + dy * dy;
+    let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const ix = x1 + t * dx, iy = y1 + t * dy;
+    return Math.hypot(px - ix, py - iy);
+  }
+
+  // Rounded rectangle mask — returns true if pixel is inside the rounded square
+  function insideRounded(x, y) {
+    if (x >= radius && x <= size - radius) return y >= 0 && y <= size;
+    if (y >= radius && y <= size - radius) return x >= 0 && x <= size;
+    // Corners
+    const corners = [
+      [radius, radius],
+      [size - radius, radius],
+      [radius, size - radius],
+      [size - radius, size - radius],
+    ];
+    for (const [cxr, cyr] of corners) {
+      const inCornerBox = Math.abs(x - cxr) < radius && Math.abs(y - cyr) < radius;
+      if (inCornerBox) {
+        return Math.hypot(x - cxr, y - cyr) <= radius;
+      }
+    }
+    return true;
+  }
+
+  // Is pixel inside the N shape?
+  function insideN(x, y) {
+    // Two vertical bars
+    if (y >= nTop && y <= nBot) {
+      if (Math.abs(x - nLeft) < stroke / 2) return true;
+      if (Math.abs(x - nRight) < stroke / 2) return true;
+    }
+    // Diagonal from top-left to bottom-right
+    if (y >= nTop && y <= nBot && x >= nLeft && x <= nRight) {
+      if (distSeg(x, y, nLeft, nTop, nRight, nBot) < stroke / 2) return true;
+    }
     return false;
-  };
+  }
+
+  // Background gradient (vertical)
+  function bgColor(y) {
+    const t = y / size;
+    if (t < 0.5) return lerp(BG_TOP, BG_MID, t * 2);
+    return lerp(BG_MID, BG_BOT, (t - 0.5) * 2);
+  }
+
+  // Gold gradient across N (top-light → bottom-deep)
+  function goldColor(y) {
+    const t = Math.max(0, Math.min(1, (y - nTop) / nH));
+    if (t < 0.5) return lerp(GOLD_LIGHT, GOLD_MID, t * 2);
+    return lerp(GOLD_MID, GOLD_DEEP, (t - 0.5) * 2);
+  }
 
   const rowSize = 1 + size * 3;
   const raw = Buffer.alloc(size * rowSize);
+
   for (let y = 0; y < size; y++) {
     raw[y * rowSize] = 0; // filter none
     for (let x = 0; x < size; x++) {
-      const [r, g, b] = px(x, y) ? FG : BG;
-      raw[y * rowSize + 1 + x * 3] = r;
-      raw[y * rowSize + 1 + x * 3 + 1] = g;
-      raw[y * rowSize + 1 + x * 3 + 2] = b;
+      let r, g, b;
+      if (!insideRounded(x, y)) {
+        // Outside the rounded square: transparent-equivalent (we use RGB without alpha, so paint deep violet)
+        [r, g, b] = BG_BOT;
+      } else if (insideN(x, y)) {
+        [r, g, b] = goldColor(y);
+      } else {
+        [r, g, b] = bgColor(y);
+      }
+      const i = y * rowSize + 1 + x * 3;
+      raw[i] = r;
+      raw[i + 1] = g;
+      raw[i + 2] = b;
     }
   }
 
@@ -77,4 +152,4 @@ function makePNG(size) {
 
 writeFileSync('public/icon-192.png', makePNG(192));
 writeFileSync('public/icon-512.png', makePNG(512));
-console.log('✓ public/icon-192.png and public/icon-512.png created');
+console.log('✓ NEXIUM icons regenerated: public/icon-192.png and public/icon-512.png');
