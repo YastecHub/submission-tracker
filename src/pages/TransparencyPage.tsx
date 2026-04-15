@@ -94,7 +94,7 @@ export default function TransparencyPage() {
         const v: Verified = { matricNumber: res.matricNumber, displayName: res.displayName };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
         setVerified(v);
-        toast(`Welcome, ${res.displayName.split(' ')[0]}!`, 'success');
+        toast('Ledger unlocked', 'success');
       } else {
         toast('Matric not found in class records', 'error');
       }
@@ -138,7 +138,7 @@ export default function TransparencyPage() {
                   type="text"
                   value={matricInput}
                   onChange={(e) => setMatricInput(e.target.value)}
-                  placeholder="e.g. CSC/2020/001"
+                  placeholder="e.g. 251100000"
                   className="input-base uppercase"
                   autoFocus
                 />
@@ -189,7 +189,7 @@ export default function TransparencyPage() {
             </div>
             <div className="text-right">
               <p className="text-xs text-dim uppercase tracking-wider">Viewing as</p>
-              <p className="text-sm font-semibold truncate max-w-[160px]">{verified.displayName}</p>
+              <p className="text-sm font-semibold truncate max-w-[160px]">{verified.matricNumber}</p>
               <button
                 type="button"
                 onClick={handleLogOut}
@@ -428,7 +428,10 @@ function TransactionCard({
                   </span>
                 )}
                 {transaction.recorderName && (
-                  <span className="text-dim">by {transaction.recorderName}</span>
+                  <span className="text-dim">
+                    Approved by {transaction.recorderName}
+                    {transaction.recorderRole && ` (${transaction.recorderRole})`}
+                  </span>
                 )}
               </div>
             </div>

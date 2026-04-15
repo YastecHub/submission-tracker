@@ -179,7 +179,7 @@ export default function PaymentSubmitForm() {
                 value={form.matricNumber}
                 onChange={(e) => setForm({ ...form, matricNumber: e.target.value })}
                 className="input-base uppercase"
-                placeholder="e.g. 2021/12345"
+                placeholder="e.g. 251100000"
               />
             </div>
 

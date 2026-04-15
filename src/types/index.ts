@@ -88,6 +88,7 @@ export interface Transaction {
   occurredAt: string;
   proofUrl?: string | null;
   recorderName?: string | null;
+  recorderRole?: string | null;
   receiptId?: string | null;
   isDeleted: boolean;
   createdAt: string;
