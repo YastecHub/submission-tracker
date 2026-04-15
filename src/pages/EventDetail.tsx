@@ -18,37 +18,20 @@ interface SubmissionsPage {
 
 function EventDetailSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-base">
       <Navbar />
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-4" />
-        <div className="bg-blue-100 rounded-2xl p-5 mb-6 animate-pulse">
-          <div className="h-3 w-16 bg-blue-200 rounded mb-3" />
-          <div className="h-6 w-2/3 bg-blue-200 rounded mb-2" />
-          <div className="h-3 w-24 bg-blue-200 rounded" />
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="h-4 w-24 bg-surface-2 rounded animate-pulse mb-4" />
+        <div className="card-base p-5 mb-6 animate-pulse">
+          <div className="h-3 w-16 bg-surface-2 rounded mb-3" />
+          <div className="h-6 w-2/3 bg-surface-2 rounded mb-2" />
+          <div className="h-3 w-24 bg-surface-2 rounded" />
         </div>
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow p-4 text-center animate-pulse">
-              <div className="h-7 w-10 bg-gray-200 rounded mx-auto mb-1" />
-              <div className="h-3 w-12 bg-gray-100 rounded mx-auto" />
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-col gap-3 mb-4">
-          <div className="h-12 bg-white border border-gray-200 rounded-lg animate-pulse" />
-          <div className="flex gap-2">
-            <div className="flex-1 h-12 bg-purple-100 rounded-lg animate-pulse" />
-            <div className="flex-1 h-12 bg-green-100 rounded-lg animate-pulse" />
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl shadow overflow-hidden">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 animate-pulse">
-              <div className="w-5 h-3 bg-gray-200 rounded" />
-              <div className="flex-1 h-4 bg-gray-200 rounded" />
-              <div className="w-24 h-3 bg-gray-100 rounded" />
-              <div className="w-16 h-5 bg-gray-100 rounded-full" />
+            <div key={i} className="card-base p-4 text-center animate-pulse">
+              <div className="h-7 w-10 bg-surface-2 rounded mx-auto mb-1" />
+              <div className="h-3 w-12 bg-surface-2 rounded mx-auto" />
             </div>
           ))}
         </div>
@@ -73,7 +56,6 @@ export default function EventDetail() {
   const [exporting, setExporting] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search — wait 400ms before hitting API
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -111,7 +93,6 @@ export default function EventDetail() {
     }
   }, [id]);
 
-  // Initial load
   useEffect(() => {
     async function init() {
       await Promise.all([fetchEvent(), fetchSubmissions(1, '')]);
@@ -120,13 +101,11 @@ export default function EventDetail() {
     void init();
   }, [fetchEvent, fetchSubmissions]);
 
-  // Refetch when page or search changes (skip on initial)
   useEffect(() => {
     if (loading) return;
     void fetchSubmissions(currentPage, debouncedSearch);
   }, [currentPage, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent background poll every 30s
   useEffect(() => {
     const interval = setInterval(() => {
       void fetchSubmissions(currentPage, debouncedSearch, true);
@@ -179,7 +158,7 @@ export default function EventDetail() {
   const totalPages = page?.totalPages ?? 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-base">
       <Navbar />
       {showScanner && (
         <QRScanner
@@ -188,20 +167,20 @@ export default function EventDetail() {
         />
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        <Link to="/dashboard" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-          ← Back to Dashboard
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <Link to="/dashboard" className="btn-ghost !px-0 mb-4">
+          ← Back to dashboard
         </Link>
 
         {event && (
-          <div className="bg-blue-700 text-white rounded-2xl p-5 mb-6 shadow">
-            <span className="text-xs uppercase tracking-widest opacity-70">{event.type}</span>
-            <h1 className="text-xl font-bold mt-1">{event.title}</h1>
-            <p className="text-sm opacity-80">{event.courseCode}</p>
+          <div className="card-base p-5 mb-6">
+            <span className="badge badge-accent">{event.type}</span>
+            <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
+            <p className="text-sm text-muted mt-1">{event.courseCode}</p>
             {event.description && (
-              <p className="text-sm opacity-70 mt-2">{event.description}</p>
+              <p className="text-sm text-muted mt-2 leading-relaxed">{event.description}</p>
             )}
-            <p className="text-xs mt-2 opacity-60">
+            <p className="text-xs text-dim mt-3">
               Deadline:{' '}
               {new Date(event.deadline).toLocaleString('en-GB', {
                 day: '2-digit',
@@ -215,17 +194,17 @@ export default function EventDetail() {
         )}
 
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-white rounded-2xl shadow p-4 text-center">
-            <p className="text-2xl font-bold text-gray-800">{totalSubmissions}</p>
-            <p className="text-xs text-gray-500 mt-1">Total</p>
+          <div className="card-base p-4 text-center">
+            <p className="text-2xl font-semibold">{totalSubmissions}</p>
+            <p className="text-xs text-dim mt-1">Total</p>
           </div>
-          <div className="bg-white rounded-2xl shadow p-4 text-center">
-            <p className="text-2xl font-bold text-green-700">{confirmedTotal}</p>
-            <p className="text-xs text-gray-500 mt-1">Confirmed</p>
+          <div className="card-base p-4 text-center">
+            <p className="text-2xl font-semibold text-success">{confirmedTotal}</p>
+            <p className="text-xs text-dim mt-1">Confirmed</p>
           </div>
-          <div className="bg-white rounded-2xl shadow p-4 text-center">
-            <p className="text-2xl font-bold text-yellow-600">{pendingTotal}</p>
-            <p className="text-xs text-gray-500 mt-1">Pending</p>
+          <div className="card-base p-4 text-center">
+            <p className="text-2xl font-semibold text-accent">{pendingTotal}</p>
+            <p className="text-xs text-dim mt-1">Pending</p>
           </div>
         </div>
 
@@ -235,33 +214,30 @@ export default function EventDetail() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or matric number..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+              placeholder="Search by name or matric number…"
+              className="input-base pr-10"
             />
             {tableLoading && (
               <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                <span className="block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                <span className="block w-4 h-4 border-2 border-t-transparent rounded-full animate-spin border-[color:var(--nx-accent)]" />
               </span>
             )}
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowScanner(true)}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-3 rounded-lg transition"
-            >
+            <button onClick={() => setShowScanner(true)} className="btn-secondary flex-1 !py-3">
               Scan QR
             </button>
             <button
               onClick={handleExport}
               disabled={exporting || totalSubmissions === 0}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-3 rounded-lg transition disabled:opacity-60"
+              className="btn-primary flex-1 !py-3"
             >
-              {exporting ? 'Exporting...' : 'Export Excel'}
+              {exporting ? 'Exporting…' : 'Export Excel'}
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow overflow-hidden">
+        <div className="card-base overflow-hidden">
           <SubmissionsTable
             submissions={page?.submissions ?? []}
             onConfirmed={handleConfirmed}
@@ -271,13 +247,13 @@ export default function EventDetail() {
         </div>
 
         {!tableLoading && search && (page?.submissions.length ?? 0) === 0 && (
-          <p className="text-center text-sm text-gray-400 mt-4">
+          <p className="text-center text-sm text-dim mt-4">
             No results for &quot;{search}&quot;
           </p>
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+          <div className="flex items-center justify-between mt-4 text-sm text-muted">
             <span>
               Page {currentPage} of {totalPages} · {totalSubmissions} total
             </span>
@@ -285,14 +261,14 @@ export default function EventDetail() {
               <button
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="btn-secondary !py-2 !text-sm"
               >
                 ← Prev
               </button>
               <button
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="btn-secondary !py-2 !text-sm"
               >
                 Next →
               </button>

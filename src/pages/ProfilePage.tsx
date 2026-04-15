@@ -80,100 +80,78 @@ export default function ProfilePage() {
     user?.role === 'dev' ? 'Developer' :
     user?.role === 'fin_sec' ? 'Financial Secretary' :
     'Class Representative';
-  const roleBadgeClass =
-    user?.role === 'acr' ? 'bg-purple-100 text-purple-700' :
-    user?.role === 'dev' ? 'bg-gray-100 text-gray-700' :
-    user?.role === 'fin_sec' ? 'bg-green-100 text-green-700' :
-    'bg-yellow-100 text-yellow-800';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-base">
       <Navbar />
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-2xl mx-auto px-4 py-8">
         <button
           onClick={() => navigate('/dashboard')}
-          className="text-sm text-blue-600 hover:underline mb-6 inline-block"
+          className="btn-ghost !px-0 mb-6"
         >
-          ← Back to Dashboard
+          ← Back to dashboard
         </button>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
+        <h1 className="text-2xl font-semibold tracking-tight mb-6">My profile</h1>
 
-        {/* Avatar + role */}
-        <div className="bg-white rounded-2xl shadow p-6 mb-5 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+        <div className="card-base p-6 mb-5 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-surface-2 border border-nx flex items-center justify-center text-xl font-semibold shrink-0">
             {user?.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-lg">{user?.name}</p>
-            <p className="text-sm text-gray-500">{user?.email}</p>
-            <span className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${roleBadgeClass}`}>
-              {roleLabel}
-            </span>
+            <p className="font-semibold text-lg">{user?.name}</p>
+            <p className="text-sm text-muted">{user?.email}</p>
+            <span className="badge badge-accent mt-2">{roleLabel}</span>
           </div>
         </div>
 
-        {/* Profile info form */}
-        <div className="bg-white rounded-2xl shadow p-6 mb-5">
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Update Information</h2>
-          {profileError && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              {profileError}
-            </div>
-          )}
+        <div className="card-base p-6 mb-5">
+          <h2 className="text-base font-semibold mb-4">Update information</h2>
+          {profileError && <div className="alert-danger mb-4">{profileError}</div>}
           <form onSubmit={handleProfileSave} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Full name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Email address</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
               />
             </div>
-            <button
-              type="submit"
-              disabled={profileLoading}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition disabled:opacity-60 text-base"
-            >
-              {profileLoading ? 'Saving...' : 'Save Changes'}
+            <button type="submit" disabled={profileLoading} className="btn-primary">
+              {profileLoading ? 'Saving…' : 'Save changes'}
             </button>
           </form>
         </div>
 
-        {/* Change password form */}
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Change Password</h2>
-          {passwordError && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              {passwordError}
-            </div>
-          )}
+        <div className="card-base p-6">
+          <h2 className="text-base font-semibold mb-4">Change password</h2>
+          {passwordError && <div className="alert-danger mb-4">{passwordError}</div>}
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Current password</label>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">New password</label>
               <input
                 type="password"
                 value={newPassword}
@@ -181,26 +159,22 @@ export default function ProfilePage() {
                 required
                 autoComplete="new-password"
                 minLength={8}
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Confirm new password</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
               />
             </div>
-            <button
-              type="submit"
-              disabled={passwordLoading}
-              className="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 text-white font-semibold px-6 py-3 rounded-lg transition disabled:opacity-60 text-base"
-            >
-              {passwordLoading ? 'Changing...' : 'Change Password'}
+            <button type="submit" disabled={passwordLoading} className="btn-primary">
+              {passwordLoading ? 'Changing…' : 'Change password'}
             </button>
           </form>
         </div>

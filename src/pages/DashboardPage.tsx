@@ -43,7 +43,6 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const canCreate = user?.role !== 'fin_sec';
 
-  // Submission events
   const [events, setEvents] = useState<SubmissionEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -53,7 +52,6 @@ export default function DashboardPage() {
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [eventFormError, setEventFormError] = useState('');
 
-  // Payment events
   const [paymentEvents, setPaymentEvents] = useState<PaymentEvent[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(true);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -180,130 +178,95 @@ export default function DashboardPage() {
     }
   }
 
-  const loading = eventsLoading || paymentsLoading;
+  const tabClass = (tab: ActiveTab) =>
+    `px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+      activeTab === tab
+        ? 'bg-surface text-[color:var(--nx-text)] border border-nx'
+        : 'text-muted hover:text-[color:var(--nx-text)]'
+    }`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-base">
       <Navbar />
-      <main className="max-w-5xl mx-auto px-4 py-6">
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           {canCreate && (
             <div className="flex gap-2">
               {activeTab === 'submissions' && (
                 <button
                   type="button"
                   onClick={() => { setShowEventForm(!showEventForm); setShowPaymentForm(false); }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
+                  className="btn-primary !py-2 !text-sm"
                 >
-                  {showEventForm ? 'Cancel' : '+ New Event'}
+                  {showEventForm ? 'Cancel' : '+ New event'}
                 </button>
               )}
               {activeTab === 'payments' && (
                 <button
                   type="button"
                   onClick={() => { setShowPaymentForm(!showPaymentForm); setShowEventForm(false); }}
-                  className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
+                  className="btn-primary !py-2 !text-sm"
                 >
-                  {showPaymentForm ? 'Cancel' : '+ New Payment'}
+                  {showPaymentForm ? 'Cancel' : '+ New payment'}
                 </button>
               )}
             </div>
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
-          <button
-            type="button"
-            onClick={() => setActiveTab('submissions')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-              activeTab === 'submissions'
-                ? 'bg-white text-blue-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
+        <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-fit">
+          <button type="button" onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
             Submissions
-            {!eventsLoading && (
-              <span className="ml-2 bg-gray-200 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">
-                {events.length}
-              </span>
-            )}
+            {!eventsLoading && <span className="ml-2 badge">{events.length}</span>}
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('payments')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-              activeTab === 'payments'
-                ? 'bg-white text-green-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
+          <button type="button" onClick={() => setActiveTab('payments')} className={tabClass('payments')}>
             Payments
-            {!paymentsLoading && (
-              <span className="ml-2 bg-gray-200 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">
-                {paymentEvents.length}
-              </span>
-            )}
+            {!paymentsLoading && <span className="ml-2 badge">{paymentEvents.length}</span>}
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('ledger')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-              activeTab === 'ledger'
-                ? 'bg-white text-emerald-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
+          <button type="button" onClick={() => setActiveTab('ledger')} className={tabClass('ledger')}>
             Ledger
           </button>
         </div>
 
-        {/* ── SUBMISSION EVENTS TAB ── */}
         {activeTab === 'submissions' && (
           <>
             {showEventForm && (
-              <div className="bg-white rounded-2xl shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold mb-4">Create Submission Event</h2>
-                {eventFormError && (
-                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-                    {eventFormError}
-                  </div>
-                )}
+              <div className="card-base p-6 mb-6">
+                <h2 className="text-lg font-semibold mb-4">Create submission event</h2>
+                {eventFormError && <div className="alert-danger mb-4">{eventFormError}</div>}
                 <form onSubmit={handleCreateEvent} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Title <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Title <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text" required value={eventForm.title}
                         onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="input-base"
                         placeholder="Assignment 1"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Course Code <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Course code <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text" required value={eventForm.courseCode}
                         onChange={(e) => setEventForm({ ...eventForm, courseCode: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="input-base"
                         placeholder="CSC401"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Type</label>
                       <select
                         value={eventForm.type}
                         onChange={(e) => setEventForm({ ...eventForm, type: e.target.value as EventType })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="input-base"
                       >
                         {EVENT_TYPES.map((t) => (
                           <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -311,30 +274,29 @@ export default function DashboardPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Deadline <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Deadline <span className="text-danger">*</span>
                       </label>
                       <input
                         type="datetime-local" required value={eventForm.deadline}
                         onChange={(e) => setEventForm({ ...eventForm, deadline: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="input-base"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                    <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                      Description <span className="text-dim font-normal normal-case">(optional)</span>
+                    </label>
                     <textarea
                       value={eventForm.description}
                       onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="input-base"
                       rows={2} placeholder="Any notes for students..."
                     />
                   </div>
-                  <button
-                    type="submit" disabled={creatingEvent}
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold px-6 py-3 rounded-lg transition disabled:opacity-60"
-                  >
-                    {creatingEvent ? 'Creating...' : 'Create Event'}
+                  <button type="submit" disabled={creatingEvent} className="btn-primary">
+                    {creatingEvent ? 'Creating…' : 'Create event'}
                   </button>
                 </form>
               </div>
@@ -343,28 +305,26 @@ export default function DashboardPage() {
             {eventsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl shadow p-5 animate-pulse">
-                    <div className="h-3 bg-gray-200 rounded w-1/4 mb-3" />
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
-                    <div className="h-3 bg-gray-200 rounded w-1/3 mb-4" />
-                    <div className="flex gap-3 mb-4">
-                      <div className="flex-1 h-12 bg-gray-100 rounded-xl" />
-                      <div className="flex-1 h-12 bg-gray-100 rounded-xl" />
-                      <div className="flex-1 h-12 bg-gray-100 rounded-xl" />
+                  <div key={i} className="card-base p-5 animate-pulse">
+                    <div className="h-3 bg-surface-2 rounded w-1/4 mb-3" />
+                    <div className="h-5 bg-surface-2 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-surface-2 rounded w-1/3 mb-4" />
+                    <div className="flex gap-2 mb-4">
+                      <div className="flex-1 h-12 bg-surface-2 rounded-lg" />
+                      <div className="flex-1 h-12 bg-surface-2 rounded-lg" />
+                      <div className="flex-1 h-12 bg-surface-2 rounded-lg" />
                     </div>
                     <div className="flex gap-2">
-                      <div className="flex-1 h-9 bg-gray-200 rounded-lg" />
-                      <div className="flex-1 h-9 bg-gray-200 rounded-lg" />
-                      <div className="h-9 w-9 bg-gray-200 rounded-lg" />
+                      <div className="flex-1 h-9 bg-surface-2 rounded-lg" />
+                      <div className="flex-1 h-9 bg-surface-2 rounded-lg" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : events.length === 0 ? (
-              <div className="text-center py-20 text-gray-400">
-                <p className="text-5xl mb-4">📋</p>
+              <div className="text-center py-20 text-muted">
                 <p className="text-lg font-medium">No submission events yet</p>
-                {canCreate && <p className="text-sm mt-1">Create your first submission event to get started.</p>}
+                {canCreate && <p className="text-sm text-dim mt-2">Create your first submission event to get started.</p>}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -381,107 +341,99 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* ── PAYMENT EVENTS TAB ── */}
         {activeTab === 'payments' && (
           <>
             {showPaymentForm && (
-              <div className="bg-white rounded-2xl shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold mb-4">Create Payment Collection</h2>
-                {paymentFormError && (
-                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-                    {paymentFormError}
-                  </div>
-                )}
+              <div className="card-base p-6 mb-6">
+                <h2 className="text-lg font-semibold mb-4">Create payment collection</h2>
+                {paymentFormError && <div className="alert-danger mb-4">{paymentFormError}</div>}
                 <form onSubmit={handleCreatePayment} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title <span className="text-red-500">*</span>
+                    <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                      Title <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text" required value={paymentForm.title}
                       onChange={(e) => setPaymentForm({ ...paymentForm, title: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="e.g. Department Dinner Ticket"
+                      className="input-base"
+                      placeholder="e.g. Department dinner ticket"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Amount (₦) <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Amount (₦) <span className="text-danger">*</span>
                       </label>
                       <input
                         type="number" required min="1" step="any" value={paymentForm.amount}
                         onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="input-base"
                         placeholder="2000"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Deadline <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Deadline <span className="text-danger">*</span>
                       </label>
                       <input
                         type="datetime-local" required value={paymentForm.deadline}
                         onChange={(e) => setPaymentForm({ ...paymentForm, deadline: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="input-base"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bank Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Bank name <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text" required value={paymentForm.bankName}
                         onChange={(e) => setPaymentForm({ ...paymentForm, bankName: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="input-base"
                         placeholder="First Bank"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Account Number <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Account number <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text" required value={paymentForm.accountNumber}
                         onChange={(e) => setPaymentForm({ ...paymentForm, accountNumber: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500 font-mono"
+                        className="input-base font-mono"
                         placeholder="0123456789"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Account Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                        Account name <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text" required value={paymentForm.accountName}
                         onChange={(e) => setPaymentForm({ ...paymentForm, accountName: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="input-base"
                         placeholder="NASAMS CSC Dept"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description <span className="text-gray-400 font-normal">(optional)</span>
+                    <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                      Description <span className="text-dim font-normal normal-case">(optional)</span>
                     </label>
                     <textarea
                       value={paymentForm.description}
                       onChange={(e) => setPaymentForm({ ...paymentForm, description: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="input-base"
                       rows={2} placeholder="What is this payment for?"
                     />
                   </div>
 
-                  <button
-                    type="submit" disabled={creatingPayment}
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white text-base font-semibold px-6 py-3 rounded-lg transition disabled:opacity-60"
-                  >
-                    {creatingPayment ? 'Creating...' : 'Create Payment Collection'}
+                  <button type="submit" disabled={creatingPayment} className="btn-primary">
+                    {creatingPayment ? 'Creating…' : 'Create payment collection'}
                   </button>
                 </form>
               </div>
@@ -490,29 +442,23 @@ export default function DashboardPage() {
             {paymentsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl shadow p-5 animate-pulse">
-                    <div className="h-3 bg-gray-200 rounded w-1/4 mb-3" />
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
-                    <div className="h-8 bg-gray-200 rounded w-1/3 mb-4" />
-                    <div className="h-12 bg-green-50 rounded-xl mb-3" />
-                    <div className="flex gap-3 mb-4">
-                      <div className="flex-1 h-12 bg-gray-100 rounded-xl" />
-                      <div className="flex-1 h-12 bg-gray-100 rounded-xl" />
-                      <div className="flex-1 h-12 bg-gray-100 rounded-xl" />
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="flex-1 h-9 bg-gray-200 rounded-lg" />
-                      <div className="flex-1 h-9 bg-gray-200 rounded-lg" />
-                      <div className="h-9 w-9 bg-gray-200 rounded-lg" />
+                  <div key={i} className="card-base p-5 animate-pulse">
+                    <div className="h-3 bg-surface-2 rounded w-1/4 mb-3" />
+                    <div className="h-5 bg-surface-2 rounded w-3/4 mb-2" />
+                    <div className="h-8 bg-surface-2 rounded w-1/3 mb-4" />
+                    <div className="h-12 bg-surface-2 rounded-lg mb-3" />
+                    <div className="flex gap-2 mb-4">
+                      <div className="flex-1 h-12 bg-surface-2 rounded-lg" />
+                      <div className="flex-1 h-12 bg-surface-2 rounded-lg" />
+                      <div className="flex-1 h-12 bg-surface-2 rounded-lg" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : paymentEvents.length === 0 ? (
-              <div className="text-center py-20 text-gray-400">
-                <p className="text-5xl mb-4">💳</p>
+              <div className="text-center py-20 text-muted">
                 <p className="text-lg font-medium">No payment collections yet</p>
-                {canCreate && <p className="text-sm mt-1">Create one to start collecting payment receipts.</p>}
+                {canCreate && <p className="text-sm text-dim mt-2">Create one to start collecting payment receipts.</p>}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -529,7 +475,6 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* ── LEDGER TAB ── */}
         {activeTab === 'ledger' && <DashboardLedger />}
       </main>
 

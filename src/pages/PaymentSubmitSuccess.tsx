@@ -55,7 +55,7 @@ export default function PaymentSubmitSuccess() {
   }, [receipt]);
 
   if (!receipt || !event) {
-    return <Navigate to={`/pay/${slug}`} replace />;
+    return <Navigate to={`/payment/${slug}`} replace />;
   }
 
   const submittedAt = new Date(receipt.submittedAt).toLocaleString('en-GB', {
@@ -73,118 +73,108 @@ export default function PaymentSubmitSuccess() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8">
-      <div className="w-full max-w-sm space-y-4">
-
-        {/* Status banner */}
+    <div className="page-base flex flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm space-y-4 animate-fade-up">
         {status === 'confirmed' && (
-          <div className={`rounded-2xl px-4 py-4 text-center shadow-md bg-green-500 text-white ${justUpdated ? 'animate-bounce-once' : ''}`}>
-            <p className="text-2xl mb-1">🎉</p>
-            <p className="font-bold text-lg">Payment Confirmed!</p>
-            {confirmedBy && <p className="text-sm opacity-90 mt-0.5">Confirmed by {confirmedBy}</p>}
-            {note && <p className="text-sm opacity-80 mt-1 italic">"{note}"</p>}
+          <div className={`alert-success text-center ${justUpdated ? 'animate-bounce-once' : ''}`}>
+            <p className="font-semibold">Payment confirmed</p>
+            {confirmedBy && <p className="text-xs opacity-80 mt-1">Confirmed by {confirmedBy}</p>}
+            {note && <p className="text-xs opacity-80 mt-1 italic">"{note}"</p>}
           </div>
         )}
 
         {status === 'rejected' && (
-          <div className="rounded-2xl px-4 py-4 text-center shadow-md bg-red-500 text-white">
-            <p className="text-2xl mb-1">❌</p>
-            <p className="font-bold text-lg">Receipt Rejected</p>
-            {confirmedBy && <p className="text-sm opacity-90 mt-0.5">Reviewed by {confirmedBy}</p>}
-            {note && <p className="text-sm opacity-80 mt-2 bg-red-600 rounded-lg px-3 py-2">Reason: {note}</p>}
-            <p className="text-sm opacity-80 mt-2">Please contact your Fin Sec or CR.</p>
+          <div className="alert-danger text-center">
+            <p className="font-semibold">Receipt rejected</p>
+            {confirmedBy && <p className="text-xs opacity-80 mt-1">Reviewed by {confirmedBy}</p>}
+            {note && <p className="text-xs mt-2">Reason: {note}</p>}
+            <p className="text-xs mt-2">Please contact your Fin Sec or class rep.</p>
           </div>
         )}
 
         {status === 'pending' && (
-          <div className="rounded-2xl px-4 py-3 text-center bg-yellow-50 border border-yellow-200">
-            <div className="flex items-center justify-center gap-2 text-yellow-700 text-sm">
-              <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse inline-block" />
-              Waiting for Fin Sec to confirm your payment...
+          <div className="card-base px-4 py-3 text-center">
+            <div className="flex items-center justify-center gap-2 text-muted text-sm">
+              <span className="w-2 h-2 rounded-full bg-[color:var(--nx-accent)] inline-block" />
+              Waiting for Fin Sec to confirm your payment…
             </div>
           </div>
         )}
 
-        {/* Details card */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
-          <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors duration-500
-            ${status === 'confirmed' ? 'bg-green-500' : status === 'rejected' ? 'bg-red-500' : 'bg-green-100'}`}>
+        <div className="card-base p-6 text-center">
+          <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4 bg-surface-2 border border-nx">
             {status === 'rejected' ? (
-              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-7 h-7 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className={`w-8 h-8 ${status === 'confirmed' ? 'text-white' : 'text-green-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className={`w-7 h-7 ${status === 'confirmed' ? 'text-success' : 'text-accent'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             )}
           </div>
 
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Receipt Submitted!</h1>
-          <p className="text-sm text-gray-500 mb-4">Your payment receipt has been uploaded.</p>
+          <h1 className="text-xl font-semibold tracking-tight">Receipt submitted</h1>
+          <p className="text-sm text-muted mt-1 mb-5">Your payment receipt has been uploaded.</p>
 
-          <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left text-sm space-y-1">
+          <div className="bg-surface-2 border border-nx rounded-lg p-4 mb-4 text-left text-sm space-y-1.5">
             <div>
-              <span className="text-gray-500">Name:</span>{' '}
+              <span className="text-dim">Name:</span>{' '}
               <span className="font-medium">{receipt.fullName}</span>
             </div>
             <div>
-              <span className="text-gray-500">Matric:</span>{' '}
+              <span className="text-dim">Matric:</span>{' '}
               <span className="font-medium">{receipt.matricNumber}</span>
             </div>
             {receipt.level && (
               <div>
-                <span className="text-gray-500">Level:</span>{' '}
+                <span className="text-dim">Level:</span>{' '}
                 <span className="font-medium">{receipt.level}</span>
               </div>
             )}
             <div>
-              <span className="text-gray-500">Amount:</span>{' '}
+              <span className="text-dim">Amount:</span>{' '}
               <span className="font-medium">{amount}</span>
             </div>
             <div>
-              <span className="text-gray-500">Submitted:</span>{' '}
+              <span className="text-dim">Submitted:</span>{' '}
               <span className="font-medium">{submittedAt}</span>
             </div>
             <div className="pt-1">
-              <span className="text-gray-500">Status:</span>{' '}
+              <span className="text-dim">Status:</span>{' '}
               {status === 'confirmed' ? (
-                <span className="font-semibold text-green-600">Confirmed ✓</span>
+                <span className="font-semibold text-success">Confirmed</span>
               ) : status === 'rejected' ? (
-                <span className="font-semibold text-red-600">Rejected ✗</span>
+                <span className="font-semibold text-danger">Rejected</span>
               ) : (
-                <span className="font-medium text-yellow-600">Pending review</span>
+                <span className="font-medium text-accent">Pending review</span>
               )}
             </div>
           </div>
 
-          {/* Receipt image thumbnail */}
           <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-2">Your uploaded receipt</p>
+            <p className="text-xs text-muted mb-2">Your uploaded receipt</p>
             <a href={receipt.receiptUrl} target="_blank" rel="noopener noreferrer">
               <img
                 src={receipt.receiptUrl}
                 alt="Payment receipt"
-                className="w-full max-h-40 object-contain rounded-xl border border-gray-200 cursor-pointer hover:opacity-90 transition"
+                className="w-full max-h-40 object-contain rounded-lg border border-nx bg-surface-2 cursor-pointer hover:opacity-90 transition-opacity"
               />
             </a>
-            <p className="text-xs text-gray-400 mt-1">Tap to view full size</p>
+            <p className="text-xs text-dim mt-1">Tap to view full size</p>
           </div>
 
-          <p className="text-xs text-gray-400">Screenshot this page for your records</p>
+          <p className="text-xs text-dim">Screenshot this page for your records.</p>
         </div>
 
-        <Link
-          to="/transparency"
-          className="block bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-2xl p-4 transition"
-        >
+        <Link to="/transparency" className="card-interactive block p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl">
+            <div className="w-10 h-10 rounded-lg bg-surface-2 border border-nx flex items-center justify-center text-accent font-semibold">
               ₦
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-sm font-semibold text-emerald-800">See class account transparency</p>
-              <p className="text-xs text-emerald-700">View the current balance and all transactions →</p>
+              <p className="text-sm font-medium">See class account transparency</p>
+              <p className="text-xs text-muted">View the current balance and all transactions</p>
             </div>
           </div>
         </Link>

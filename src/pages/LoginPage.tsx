@@ -4,6 +4,25 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
+const FEATURES = [
+  {
+    title: 'Collect submissions',
+    body: 'Share one link. Students upload their work before the deadline, no more DMs, no more lost files.',
+  },
+  {
+    title: 'Track payments',
+    body: 'Receipts come in, get verified, and stay in one place. Export when you need to.',
+  },
+  {
+    title: 'Public ledger',
+    body: 'Every naira in or out is visible to the class. Nothing to explain, nothing to defend.',
+  },
+  {
+    title: 'No more chasing',
+    body: 'Students see what is due and what has been paid. You stop being the middleman.',
+  },
+];
+
 export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -40,86 +59,96 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Grid background + radial fade */}
-      <div className="absolute inset-0 bg-grid-dark bg-radial-fade pointer-events-none" />
+    <div className="page-base px-4 py-8 sm:py-16">
+      {/* Mobile brand header — desktop hides this, brand lives in left column */}
+      <div className="md:hidden flex items-center gap-3 mb-6 max-w-md mx-auto">
+        <div className="w-10 h-10 rounded-xl bg-surface-2 border border-nx flex items-center justify-center overflow-hidden">
+          <img src="/icon.svg" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div>
+          <p className="text-base font-semibold tracking-tight leading-tight">NEXIUM</p>
+          <p className="text-xs text-muted leading-tight">Run your class in one place.</p>
+        </div>
+      </div>
 
-      {/* Aurora blobs */}
-      <div className="blob bg-purple-600 w-[500px] h-[500px] -top-40 -left-40 animate-aurora" />
-      <div className="blob bg-violet-700 w-[420px] h-[420px] -bottom-32 -right-32 animate-aurora-slow" />
-      <div className="blob bg-amber-500 w-[300px] h-[300px] top-1/3 right-1/4 opacity-25 animate-aurora" />
-
-      <div className="w-full max-w-md relative animate-fade-up">
-        {/* Brand header */}
-        <div className="text-center mb-6">
-          <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 mb-4 shadow-2xl animate-pulse-ring-violet overflow-hidden">
-            <img src="/icon.svg" alt="NEXIUM" className="w-full h-full object-contain" />
+      <div className="w-full max-w-5xl mx-auto grid md:grid-cols-2 gap-10 md:gap-16 md:items-center animate-fade-up">
+        {/* Left — brand + features (desktop; hidden on mobile top, shown below form) */}
+        <div className="order-2 md:order-1">
+          <div className="hidden md:flex items-center gap-3 mb-6">
+            <div className="w-11 h-11 rounded-xl bg-surface-2 border border-nx flex items-center justify-center overflow-hidden">
+              <img src="/icon.svg" alt="" className="w-full h-full object-contain" />
+            </div>
+            <span className="text-lg font-semibold tracking-tight">NEXIUM</span>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-gradient-nexium">NEXIUM</h1>
-          <p className="text-zinc-400 text-sm mt-1.5 tracking-wide">Class Representative Portal</p>
+
+          <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-tight">
+            Run your class.<br />
+            <span className="text-muted">Collect submissions and dues in one place.</span>
+          </h1>
+
+          <p className="mt-4 sm:mt-5 text-muted text-[0.95rem] leading-relaxed max-w-md">
+            The App is a quiet workspace for class reps. Gather assignments, log payments,
+            and keep the whole class in the loop, without the whatsapp group-chat chaos.
+          </p>
+
+          <ul className="mt-6 sm:mt-8 space-y-5">
+            {FEATURES.map((f) => (
+              <li key={f.title} className="flex gap-3">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[color:var(--nx-accent)] flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">{f.title}</p>
+                  <p className="text-muted text-sm leading-relaxed mt-0.5">{f.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Login card with gradient border */}
-        <div className="relative rounded-3xl p-[1px] bg-gradient-to-br from-white/20 via-white/5 to-transparent overflow-hidden">
-          <div className="absolute inset-0 opacity-50 overflow-hidden rounded-3xl">
-            <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer-sweep" />
-          </div>
-
-          <div className="relative bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-7 sm:p-8">
-            <h2 className="text-xl font-bold text-white mb-1">Welcome back</h2>
-            <p className="text-sm text-zinc-400 mb-6">Sign in to manage submissions and payments.</p>
+        {/* Right — login card */}
+        <div className="order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 md:justify-self-end">
+          <div className="card-base p-7 sm:p-8">
+            <h2 className="text-xl font-semibold">Sign in</h2>
+            <p className="text-sm text-muted mt-1">Class reps and assistant CRs only.</p>
 
             {error && (
-              <div className="mb-5 bg-red-500/10 text-red-300 border border-red-500/30 rounded-xl px-4 py-3 text-sm flex items-start gap-2 animate-fade-up">
+              <div className="alert-danger mt-5 flex items-start gap-2">
                 <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                {error}
+                <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Email</label>
-                <div className="relative group">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 group-focus-within:text-amber-400 transition-colors">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </span>
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 rounded-xl pl-10 pr-3 py-3 text-base focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition"
-                    placeholder="cr@university.edu"
-                  />
-                </div>
+                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Email</label>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-base"
+                  placeholder="cr@university.edu"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Password</label>
-                <div className="relative group">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 group-focus-within:text-amber-400 transition-colors">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </span>
+                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Password</label>
+                <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-zinc-800/60 border border-zinc-700 text-zinc-100 placeholder-zinc-500 rounded-xl pl-10 pr-12 py-3 text-base focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition"
+                    className="input-base pr-11"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 transition"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-dim hover:text-muted transition-colors"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -136,55 +165,42 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="relative w-full overflow-hidden bg-gradient-to-r from-purple-700 via-violet-600 to-purple-700 hover:from-purple-600 hover:via-violet-500 hover:to-purple-600 text-white font-semibold py-3.5 rounded-xl transition disabled:opacity-60 text-base mt-2 shadow-lg shadow-purple-600/40 flex items-center justify-center gap-2 group ring-1 ring-amber-300/30"
-              >
-                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
-                </span>
+              <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
                 {loading ? (
                   <>
-                    <svg className="w-5 h-5 animate-spin relative" fill="none" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span className="relative">Signing in...</span>
+                    <span>Signing in…</span>
                   </>
                 ) : (
-                  <>
-                    <span className="relative">Sign In</span>
-                    <svg className="w-5 h-5 relative group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </>
+                  <span>Sign in</span>
                 )}
               </button>
             </form>
           </div>
+
+          <p className="text-center text-xs text-dim mt-5">
+            Protected portal. Contact your admin if you need access.
+          </p>
+
+          {/* Student CTA — prominent, right under the login card on every screen */}
+          <Link
+            to="/transparency"
+            className="mt-5 flex items-center justify-between gap-3 card-base p-4 hover:border-[color:var(--nx-border-hover)] transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Are you a student?</p>
+              <p className="text-xs text-muted mt-0.5">View the class account ledger.</p>
+            </div>
+            <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 border border-nx flex items-center justify-center text-accent group-hover:bg-[color:var(--nx-accent)] group-hover:text-black group-hover:border-[color:var(--nx-accent)] transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </Link>
         </div>
-
-        {/* Transparency link */}
-        <Link
-          to="/transparency"
-          className="card-lift mt-5 flex items-center gap-3 bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-xl border border-white/10 hover:border-emerald-400/40 rounded-2xl p-4 group"
-        >
-          <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-emerald-500/30 flex-shrink-0">
-            ₦
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white">Student? View class account transparency</p>
-            <p className="text-xs text-zinc-400 mt-0.5">See the balance and every transaction</p>
-          </div>
-          <svg className="w-5 h-5 text-zinc-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-
-        <p className="text-center text-xs text-zinc-500 mt-6">
-          Protected portal. Contact your admin if you need access.
-        </p>
       </div>
     </div>
   );

@@ -7,8 +7,13 @@ if ('serviceWorker' in navigator) {
 }
 
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import './index.css';
+
+function RedirectWithSlug({ to }: { to: (slug: string) => string }) {
+  const { slug } = useParams<{ slug: string }>();
+  return <Navigate to={to(slug ?? '')} replace />;
+}
 
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -59,12 +64,18 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 </ProtectedRoute>
               }
             />
-            <Route path="/submit/:slug" element={<SubmissionForm />} />
-            <Route path="/submit/:slug/success" element={<SubmissionSuccess />} />
-            <Route path="/submit/:slug/closed" element={<SubmissionClosed />} />
-            <Route path="/pay/:slug" element={<PaymentSubmitForm />} />
-            <Route path="/pay/:slug/success" element={<PaymentSubmitSuccess />} />
-            <Route path="/pay/:slug/closed" element={<PaymentSubmitClosed />} />
+            <Route path="/submitit/:slug" element={<SubmissionForm />} />
+            <Route path="/submitit/:slug/success" element={<SubmissionSuccess />} />
+            <Route path="/submitit/:slug/closed" element={<SubmissionClosed />} />
+            <Route path="/payment/:slug" element={<PaymentSubmitForm />} />
+            <Route path="/payment/:slug/success" element={<PaymentSubmitSuccess />} />
+            <Route path="/payment/:slug/closed" element={<PaymentSubmitClosed />} />
+            <Route path="/submit/:slug" element={<RedirectWithSlug to={(s) => `/submitit/${s}`} />} />
+            <Route path="/submit/:slug/success" element={<RedirectWithSlug to={(s) => `/submitit/${s}/success`} />} />
+            <Route path="/submit/:slug/closed" element={<RedirectWithSlug to={(s) => `/submitit/${s}/closed`} />} />
+            <Route path="/pay/:slug" element={<RedirectWithSlug to={(s) => `/payment/${s}`} />} />
+            <Route path="/pay/:slug/success" element={<RedirectWithSlug to={(s) => `/payment/${s}/success`} />} />
+            <Route path="/pay/:slug/closed" element={<RedirectWithSlug to={(s) => `/payment/${s}/closed`} />} />
             <Route path="/transparency" element={<TransparencyPage />} />
             <Route
               path="/dashboard/payments/:id"

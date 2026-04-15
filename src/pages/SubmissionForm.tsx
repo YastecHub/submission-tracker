@@ -23,12 +23,12 @@ export default function SubmissionForm() {
         const ev = res.data;
         const isClosed = ev.isClosed || new Date() > new Date(ev.deadline);
         if (isClosed || ev.isDeleted) {
-          navigate(`/submit/${slug}/closed`, { replace: true });
+          navigate(`/submitit/${slug}/closed`, { replace: true });
         } else {
           setEvent(ev);
         }
       })
-      .catch(() => navigate(`/submit/${slug}/closed`, { replace: true }))
+      .catch(() => navigate(`/submitit/${slug}/closed`, { replace: true }))
       .finally(() => setLoadingEvent(false));
   }, [slug, navigate]);
 
@@ -43,7 +43,7 @@ export default function SubmissionForm() {
         matricNumber: form.matricNumber.trim().toUpperCase(),
         level: form.level || undefined,
       });
-      navigate(`/submit/${slug}/success`, {
+      navigate(`/submitit/${slug}/success`, {
         state: { submission: res.data.submission },
         replace: true,
       });
@@ -52,7 +52,7 @@ export default function SubmissionForm() {
         if (err.response?.status === 409) {
           setError('You have already submitted for this event.');
         } else if (err.response?.status === 403) {
-          navigate(`/submit/${slug}/closed`, { replace: true });
+          navigate(`/submitit/${slug}/closed`, { replace: true });
         } else {
           setError(err.response?.data?.error ?? 'Something went wrong. Please try again.');
         }
@@ -66,8 +66,8 @@ export default function SubmissionForm() {
 
   if (loadingEvent) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+      <div className="page-base flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-nx" />
       </div>
     );
   }
@@ -83,32 +83,30 @@ export default function SubmissionForm() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="bg-blue-700 text-white rounded-2xl p-5 mb-6 shadow">
-          <span className="text-xs uppercase tracking-widest opacity-70">{event.type}</span>
-          <h1 className="text-xl font-bold mt-1">{event.title}</h1>
-          <p className="text-sm opacity-80 mt-1">{event.courseCode}</p>
-          {event.description && <p className="text-sm opacity-70 mt-2">{event.description}</p>}
-          <p className="text-xs mt-3 opacity-60">Deadline: {deadline}</p>
+    <div className="page-base flex flex-col items-center px-4 py-10">
+      <div className="w-full max-w-md animate-fade-up">
+        <div className="card-base p-5 mb-5">
+          <span className="badge badge-accent">{event.type}</span>
+          <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
+          <p className="text-sm text-muted mt-1">{event.courseCode}</p>
+          {event.description && (
+            <p className="text-sm text-muted mt-2 leading-relaxed">{event.description}</p>
+          )}
+          <p className="text-xs text-dim mt-3">Deadline: {deadline}</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">Digital Submission</h2>
-          <p className="text-sm text-gray-500 mb-5">
+        <div className="card-base p-6">
+          <h2 className="text-lg font-semibold">Digital submission</h2>
+          <p className="text-sm text-muted mt-1 mb-5">
             Fill in your details after physically submitting your work.
           </p>
 
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert-danger mb-4">{error}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                Full name <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -116,33 +114,33 @@ export default function SubmissionForm() {
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                 autoComplete="name"
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
                 placeholder="e.g. Amina Bello"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Matric Number <span className="text-red-500">*</span>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                Matric number <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={form.matricNumber}
                 onChange={(e) => setForm({ ...form, matricNumber: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                className="input-base uppercase"
                 placeholder="e.g. 2021/12345"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Level <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+                Level <span className="text-dim font-normal normal-case">(optional)</span>
               </label>
               <select
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-base"
               >
                 <option value="">Select level</option>
                 {LEVELS.map((l) => (
@@ -153,12 +151,8 @@ export default function SubmissionForm() {
               </select>
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-lg transition text-base disabled:opacity-60 mt-2"
-            >
-              {submitting ? 'Submitting...' : 'Confirm Submission'}
+            <button type="submit" disabled={submitting} className="btn-primary w-full mt-2">
+              {submitting ? 'Submitting…' : 'Confirm submission'}
             </button>
           </form>
         </div>

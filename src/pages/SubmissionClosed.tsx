@@ -1,9 +1,9 @@
 export default function SubmissionClosed() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm text-center">
-        <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="page-base flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-sm text-center animate-fade-up">
+        <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4 bg-surface-2 border border-nx">
+          <svg className="w-7 h-7 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -12,13 +12,13 @@ export default function SubmissionClosed() {
             />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Submissions Closed</h1>
-        <p className="text-gray-500 text-sm">
-          This event is no longer accepting submissions. The deadline may have passed or the course
+        <h1 className="text-xl font-semibold tracking-tight mb-2">Submissions closed</h1>
+        <p className="text-muted text-sm leading-relaxed">
+          This event is no longer accepting submissions. The deadline may have passed or the class
           rep has closed it manually.
         </p>
-        <p className="text-gray-400 text-xs mt-4">
-          If you believe this is an error, contact your Course Representative.
+        <p className="text-dim text-xs mt-4">
+          If you believe this is an error, contact your class representative.
         </p>
       </div>
     </div>

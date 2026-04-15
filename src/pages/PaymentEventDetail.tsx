@@ -39,7 +39,6 @@ export default function PaymentEventDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
-  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(t);
@@ -77,16 +76,15 @@ export default function PaymentEventDetail() {
         setLoading(false);
       }
     }
-    init();
+    void init();
   }, [id, toast]);
 
   useEffect(() => {
-    if (!loading) fetchReceipts();
+    if (!loading) void fetchReceipts();
   }, [loading, fetchReceipts]);
 
-  // Poll every 30s
   useEffect(() => {
-    const interval = setInterval(fetchReceipts, 30_000);
+    const interval = setInterval(() => void fetchReceipts(), 30_000);
     return () => clearInterval(interval);
   }, [fetchReceipts]);
 
@@ -120,10 +118,10 @@ export default function PaymentEventDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-base">
         <Navbar />
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin border-[color:var(--nx-accent)]" />
         </div>
       </div>
     );
@@ -131,9 +129,9 @@ export default function PaymentEventDetail() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-base">
         <Navbar />
-        <div className="text-center py-20 text-gray-400">Payment event not found.</div>
+        <div className="text-center py-20 text-dim">Payment event not found.</div>
       </div>
     );
   }
@@ -149,18 +147,15 @@ export default function PaymentEventDetail() {
   });
 
   function statusBadge(status: PaymentReceipt['status']) {
-    if (status === 'confirmed')
-      return <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded-full">Confirmed</span>;
-    if (status === 'rejected')
-      return <span className="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full">Rejected</span>;
-    return <span className="px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-700 rounded-full">Pending</span>;
+    if (status === 'confirmed') return <span className="badge badge-success">Confirmed</span>;
+    if (status === 'rejected') return <span className="badge badge-danger">Rejected</span>;
+    return <span className="badge badge-accent">Pending</span>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-base">
       <Navbar />
 
-      {/* Lightbox */}
       {lightboxUrl && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
@@ -169,110 +164,108 @@ export default function PaymentEventDetail() {
           <img
             src={lightboxUrl}
             alt="Receipt"
-            className="max-w-full max-h-full rounded-xl shadow-2xl"
+            className="max-w-full max-h-full rounded-xl shadow-lg"
             onClick={(e) => e.stopPropagation()}
           />
           <button
             onClick={() => setLightboxUrl(null)}
-            className="absolute top-4 right-4 text-white text-2xl font-bold bg-black/40 rounded-full w-10 h-10 flex items-center justify-center"
+            className="absolute top-4 right-4 text-white text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+            aria-label="Close"
           >
             ×
           </button>
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* Back link */}
-        <Link to="/dashboard" className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-4">
-          ← Back to Dashboard
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <Link to="/dashboard" className="btn-ghost !px-0 mb-4">
+          ← Back to dashboard
         </Link>
 
-        {/* Event header */}
-        <div className="bg-white rounded-2xl shadow p-5 mb-5">
+        <div className="card-base p-5 mb-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <span className="text-xs uppercase tracking-widest text-green-600 font-semibold">Payment Collection</span>
-              <h1 className="text-xl font-bold text-gray-900 mt-0.5">{event.title}</h1>
-              {event.description && <p className="text-sm text-gray-500 mt-1">{event.description}</p>}
-              <p className="text-xs text-gray-400 mt-1">Deadline: {deadline}</p>
+            <div className="min-w-0">
+              <span className="badge badge-accent">Payment Collection</span>
+              <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
+              {event.description && <p className="text-sm text-muted mt-1">{event.description}</p>}
+              <p className="text-xs text-dim mt-2">Deadline: {deadline}</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-green-700">{amount}</p>
-              <p className="text-sm text-gray-500">{event.bankName}</p>
-              <p className="text-sm text-gray-600 font-medium">{event.accountName}</p>
-              <p className="font-mono text-sm text-gray-800">{event.accountNumber}</p>
+              <p className="text-2xl font-semibold text-accent">{amount}</p>
+              <p className="text-sm text-muted mt-1">{event.bankName}</p>
+              <p className="text-sm">{event.accountName}</p>
+              <p className="font-mono text-sm text-muted">{event.accountNumber}</p>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-3 mt-4">
-            {[
-              { label: 'Total', value: stats.total, color: 'text-gray-700' },
-              { label: 'Pending', value: stats.pending, color: 'text-yellow-600' },
-              { label: 'Confirmed', value: stats.confirmed, color: 'text-green-600' },
-              { label: 'Rejected', value: stats.rejected, color: 'text-red-600' },
-            ].map((s) => (
-              <div key={s.label} className="bg-gray-50 rounded-xl p-3 text-center">
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-4 gap-3 mt-5">
+            <div className="card-base p-3 text-center bg-surface-2">
+              <p className="text-2xl font-semibold">{stats.total}</p>
+              <p className="text-xs text-dim mt-1">Total</p>
+            </div>
+            <div className="card-base p-3 text-center bg-surface-2">
+              <p className="text-2xl font-semibold text-accent">{stats.pending}</p>
+              <p className="text-xs text-dim mt-1">Pending</p>
+            </div>
+            <div className="card-base p-3 text-center bg-surface-2">
+              <p className="text-2xl font-semibold text-success">{stats.confirmed}</p>
+              <p className="text-xs text-dim mt-1">Confirmed</p>
+            </div>
+            <div className="card-base p-3 text-center bg-surface-2">
+              <p className="text-2xl font-semibold text-danger">{stats.rejected}</p>
+              <p className="text-xs text-dim mt-1">Rejected</p>
+            </div>
           </div>
 
-          {/* Student link */}
-          <div className="mt-4 flex items-center gap-2 bg-green-50 rounded-xl px-4 py-2">
-            <span className="text-xs text-gray-500 flex-1 truncate">
-              Student link: <span className="font-mono text-green-700">/pay/{event.slug}</span>
+          <div className="mt-4 flex items-center gap-2 bg-surface-2 border border-nx rounded-xl px-4 py-2.5">
+            <span className="text-xs text-muted flex-1 truncate">
+              Student link: <span className="font-mono text-accent">/payment/{event.slug}</span>
             </span>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/pay/${event.slug}`);
+                navigator.clipboard.writeText(`${window.location.origin}/payment/${event.slug}`);
                 toast('Link copied!', 'success');
               }}
-              className="text-xs text-green-700 font-semibold hover:underline whitespace-nowrap"
+              className="btn-ghost !py-1 !px-2 !text-xs whitespace-nowrap"
             >
-              Copy Link
+              Copy link
             </button>
           </div>
         </div>
 
-        {/* Filters */}
         <div className="flex gap-2 mb-4 flex-wrap">
           <input
-            type="text"
+            type="search"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search by name or matric..."
-            className="flex-1 min-w-[180px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Search by name or matric number…"
+            className="input-base flex-1 min-w-[180px]"
           />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="input-base !w-auto"
           >
-            <option value="">All Statuses</option>
+            <option value="">All statuses</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
             <option value="rejected">Rejected</option>
           </select>
         </div>
 
-        {/* Receipts list */}
         {receipts.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">🧾</p>
+          <div className="card-base p-10 text-center text-dim">
             <p className="font-medium">No receipts yet</p>
             <p className="text-sm mt-1">Share the student link for them to submit.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {receipts.map((receipt) => (
-              <div key={receipt.id} className="bg-white rounded-2xl shadow p-4">
+              <div key={receipt.id} className="card-base p-4">
                 <div className="flex gap-4 items-start">
-                  {/* Receipt thumbnail */}
                   <button
                     onClick={() => setLightboxUrl(receipt.receiptUrl)}
-                    className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-200 hover:opacity-80 transition"
+                    className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-nx hover:opacity-80 transition-opacity"
                   >
                     <img
                       src={receipt.receiptUrl}
@@ -281,36 +274,36 @@ export default function PaymentEventDetail() {
                     />
                   </button>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="font-semibold text-gray-900">{receipt.fullName}</p>
+                      <p className="font-semibold">{receipt.fullName}</p>
                       {statusBadge(receipt.status)}
                     </div>
-                    <p className="text-sm text-gray-500">{receipt.matricNumber}{receipt.level ? ` · ${receipt.level}` : ''}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm text-muted">
+                      {receipt.matricNumber}{receipt.level ? ` · ${receipt.level}` : ''}
+                    </p>
+                    <p className="text-xs text-dim mt-0.5">
                       Submitted {new Date(receipt.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
                     {receipt.confirmedBy && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-muted mt-0.5">
                         {receipt.status === 'confirmed' ? 'Confirmed' : 'Rejected'} by {receipt.confirmedBy}
-                        {receipt.note && <span className="italic"> — "{receipt.note}"</span>}
+                        {receipt.note && <span className="italic"> — &ldquo;{receipt.note}&rdquo;</span>}
                       </p>
                     )}
                   </div>
 
-                  {/* Actions */}
                   {receipt.status === 'pending' && (
                     <div className="flex flex-col gap-2 flex-shrink-0">
                       <button
                         onClick={() => setActionModal({ type: 'confirm', receipt })}
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                        className="btn-primary !py-1.5 !px-3 !text-xs"
                       >
                         Confirm
                       </button>
                       <button
                         onClick={() => setActionModal({ type: 'reject', receipt })}
-                        className="bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 transition"
+                        className="btn-secondary !py-1.5 !px-3 !text-xs"
                       >
                         Reject
                       </button>
@@ -322,69 +315,67 @@ export default function PaymentEventDetail() {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-6">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 text-sm border rounded-lg disabled:opacity-40 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <span className="px-4 py-2 text-sm text-gray-500">
-              {page} / {totalPages}
-            </span>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 text-sm border rounded-lg disabled:opacity-40 hover:bg-gray-50"
-            >
-              Next
-            </button>
+          <div className="flex items-center justify-between mt-6 text-sm text-muted">
+            <span>Page {page} of {totalPages}</span>
+            <div className="flex gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="btn-secondary !py-2 !text-sm"
+              >
+                ← Prev
+              </button>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="btn-secondary !py-2 !text-sm"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </main>
 
-      {/* Confirm / Reject modal */}
       {actionModal && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-            <h3 className="font-bold text-lg text-gray-900 mb-1">
-              {actionModal.type === 'confirm' ? 'Confirm Payment' : 'Reject Receipt'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => { setActionModal(null); setActionNote(''); }} />
+          <div className="relative card-base w-full max-w-sm p-6 z-10 animate-fade-up">
+            <h3 className="text-lg font-semibold mb-2">
+              {actionModal.type === 'confirm' ? 'Confirm payment' : 'Reject receipt'}
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted mb-4">
               {actionModal.type === 'confirm'
                 ? `Confirm payment from ${actionModal.receipt.fullName} (${actionModal.receipt.matricNumber})?`
                 : `Reject receipt from ${actionModal.receipt.fullName} (${actionModal.receipt.matricNumber})?`}
             </p>
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Note <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
+              Note (optional)
             </label>
             <textarea
               value={actionNote}
               onChange={(e) => setActionNote(e.target.value)}
               rows={2}
-              placeholder={actionModal.type === 'reject' ? 'Reason for rejection...' : 'Any note for the student...'}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+              placeholder={actionModal.type === 'reject' ? 'Reason for rejection…' : 'Any note for the student…'}
+              className="input-base mb-4 resize-none"
             />
 
             <div className="flex gap-2">
               <button
                 onClick={() => { setActionModal(null); setActionNote(''); }}
                 disabled={actionLoading}
-                className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition"
+                className="btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAction}
                 disabled={actionLoading}
-                className={`flex-1 text-white text-sm font-semibold py-2.5 rounded-lg transition disabled:opacity-60
-                  ${actionModal.type === 'confirm' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                className="btn-primary flex-1"
               >
-                {actionLoading ? '...' : actionModal.type === 'confirm' ? 'Confirm' : 'Reject'}
+                {actionLoading ? 'Please wait…' : actionModal.type === 'confirm' ? 'Confirm' : 'Reject'}
               </button>
             </div>
           </div>
