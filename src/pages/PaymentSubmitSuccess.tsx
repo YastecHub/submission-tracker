@@ -13,6 +13,14 @@ interface StatusResponse {
   confirmedAt: string | null;
   confirmedBy: string | null;
   note: string | null;
+  ticketQrCode: string | null;
+  hasTickets: boolean;
+  eventTitle: string;
+  fullName: string;
+  matricNumber: string;
+  isClaimed: boolean;
+  claimedAt: string | null;
+  claimedBy: string | null;
 }
 
 export default function PaymentSubmitSuccess() {
@@ -23,32 +31,47 @@ export default function PaymentSubmitSuccess() {
   const [confirmedBy, setConfirmedBy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [justUpdated, setJustUpdated] = useState(false);
+  const [ticketQrCode, setTicketQrCode] = useState<string | null>(null);
+  const [hasTickets, setHasTickets] = useState(false);
+  const [isClaimed, setIsClaimed] = useState(false);
+  const [claimedBy, setClaimedBy] = useState<string | null>(null);
+  const [claimedAt, setClaimedAt] = useState<string | null>(null);
 
   const receipt = state?.receipt;
   const event = state?.event;
 
+  function applyStatusResponse(data: StatusResponse) {
+    setStatus(data.status);
+    setConfirmedBy(data.confirmedBy ?? null);
+    setNote(data.note ?? null);
+    setTicketQrCode(data.ticketQrCode ?? null);
+    setHasTickets(data.hasTickets ?? false);
+    setIsClaimed(data.isClaimed ?? false);
+    setClaimedBy(data.claimedBy ?? null);
+    setClaimedAt(data.claimedAt ?? null);
+  }
+
   useEffect(() => {
     if (!receipt) return;
-    if (receipt.status !== 'pending') {
-      setStatus(receipt.status);
-      setConfirmedBy(receipt.confirmedBy ?? null);
-      setNote(receipt.note ?? null);
-      return;
-    }
 
-    const interval = setInterval(async () => {
+    async function fetchStatus() {
       try {
-        const res = await api.get<StatusResponse>(`/api/payment-receipts/status/${receipt.id}`);
+        const res = await api.get<StatusResponse>(`/api/payment-receipts/status/${receipt!.id}`);
+        applyStatusResponse(res.data);
         if (res.data.status !== 'pending') {
-          clearInterval(interval);
-          setStatus(res.data.status);
-          setConfirmedBy(res.data.confirmedBy ?? null);
-          setNote(res.data.note ?? null);
           setJustUpdated(true);
         }
+        return res.data.status !== 'pending';
       } catch {
-        // silent — student has no auth, keep polling
+        return false;
       }
+    }
+
+    void fetchStatus();
+
+    const interval = setInterval(async () => {
+      const done = await fetchStatus();
+      if (done) clearInterval(interval);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -167,6 +190,20 @@ export default function PaymentSubmitSuccess() {
           <p className="text-xs text-dim">Screenshot this page for your records.</p>
         </div>
 
+        {hasTickets && ticketQrCode && (
+          <TicketCard
+            eventTitle={event.title}
+            fullName={receipt.fullName}
+            matricNumber={receipt.matricNumber}
+            receiptId={receipt.id}
+            qrCode={ticketQrCode}
+            status={status}
+            isClaimed={isClaimed}
+            claimedBy={claimedBy}
+            claimedAt={claimedAt}
+          />
+        )}
+
         <Link to="/transparency" className="card-interactive block p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-surface-2 border border-nx flex items-center justify-center text-accent font-semibold">
@@ -178,6 +215,109 @@ export default function PaymentSubmitSuccess() {
             </div>
           </div>
         </Link>
+      </div>
+    </div>
+  );
+}
+
+function formatClaimCode(id: string): string {
+  const hex = id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
+}
+
+function TicketCard({
+  eventTitle,
+  fullName,
+  matricNumber,
+  receiptId,
+  qrCode,
+  status,
+  isClaimed,
+  claimedBy,
+  claimedAt,
+}: {
+  eventTitle: string;
+  fullName: string;
+  matricNumber: string;
+  receiptId: string;
+  qrCode: string;
+  status: 'pending' | 'confirmed' | 'rejected';
+  isClaimed: boolean;
+  claimedBy: string | null;
+  claimedAt: string | null;
+}) {
+  const claimCode = formatClaimCode(receiptId);
+
+  if (isClaimed) {
+    const claimedTime = claimedAt
+      ? new Date(claimedAt).toLocaleString('en-GB', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+        })
+      : '';
+
+    return (
+      <div className="card-base p-6 text-center border-[color:var(--nx-success)]">
+        <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-3 bg-[color:var(--nx-success-soft)]">
+          <svg className="w-7 h-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="font-semibold text-success text-lg">Collected</p>
+        <p className="text-sm text-muted mt-1">
+          Claimed by {claimedBy}{claimedTime ? ` at ${claimedTime}` : ''}
+        </p>
+        <p className="text-xs text-dim mt-3">{eventTitle}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-base overflow-hidden">
+      <div className="bg-surface-2 border-b border-nx px-5 py-3">
+        <p className="text-xs uppercase tracking-wider font-semibold text-accent">{eventTitle}</p>
+        <p className="text-sm text-muted mt-0.5">Your ticket</p>
+      </div>
+      <div className="p-5">
+        <div className="flex gap-4 items-start">
+          <div className="flex-shrink-0">
+            <img
+              src={qrCode}
+              alt="Ticket QR code"
+              className="w-28 h-28 rounded-lg border border-nx bg-white p-1"
+            />
+          </div>
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div>
+              <p className="text-xs text-dim">Name</p>
+              <p className="text-sm font-semibold">{fullName}</p>
+            </div>
+            <div>
+              <p className="text-xs text-dim">Matric</p>
+              <p className="text-sm font-semibold">{matricNumber}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-dim uppercase tracking-wider mb-1">Claim code</p>
+          <p className="text-2xl font-mono font-bold tracking-widest text-accent">{claimCode}</p>
+        </div>
+
+        <div className="mt-4 bg-surface-2 border border-nx rounded-lg px-4 py-2.5 text-center">
+          <p className="text-xs text-muted">Show this at the event to collect your item</p>
+        </div>
+
+        {status === 'pending' && (
+          <div className="mt-3 bg-[color:var(--nx-accent-soft)] border border-[color:var(--nx-accent)] rounded-lg px-4 py-2.5 text-center">
+            <p className="text-xs text-accent font-medium">Your payment is still pending confirmation. The ticket will be active once confirmed.</p>
+          </div>
+        )}
+
+        {status === 'rejected' && (
+          <div className="mt-3 alert-danger text-center">
+            <p className="text-xs font-medium">This ticket is invalid — your receipt was rejected.</p>
+          </div>
+        )}
       </div>
     </div>
   );

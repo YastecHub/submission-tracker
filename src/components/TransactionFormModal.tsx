@@ -75,16 +75,22 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md my-8">
-        <h3 className="font-bold text-lg text-gray-900 mb-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+
+      <div className="relative card-base w-full max-w-md p-6 my-8 z-10 animate-fade-up">
+        <h3 className="font-bold text-lg mb-4">
           {isEdit ? 'Edit Transaction' : 'New Transaction'}
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-muted mb-1">Type</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -92,7 +98,7 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
                 className={`py-2.5 rounded-lg text-sm font-semibold border transition ${
                   type === 'credit'
                     ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-surface-2 text-muted border-nx hover:border-[color:var(--nx-border-hover)]'
                 }`}
               >
                 ↓ Money In
@@ -103,7 +109,7 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
                 className={`py-2.5 rounded-lg text-sm font-semibold border transition ${
                   type === 'debit'
                     ? 'bg-red-600 text-white border-red-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-surface-2 text-muted border-nx hover:border-[color:var(--nx-border-hover)]'
                 }`}
               >
                 ↑ Money Out
@@ -113,7 +119,7 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-muted mb-1">
               Amount (₦) <span className="text-red-500">*</span>
             </label>
             <input
@@ -123,14 +129,14 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="input-base"
               placeholder="2000"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-muted mb-1">
               Description <span className="text-red-500">*</span>
             </label>
             <input
@@ -139,15 +145,15 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
               maxLength={500}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="input-base"
               placeholder="e.g. Printing for group project"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-muted mb-1">
+              Category <span className="text-dim font-normal">(optional)</span>
             </label>
             <input
               type="text"
@@ -155,7 +161,7 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
               maxLength={50}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="input-base"
               placeholder="Printing"
             />
             <datalist id="tx-categories">
@@ -165,7 +171,7 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-muted mb-1">
               Date <span className="text-red-500">*</span>
             </label>
             <input
@@ -173,22 +179,22 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
               required
               value={occurredAt}
               onChange={(e) => setOccurredAt(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="input-base [color-scheme:dark]"
             />
           </div>
 
           {/* Proof */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Proof image <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-muted mb-1">
+              Proof image <span className="text-dim font-normal">(optional)</span>
             </label>
             {existingProofUrl && !proof && !removeProof && (
               <div className="mb-2 flex items-center gap-2">
-                <img src={existingProofUrl} alt="Current proof" className="w-14 h-14 rounded-lg object-cover border" />
+                <img src={existingProofUrl} alt="Current proof" className="w-14 h-14 rounded-lg object-cover border border-nx" />
                 <button
                   type="button"
                   onClick={() => { setRemoveProof(true); setExistingProofUrl(null); }}
-                  className="text-xs text-red-600 hover:underline"
+                  className="text-xs text-danger hover:underline"
                 >
                   Remove
                 </button>
@@ -198,9 +204,9 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={(e) => setProof(e.target.files?.[0] ?? null)}
-              className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-semibold hover:file:bg-emerald-100"
+              className="w-full text-sm text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-semibold hover:file:bg-emerald-100"
             />
-            {proof && <p className="text-xs text-gray-500 mt-1">{proof.name}</p>}
+            {proof && <p className="text-xs text-dim mt-1">{proof.name}</p>}
           </div>
 
           <div className="flex gap-2 pt-2">
@@ -208,14 +214,14 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition"
+              className="btn-secondary flex-1"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-lg transition disabled:opacity-60"
+              className="btn-primary flex-1"
             >
               {submitting ? 'Saving...' : isEdit ? 'Save' : 'Add Transaction'}
             </button>

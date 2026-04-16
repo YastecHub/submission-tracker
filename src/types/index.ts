@@ -52,6 +52,7 @@ export interface PaymentEvent {
   accountName: string;
   bankName: string;
   deadline: string;
+  hasTickets: boolean;
   isClosed: boolean;
   isDeleted: boolean;
   createdBy?: string;
@@ -75,6 +76,10 @@ export interface PaymentReceipt {
   confirmedAt?: string | null;
   confirmedBy?: string | null;
   note?: string | null;
+  ticketQrCode?: string | null;
+  isClaimed?: boolean;
+  claimedAt?: string | null;
+  claimedBy?: string | null;
 }
 
 export type TransactionType = 'credit' | 'debit';

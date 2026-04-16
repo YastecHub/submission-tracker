@@ -1,9 +1,23 @@
 import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import api from '../api/axios';
 import { fetchPublicLedger, verifyMatricNumber } from '../api/transactions';
 import { useToast } from '../context/ToastContext';
 import type { Ledger, Transaction, TransactionType } from '../types';
+
+interface Ticket {
+  receiptId: string;
+  eventTitle: string;
+  eventSlug: string;
+  amount: string;
+  fullName: string;
+  matricNumber: string;
+  ticketQrCode: string;
+  isClaimed: boolean;
+  claimedAt: string | null;
+  claimedBy: string | null;
+}
 
 const STORAGE_KEY = 'classLedgerVerifiedMatric';
 
@@ -61,6 +75,7 @@ export default function TransparencyPage() {
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<TransactionType | ''>('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
 
   const loadLedger = useCallback(async () => {
     setLoading(true);
@@ -80,7 +95,13 @@ export default function TransparencyPage() {
   }, [page, typeFilter, toast]);
 
   useEffect(() => {
-    if (verified) void loadLedger();
+    if (verified) {
+      void loadLedger();
+      api
+        .get<{ tickets: Ticket[] }>(`/api/payment-receipts/my-tickets?matricNumber=${verified.matricNumber}`)
+        .then((res) => setTickets(res.data.tickets))
+        .catch(() => {});
+    }
   }, [verified, loadLedger]);
 
   async function handleVerify(e: FormEvent<HTMLFormElement>) {
@@ -247,6 +268,15 @@ export default function TransparencyPage() {
           />
         </div>
 
+        {tickets.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider px-1">Your tickets</h2>
+            {tickets.map((t) => (
+              <StudentTicketCard key={t.receiptId} ticket={t} />
+            ))}
+          </div>
+        )}
+
         <div className="card-base p-3 mb-4 flex gap-2 items-center">
           <h2 className="text-base font-semibold flex-1 pl-2">Transactions</h2>
           <select
@@ -408,40 +438,39 @@ function TransactionCard({
 }) {
   const isCredit = transaction.type === 'credit';
   return (
-    <div className="card-base p-4">
-      <div className="flex gap-3 items-start">
+    <div className="card-base p-3 sm:p-4">
+      <div className="flex gap-3">
         <div
-          className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-lg font-semibold bg-surface-2 border border-nx ${
+          className={`flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg font-semibold bg-surface-2 border border-nx ${
             isCredit ? 'text-success' : 'text-danger'
           }`}
         >
           {isCredit ? '↓' : '↑'}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-semibold truncate">{transaction.description}</p>
-              <div className="flex items-center gap-2 mt-1 text-xs text-muted flex-wrap">
-                {transaction.category && (
-                  <span className={`badge ${isCredit ? 'badge-success' : 'badge-danger'}`}>
-                    {transaction.category}
-                  </span>
-                )}
-                {transaction.recorderName && (
-                  <span className="text-dim">
-                    Approved by {transaction.recorderName}
-                    {transaction.recorderRole && ` (${transaction.recorderRole})`}
-                  </span>
-                )}
-              </div>
-            </div>
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold text-sm sm:text-base break-words min-w-0 leading-snug">
+              {transaction.description}
+            </p>
             <p
-              className={`font-semibold whitespace-nowrap text-right ${
+              className={`font-semibold text-sm sm:text-base whitespace-nowrap text-right flex-shrink-0 ${
                 isCredit ? 'text-success' : 'text-danger'
               }`}
             >
               {isCredit ? '+' : '−'} {formatNaira(transaction.amount)}
             </p>
+          </div>
+          <div className="flex items-center gap-x-2 gap-y-1 mt-2 text-xs flex-wrap">
+            {transaction.category && (
+              <span className={`badge ${isCredit ? 'badge-success' : 'badge-danger'}`}>
+                {transaction.category}
+              </span>
+            )}
+            {transaction.recorderName && (
+              <span className="text-dim break-words">
+                Approved by {transaction.recorderName}
+              </span>
+            )}
           </div>
           {transaction.proofUrl && (
             <button
@@ -454,6 +483,91 @@ function TransactionCard({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function formatClaimCode(id: string): string {
+  const hex = id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
+}
+
+function StudentTicketCard({ ticket }: { ticket: Ticket }) {
+  const [expanded, setExpanded] = useState(false);
+  const claimCode = formatClaimCode(ticket.receiptId);
+
+  if (ticket.isClaimed) {
+    const claimedTime = ticket.claimedAt
+      ? new Date(ticket.claimedAt).toLocaleString('en-GB', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+        })
+      : '';
+
+    return (
+      <div className="card-base p-4 border-[color:var(--nx-success)]">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[color:var(--nx-success-soft)] flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-success">Collected</p>
+            <p className="text-xs text-muted">{ticket.eventTitle}</p>
+            <p className="text-xs text-dim">Claimed by {ticket.claimedBy}{claimedTime ? ` · ${claimedTime}` : ''}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-base overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-2 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-lg bg-[color:var(--nx-accent-soft)] flex items-center justify-center flex-shrink-0">
+          <span className="text-accent text-lg font-semibold">🎟</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">{ticket.eventTitle}</p>
+          <p className="text-xs text-muted">Tap to {expanded ? 'hide' : 'show'} your ticket</p>
+        </div>
+        <span className={`text-muted text-sm transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-nx p-5">
+          <div className="flex gap-4 items-start">
+            <div className="flex-shrink-0">
+              <img
+                src={ticket.ticketQrCode}
+                alt="Ticket QR code"
+                className="w-28 h-28 rounded-lg border border-nx bg-white p-1"
+              />
+            </div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div>
+                <p className="text-xs text-dim">Name</p>
+                <p className="text-sm font-semibold">{ticket.fullName}</p>
+              </div>
+              <div>
+                <p className="text-xs text-dim">Matric</p>
+                <p className="text-sm font-semibold">{ticket.matricNumber}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-xs text-dim uppercase tracking-wider mb-1">Claim code</p>
+            <p className="text-2xl font-mono font-bold tracking-widest text-accent">{claimCode}</p>
+          </div>
+          <div className="mt-3 bg-surface-2 border border-nx rounded-lg px-4 py-2.5 text-center">
+            <p className="text-xs text-muted">Show this at the event to collect your item</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

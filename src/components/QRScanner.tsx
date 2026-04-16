@@ -78,13 +78,13 @@ export default function QRScanner({ onClose, onConfirmed }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="font-semibold text-gray-900">Scan QR Code</h2>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+      <div className="card-base w-full max-w-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-nx">
+          <h2 className="font-semibold">Scan QR Code</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            className="text-dim hover:text-[color:var(--nx-text)] text-2xl leading-none"
           >
             &times;
           </button>
@@ -92,50 +92,50 @@ export default function QRScanner({ onClose, onConfirmed }: Props) {
 
         <div className="p-4">
           {error ? (
-            <div className="text-center py-8 text-red-500 text-sm">{error}</div>
+            <div className="text-center py-8 text-danger text-sm">{error}</div>
           ) : result ? (
             <div className="text-center py-4">
               {result.type === 'success' && (
                 <>
-                  <div className="mx-auto w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-3">
-                    <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-success-soft)] rounded-full flex items-center justify-center mb-3">
+                    <svg className="w-7 h-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="font-semibold text-green-700 mb-1">Confirmed!</p>
-                  <p className="text-sm text-gray-600">{result.submission?.fullName}</p>
-                  <p className="text-xs text-gray-400">{result.submission?.matricNumber}</p>
+                  <p className="font-semibold text-success mb-1">Confirmed!</p>
+                  <p className="text-sm text-muted">{result.submission?.fullName}</p>
+                  <p className="text-xs text-dim">{result.submission?.matricNumber}</p>
                 </>
               )}
               {result.type === 'warning' && (
                 <>
-                  <div className="mx-auto w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center mb-3">
+                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-accent-soft)] rounded-full flex items-center justify-center mb-3">
                     <span className="text-2xl">⚠️</span>
                   </div>
-                  <p className="font-semibold text-yellow-700 mb-1">Already Confirmed</p>
-                  <p className="text-sm text-gray-600">{result.submission?.fullName}</p>
-                  <p className="text-xs text-gray-400">{result.submission?.matricNumber}</p>
+                  <p className="font-semibold text-accent mb-1">Already Confirmed</p>
+                  <p className="text-sm text-muted">{result.submission?.fullName}</p>
+                  <p className="text-xs text-dim">{result.submission?.matricNumber}</p>
                 </>
               )}
               {result.type === 'error' && (
                 <>
-                  <div className="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-danger-soft)] rounded-full flex items-center justify-center mb-3">
                     <span className="text-2xl">❌</span>
                   </div>
-                  <p className="font-semibold text-red-600 mb-1">Error</p>
-                  <p className="text-sm text-gray-500">{result.message}</p>
+                  <p className="font-semibold text-danger mb-1">Error</p>
+                  <p className="text-sm text-muted">{result.message}</p>
                 </>
               )}
               <button
                 onClick={handleScanAgain}
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 rounded-lg font-medium"
+                className="btn-primary mt-4 text-sm px-5 py-2"
               >
                 Scan Next
               </button>
             </div>
           ) : (
             <>
-              <p className="text-center text-sm text-gray-500 mb-3">
+              <p className="text-center text-sm text-muted mb-3">
                 Point camera at a student&apos;s QR code
               </p>
               <div id="qr-reader" className="w-full rounded-xl overflow-hidden" />

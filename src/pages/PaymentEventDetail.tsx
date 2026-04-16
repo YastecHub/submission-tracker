@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../api/axios';
@@ -12,6 +12,7 @@ interface ReceiptsResponse {
   confirmedTotal: number;
   rejectedTotal: number;
   pendingTotal: number;
+  claimedTotal: number;
   page: number;
   totalPages: number;
 }
@@ -21,13 +22,20 @@ interface ActionModal {
   receipt: PaymentReceipt;
 }
 
+interface ClaimResult {
+  type: 'success' | 'warning' | 'error';
+  message: string;
+  fullName?: string;
+  matricNumber?: string;
+}
+
 export default function PaymentEventDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
-  const [stats, setStats] = useState({ confirmed: 0, rejected: 0, pending: 0, total: 0 });
+  const [stats, setStats] = useState({ confirmed: 0, rejected: 0, pending: 0, total: 0, claimed: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -38,6 +46,10 @@ export default function PaymentEventDetail() {
   const [actionNote, setActionNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
+  const [manualCode, setManualCode] = useState('');
+  const [claimLoading, setClaimLoading] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -59,6 +71,7 @@ export default function PaymentEventDetail() {
         rejected: res.data.rejectedTotal,
         pending: res.data.pendingTotal,
         total: res.data.confirmedTotal + res.data.rejectedTotal + res.data.pendingTotal,
+        claimed: res.data.claimedTotal,
       });
     } catch {
       toast('Failed to load receipts', 'error');
@@ -113,6 +126,40 @@ export default function PaymentEventDetail() {
       setActionLoading(false);
       setActionModal(null);
       setActionNote('');
+    }
+  }
+
+  async function handleClaim(code: string): Promise<void> {
+    setClaimLoading(true);
+    try {
+      const res = await api.post<{
+        alreadyClaimed: boolean;
+        receipt: { fullName: string; matricNumber: string; claimedBy: string | null; claimedAt: string | null };
+      }>('/api/payment-receipts/scan', { code });
+
+      if (res.data.alreadyClaimed) {
+        setClaimResult({
+          type: 'warning',
+          message: `Already collected by ${res.data.receipt.claimedBy}`,
+          fullName: res.data.receipt.fullName,
+          matricNumber: res.data.receipt.matricNumber,
+        });
+      } else {
+        setClaimResult({
+          type: 'success',
+          message: 'Collected!',
+          fullName: res.data.receipt.fullName,
+          matricNumber: res.data.receipt.matricNumber,
+        });
+        void fetchReceipts();
+      }
+    } catch (err: unknown) {
+      const msg = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? 'Claim failed'
+        : 'Claim failed';
+      setClaimResult({ type: 'error', message: msg });
+    } finally {
+      setClaimLoading(false);
     }
   }
 
@@ -198,7 +245,7 @@ export default function PaymentEventDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 mt-5">
+          <div className={`grid gap-3 mt-5 ${event.hasTickets ? 'grid-cols-5' : 'grid-cols-4'}`}>
             <div className="card-base p-3 text-center bg-surface-2">
               <p className="text-2xl font-semibold">{stats.total}</p>
               <p className="text-xs text-dim mt-1">Total</p>
@@ -215,6 +262,12 @@ export default function PaymentEventDetail() {
               <p className="text-2xl font-semibold text-danger">{stats.rejected}</p>
               <p className="text-xs text-dim mt-1">Rejected</p>
             </div>
+            {event.hasTickets && (
+              <div className="card-base p-3 text-center bg-surface-2">
+                <p className="text-2xl font-semibold text-accent">{stats.claimed}</p>
+                <p className="text-xs text-dim mt-1">Collected</p>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex items-center gap-2 bg-surface-2 border border-nx rounded-xl px-4 py-2.5">
@@ -231,7 +284,74 @@ export default function PaymentEventDetail() {
               Copy link
             </button>
           </div>
+
+          <label className="flex items-center gap-3 mt-4 cursor-pointer select-none bg-surface-2 border border-nx rounded-xl px-4 py-3">
+            <input
+              type="checkbox"
+              checked={event.hasTickets}
+              onChange={async (e) => {
+                const val = e.target.checked;
+                try {
+                  await api.patch(`/api/payment-events/${event.id}`, { hasTickets: val });
+                  setEvent({ ...event, hasTickets: val });
+                  toast(val ? 'Collection tickets enabled' : 'Collection tickets disabled', 'success');
+                } catch {
+                  toast('Failed to update', 'error');
+                }
+              }}
+              className="w-4 h-4 rounded border-[color:var(--nx-border)] bg-surface-2 accent-[color:var(--nx-accent)]"
+            />
+            <div>
+              <span className="text-sm font-medium">Enable collection tickets</span>
+              <p className="text-xs text-dim mt-0.5">Students get a QR ticket when confirmed. Scan at the event to mark collected.</p>
+            </div>
+          </label>
         </div>
+
+        {event.hasTickets && (
+          <div className="card-base p-4 mb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-sm font-semibold flex-1">Collection tickets</h3>
+              <button
+                type="button"
+                onClick={() => { setShowScanner(true); setClaimResult(null); }}
+                className="btn-primary !py-2 !text-sm"
+              >
+                Scan ticket
+              </button>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                placeholder="Enter claim code (e.g. 7036-1DCB)"
+                className="input-base flex-1 !py-2 !text-sm font-mono uppercase"
+                maxLength={9}
+              />
+              <button
+                type="button"
+                disabled={!manualCode.trim() || claimLoading}
+                onClick={() => { void handleClaim(manualCode.trim()); setManualCode(''); }}
+                className="btn-secondary !py-2 !text-sm whitespace-nowrap"
+              >
+                {claimLoading ? 'Checking…' : 'Claim'}
+              </button>
+            </div>
+            {claimResult && (
+              <div className={`mt-3 rounded-lg px-4 py-3 text-sm ${
+                claimResult.type === 'success' ? 'alert-success' :
+                claimResult.type === 'warning' ? 'bg-[color:var(--nx-accent-soft)] border border-[color:var(--nx-accent)] text-[color:var(--nx-accent)]' :
+                'alert-danger'
+              }`}>
+                <p className="font-semibold">{claimResult.message}</p>
+                {claimResult.fullName && (
+                  <p className="text-xs mt-0.5 opacity-80">{claimResult.fullName} ({claimResult.matricNumber})</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-2 mb-4 flex-wrap">
           <input
@@ -278,6 +398,11 @@ export default function PaymentEventDetail() {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <p className="font-semibold">{receipt.fullName}</p>
                       {statusBadge(receipt.status)}
+                      {event.hasTickets && receipt.isClaimed && (
+                        <span className="badge badge-accent" title={receipt.claimedBy ? `Claimed by ${receipt.claimedBy}` : undefined}>
+                          Collected
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-muted">
                       {receipt.matricNumber}{receipt.level ? ` · ${receipt.level}` : ''}
@@ -338,6 +463,15 @@ export default function PaymentEventDetail() {
         )}
       </main>
 
+      {showScanner && (
+        <TicketScannerModal
+          onScan={(code) => { void handleClaim(code); }}
+          onClose={() => setShowScanner(false)}
+          result={claimResult}
+          onScanAgain={() => setClaimResult(null)}
+        />
+      )}
+
       {actionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => { setActionModal(null); setActionNote(''); }} />
@@ -381,6 +515,115 @@ export default function PaymentEventDetail() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function TicketScannerModal({
+  onScan,
+  onClose,
+  result,
+  onScanAgain,
+}: {
+  onScan: (code: string) => void;
+  onClose: () => void;
+  result: ClaimResult | null;
+  onScanAgain: () => void;
+}) {
+  const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null);
+  const [error, setError] = useState('');
+  const scanningRef = useRef(true);
+
+  useEffect(() => {
+    if (!result) startScanner();
+    return () => { instanceRef.current?.stop().catch(() => {}); };
+  }, [result]);
+
+  async function startScanner(): Promise<void> {
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const qr = new Html5Qrcode('ticket-qr-reader');
+      instanceRef.current = qr;
+      scanningRef.current = true;
+
+      await qr.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async (decodedText: string) => {
+          if (!scanningRef.current) return;
+          scanningRef.current = false;
+          await qr.stop();
+          onScan(decodedText);
+        },
+        () => {},
+      );
+    } catch {
+      setError('Camera access denied or not available.');
+    }
+  }
+
+  function handleScanAgain() {
+    setError('');
+    onScanAgain();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative card-base w-full max-w-sm overflow-hidden z-10 animate-fade-up">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-nx">
+          <h2 className="font-semibold">Scan ticket</h2>
+          <button onClick={onClose} className="text-muted hover:text-[color:var(--nx-text)] text-2xl leading-none">&times;</button>
+        </div>
+        <div className="p-4">
+          {error ? (
+            <div className="text-center py-8 text-danger text-sm">{error}</div>
+          ) : result ? (
+            <div className="text-center py-4">
+              {result.type === 'success' && (
+                <>
+                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-success-soft)] rounded-full flex items-center justify-center mb-3">
+                    <svg className="w-7 h-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="font-semibold text-success mb-1">{result.message}</p>
+                </>
+              )}
+              {result.type === 'warning' && (
+                <>
+                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-accent-soft)] rounded-full flex items-center justify-center mb-3">
+                    <span className="text-2xl text-accent">!</span>
+                  </div>
+                  <p className="font-semibold text-accent mb-1">{result.message}</p>
+                </>
+              )}
+              {result.type === 'error' && (
+                <>
+                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-danger-soft)] rounded-full flex items-center justify-center mb-3">
+                    <span className="text-2xl text-danger">!</span>
+                  </div>
+                  <p className="font-semibold text-danger mb-1">{result.message}</p>
+                </>
+              )}
+              {result.fullName && (
+                <>
+                  <p className="text-sm">{result.fullName}</p>
+                  <p className="text-xs text-muted">{result.matricNumber}</p>
+                </>
+              )}
+              <button onClick={handleScanAgain} className="btn-primary mt-4 !py-2 !text-sm">
+                Scan next
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-center text-sm text-muted mb-3">Point camera at student&apos;s ticket QR</p>
+              <div id="ticket-qr-reader" className="w-full rounded-xl overflow-hidden" />
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

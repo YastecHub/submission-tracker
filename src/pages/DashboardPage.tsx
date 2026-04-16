@@ -28,6 +28,7 @@ interface PaymentForm {
   accountName: string;
   bankName: string;
   deadline: string;
+  hasTickets: boolean;
 }
 
 interface PendingAction {
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   const [paymentsLoading, setPaymentsLoading] = useState(true);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentForm, setPaymentForm] = useState<PaymentForm>({
-    title: '', description: '', amount: '', accountNumber: '', accountName: '', bankName: '', deadline: '',
+    title: '', description: '', amount: '', accountNumber: '', accountName: '', bankName: '', deadline: '', hasTickets: false,
   });
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [paymentFormError, setPaymentFormError] = useState('');
@@ -121,7 +122,7 @@ export default function DashboardPage() {
       const res = await api.post<PaymentEvent>('/api/payment-events', paymentForm);
       setPaymentEvents([res.data, ...paymentEvents]);
       setShowPaymentForm(false);
-      setPaymentForm({ title: '', description: '', amount: '', accountNumber: '', accountName: '', bankName: '', deadline: '' });
+      setPaymentForm({ title: '', description: '', amount: '', accountNumber: '', accountName: '', bankName: '', deadline: '', hasTickets: false });
       toast('Payment collection created!', 'success');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -431,6 +432,19 @@ export default function DashboardPage() {
                       rows={2} placeholder="What is this payment for?"
                     />
                   </div>
+
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={paymentForm.hasTickets}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, hasTickets: e.target.checked })}
+                      className="mt-0.5 w-4 h-4 rounded border-[color:var(--nx-border)] bg-surface-2 accent-[color:var(--nx-accent)]"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">Enable collection tickets</span>
+                      <p className="text-xs text-dim mt-0.5">Students get a QR ticket when confirmed. Scan at the event to mark collected.</p>
+                    </div>
+                  </label>
 
                   <button type="submit" disabled={creatingPayment} className="btn-primary">
                     {creatingPayment ? 'Creating…' : 'Create payment collection'}

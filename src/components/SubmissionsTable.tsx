@@ -12,18 +12,18 @@ function SkeletonRows() {
   return (
     <>
       {/* Mobile skeleton */}
-      <ul className="divide-y divide-gray-100 md:hidden">
+      <ul className="divide-y divide-[color:var(--nx-border)] md:hidden">
         {[...Array(5)].map((_, i) => (
           <li key={i} className="px-4 py-4 flex items-start justify-between gap-3 animate-pulse">
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-2/3" />
-              <div className="h-3 bg-gray-100 rounded w-1/3" />
+              <div className="h-4 bg-surface-2 rounded w-2/3" />
+              <div className="h-3 bg-surface-2 rounded w-1/3" />
               <div className="flex gap-2 mt-1">
-                <div className="h-5 w-12 bg-gray-100 rounded-full" />
-                <div className="h-5 w-16 bg-gray-100 rounded-full" />
+                <div className="h-5 w-12 bg-surface-2 rounded-full" />
+                <div className="h-5 w-16 bg-surface-2 rounded-full" />
               </div>
             </div>
-            <div className="h-8 w-20 bg-gray-200 rounded-lg flex-shrink-0" />
+            <div className="h-8 w-20 bg-surface-2 rounded-lg flex-shrink-0" />
           </li>
         ))}
       </ul>
@@ -31,22 +31,22 @@ function SkeletonRows() {
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-2 border-b border-nx">
               {['#', 'Full Name', 'Matric No.', 'Level', 'Submitted At', 'Status', 'Action'].map((h) => (
-                <th key={h} className="text-left px-4 py-3 font-semibold text-gray-600">{h}</th>
+                <th key={h} className="text-left px-4 py-3 font-semibold text-muted">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {[...Array(5)].map((_, i) => (
-              <tr key={i} className="border-b border-gray-100 animate-pulse">
-                <td className="px-4 py-3"><div className="h-3 w-4 bg-gray-200 rounded" /></td>
-                <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-36" /></td>
-                <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-24" /></td>
-                <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-10" /></td>
-                <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-20" /></td>
-                <td className="px-4 py-3"><div className="h-5 w-16 bg-gray-100 rounded-full" /></td>
-                <td className="px-4 py-3"><div className="h-8 w-20 bg-gray-200 rounded-lg" /></td>
+              <tr key={i} className="border-b border-nx animate-pulse">
+                <td className="px-4 py-3"><div className="h-3 w-4 bg-surface-2 rounded" /></td>
+                <td className="px-4 py-3"><div className="h-4 bg-surface-2 rounded w-36" /></td>
+                <td className="px-4 py-3"><div className="h-3 bg-surface-2 rounded w-24" /></td>
+                <td className="px-4 py-3"><div className="h-3 bg-surface-2 rounded w-10" /></td>
+                <td className="px-4 py-3"><div className="h-3 bg-surface-2 rounded w-20" /></td>
+                <td className="px-4 py-3"><div className="h-5 w-16 bg-surface-2 rounded-full" /></td>
+                <td className="px-4 py-3"><div className="h-8 w-20 bg-surface-2 rounded-lg" /></td>
               </tr>
             ))}
           </tbody>
@@ -61,7 +61,7 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
 
   if (submissions.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-dim">
         <p className="text-4xl mb-3">📭</p>
         <p className="text-sm">No submissions yet.</p>
       </div>
@@ -71,7 +71,7 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
   return (
     <>
       {/* Card list — mobile */}
-      <ul className="divide-y divide-gray-100 md:hidden">
+      <ul className="divide-y divide-[color:var(--nx-border)] md:hidden">
         {submissions.map((s, i) => {
           const submittedAt = new Date(s.submittedAt).toLocaleString('en-GB', {
             day: '2-digit',
@@ -83,27 +83,21 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
             <li key={s.id} className="px-4 py-4 flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs text-gray-400 font-mono">{pageOffset + i + 1}.</span>
-                  <p className="font-semibold text-gray-900 text-sm truncate">{s.fullName}</p>
+                  <span className="text-xs text-dim font-mono">{pageOffset + i + 1}.</span>
+                  <p className="font-semibold text-sm truncate">{s.fullName}</p>
                 </div>
-                <p className="text-xs text-gray-500 font-mono">{s.matricNumber}</p>
+                <p className="text-xs text-muted font-mono">{s.matricNumber}</p>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   {s.level && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-surface-2 text-muted px-2 py-0.5 rounded-full">
                       {s.level}
                     </span>
                   )}
-                  <span className="text-xs text-gray-400">{submittedAt}</span>
+                  <span className="text-xs text-dim">{submittedAt}</span>
                   {s.isConfirmed ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                      Confirmed
-                    </span>
+                    <span className="badge badge-success">Confirmed</span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
-                      <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
-                      Pending
-                    </span>
+                    <span className="badge badge-accent">Pending</span>
                   )}
                 </div>
               </div>
@@ -119,14 +113,14 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">#</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Full Name</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Matric No.</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Level</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Submitted At</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Action</th>
+            <tr className="bg-surface-2 border-b border-nx">
+              <th className="text-left px-4 py-3 font-semibold text-muted">#</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted">Full Name</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted">Matric No.</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted">Level</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted">Submitted At</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted">Status</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -138,23 +132,17 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
                 minute: '2-digit',
               });
               return (
-                <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 text-gray-400">{pageOffset + i + 1}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{s.fullName}</td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">{s.matricNumber}</td>
-                  <td className="px-4 py-3 text-gray-500">{s.level ?? '-'}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{submittedAt}</td>
+                <tr key={s.id} className="border-b border-nx hover:bg-surface-2 transition">
+                  <td className="px-4 py-3 text-dim">{pageOffset + i + 1}</td>
+                  <td className="px-4 py-3 font-medium">{s.fullName}</td>
+                  <td className="px-4 py-3 text-muted font-mono text-xs">{s.matricNumber}</td>
+                  <td className="px-4 py-3 text-muted">{s.level ?? '-'}</td>
+                  <td className="px-4 py-3 text-muted text-xs">{submittedAt}</td>
                   <td className="px-4 py-3">
                     {s.isConfirmed ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                        Confirmed
-                      </span>
+                      <span className="badge badge-success">Confirmed</span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
-                        Pending
-                      </span>
+                      <span className="badge badge-accent">Pending</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
