@@ -28,6 +28,7 @@ import SubmissionClosed from './pages/SubmissionClosed';
 import PaymentSubmitForm from './pages/PaymentSubmitForm';
 import PaymentSubmitSuccess from './pages/PaymentSubmitSuccess';
 import PaymentSubmitClosed from './pages/PaymentSubmitClosed';
+import PaymentMyTickets from './pages/PaymentMyTickets';
 import PaymentEventDetail from './pages/PaymentEventDetail';
 import TransparencyPage from './pages/TransparencyPage';
 import InstallBanner from './components/InstallBanner';
@@ -70,12 +71,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/payment/:slug" element={<PaymentSubmitForm />} />
             <Route path="/payment/:slug/success" element={<PaymentSubmitSuccess />} />
             <Route path="/payment/:slug/closed" element={<PaymentSubmitClosed />} />
+            <Route path="/payment/:slug/my-tickets" element={<PaymentMyTickets />} />
             <Route path="/submit/:slug" element={<RedirectWithSlug to={(s) => `/submitit/${s}`} />} />
             <Route path="/submit/:slug/success" element={<RedirectWithSlug to={(s) => `/submitit/${s}/success`} />} />
             <Route path="/submit/:slug/closed" element={<RedirectWithSlug to={(s) => `/submitit/${s}/closed`} />} />
             <Route path="/pay/:slug" element={<RedirectWithSlug to={(s) => `/payment/${s}`} />} />
             <Route path="/pay/:slug/success" element={<RedirectWithSlug to={(s) => `/payment/${s}/success`} />} />
             <Route path="/pay/:slug/closed" element={<RedirectWithSlug to={(s) => `/payment/${s}/closed`} />} />
+            <Route path="/pay/:slug/my-tickets" element={<RedirectWithSlug to={(s) => `/payment/${s}/my-tickets`} />} />
             <Route path="/transparency" element={<TransparencyPage />} />
             <Route
               path="/dashboard/payments/:id"

@@ -64,7 +64,7 @@ export default function PaymentSubmitForm() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      navigate(`/payment/${slug}/success`, {
+      navigate(`/payment/${slug}/success?id=${res.data.receipt.id}`, {
         state: { receipt: res.data.receipt, event },
         replace: true,
       });
@@ -241,6 +241,14 @@ export default function PaymentSubmitForm() {
               {submitting ? 'Submitting…' : 'Submit receipt'}
             </button>
           </form>
+
+          {event.hasTickets && (
+            <div className="mt-4 pt-4 border-t border-nx text-center">
+              <Link to={`/payment/${slug}/my-tickets`} className="text-xs text-accent hover:underline">
+                Already paid? Find your ticket →
+              </Link>
+            </div>
+          )}
         </div>
 
         <Link to="/transparency" className="card-interactive block p-4">

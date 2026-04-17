@@ -180,7 +180,7 @@ export default function DashboardPage() {
   }
 
   const tabClass = (tab: ActiveTab) =>
-    `px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+    `px-4 py-2 text-sm font-medium rounded-md transition-colors flex-shrink-0 ${
       activeTab === tab
         ? 'bg-surface text-[color:var(--nx-text)] border border-nx'
         : 'text-muted hover:text-[color:var(--nx-text)]'
@@ -190,15 +190,15 @@ export default function DashboardPage() {
     <div className="page-base">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           {canCreate && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               {activeTab === 'submissions' && (
                 <button
                   type="button"
                   onClick={() => { setShowEventForm(!showEventForm); setShowPaymentForm(false); }}
-                  className="btn-primary !py-2 !text-sm"
+                  className="btn-primary !py-2 !text-sm w-full sm:w-auto"
                 >
                   {showEventForm ? 'Cancel' : '+ New event'}
                 </button>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => { setShowPaymentForm(!showPaymentForm); setShowEventForm(false); }}
-                  className="btn-primary !py-2 !text-sm"
+                  className="btn-primary !py-2 !text-sm w-full sm:w-auto"
                 >
                   {showPaymentForm ? 'Cancel' : '+ New payment'}
                 </button>
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-fit">
+        <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit overflow-x-auto">
           <button type="button" onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
             Submissions
             {!eventsLoading && <span className="ml-2 badge">{events.length}</span>}

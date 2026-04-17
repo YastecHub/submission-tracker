@@ -229,49 +229,49 @@ export default function PaymentEventDetail() {
           ← Back to dashboard
         </Link>
 
-        <div className="card-base p-5 mb-6">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="card-base p-4 sm:p-5 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
               <span className="badge badge-accent">Payment Collection</span>
-              <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
               {event.description && <p className="text-sm text-muted mt-1">{event.description}</p>}
               <p className="text-xs text-dim mt-2">Deadline: {deadline}</p>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-semibold text-accent">{amount}</p>
+            <div className="text-left sm:text-right">
+              <p className="text-xl sm:text-2xl font-semibold text-accent">{amount}</p>
               <p className="text-sm text-muted mt-1">{event.bankName}</p>
               <p className="text-sm">{event.accountName}</p>
               <p className="font-mono text-sm text-muted">{event.accountNumber}</p>
             </div>
           </div>
 
-          <div className={`grid gap-3 mt-5 ${event.hasTickets ? 'grid-cols-5' : 'grid-cols-4'}`}>
+          <div className={`grid gap-2 sm:gap-3 mt-5 grid-cols-2 ${event.hasTickets ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
             <div className="card-base p-3 text-center bg-surface-2">
-              <p className="text-2xl font-semibold">{stats.total}</p>
+              <p className="text-lg sm:text-2xl font-semibold">{stats.total}</p>
               <p className="text-xs text-dim mt-1">Total</p>
             </div>
             <div className="card-base p-3 text-center bg-surface-2">
-              <p className="text-2xl font-semibold text-accent">{stats.pending}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-accent">{stats.pending}</p>
               <p className="text-xs text-dim mt-1">Pending</p>
             </div>
             <div className="card-base p-3 text-center bg-surface-2">
-              <p className="text-2xl font-semibold text-success">{stats.confirmed}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-success">{stats.confirmed}</p>
               <p className="text-xs text-dim mt-1">Confirmed</p>
             </div>
             <div className="card-base p-3 text-center bg-surface-2">
-              <p className="text-2xl font-semibold text-danger">{stats.rejected}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-danger">{stats.rejected}</p>
               <p className="text-xs text-dim mt-1">Rejected</p>
             </div>
             {event.hasTickets && (
-              <div className="card-base p-3 text-center bg-surface-2">
-                <p className="text-2xl font-semibold text-accent">{stats.claimed}</p>
+              <div className="card-base p-3 text-center bg-surface-2 col-span-2 sm:col-span-1">
+                <p className="text-lg sm:text-2xl font-semibold text-accent">{stats.claimed}</p>
                 <p className="text-xs text-dim mt-1">Collected</p>
               </div>
             )}
           </div>
 
-          <div className="mt-4 flex items-center gap-2 bg-surface-2 border border-nx rounded-xl px-4 py-2.5">
-            <span className="text-xs text-muted flex-1 truncate">
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 bg-surface-2 border border-nx rounded-xl px-4 py-2.5">
+            <span className="text-xs text-muted w-full sm:flex-1 truncate">
               Student link: <span className="font-mono text-accent">/payment/{event.slug}</span>
             </span>
             <button
@@ -279,7 +279,7 @@ export default function PaymentEventDetail() {
                 navigator.clipboard.writeText(`${window.location.origin}/payment/${event.slug}`);
                 toast('Link copied!', 'success');
               }}
-              className="btn-ghost !py-1 !px-2 !text-xs whitespace-nowrap"
+              className="btn-ghost !py-1 !px-2 !text-xs whitespace-nowrap self-end sm:self-auto"
             >
               Copy link
             </button>
@@ -320,7 +320,7 @@ export default function PaymentEventDetail() {
                 Scan ticket
               </button>
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={manualCode}
@@ -353,18 +353,18 @@ export default function PaymentEventDetail() {
           </div>
         )}
 
-        <div className="flex gap-2 mb-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
             type="search"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by name or matric number…"
-            className="input-base flex-1 min-w-[180px]"
+            className="input-base flex-1 sm:min-w-[180px]"
           />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="input-base !w-auto"
+            className="input-base sm:!w-auto"
           >
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
@@ -382,10 +382,10 @@ export default function PaymentEventDetail() {
           <div className="space-y-3">
             {receipts.map((receipt) => (
               <div key={receipt.id} className="card-base p-4">
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-3 sm:gap-4 items-start">
                   <button
                     onClick={() => setLightboxUrl(receipt.receiptUrl)}
-                    className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-nx hover:opacity-80 transition-opacity"
+                    className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-nx hover:opacity-80 transition-opacity"
                   >
                     <img
                       src={receipt.receiptUrl}
@@ -396,7 +396,7 @@ export default function PaymentEventDetail() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="font-semibold">{receipt.fullName}</p>
+                      <p className="font-semibold break-words">{receipt.fullName}</p>
                       {statusBadge(receipt.status)}
                       {event.hasTickets && receipt.isClaimed && (
                         <span className="badge badge-accent" title={receipt.claimedBy ? `Claimed by ${receipt.claimedBy}` : undefined}>
@@ -404,37 +404,55 @@ export default function PaymentEventDetail() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted break-words">
                       {receipt.matricNumber}{receipt.level ? ` · ${receipt.level}` : ''}
                     </p>
                     <p className="text-xs text-dim mt-0.5">
                       Submitted {new Date(receipt.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
                     {receipt.confirmedBy && (
-                      <p className="text-xs text-muted mt-0.5">
+                      <p className="text-xs text-muted mt-0.5 break-words">
                         {receipt.status === 'confirmed' ? 'Confirmed' : 'Rejected'} by {receipt.confirmedBy}
                         {receipt.note && <span className="italic"> — &ldquo;{receipt.note}&rdquo;</span>}
                       </p>
                     )}
                   </div>
-
-                  {receipt.status === 'pending' && (
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => setActionModal({ type: 'confirm', receipt })}
-                        className="btn-primary !py-1.5 !px-3 !text-xs"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => setActionModal({ type: 'reject', receipt })}
-                        className="btn-secondary !py-1.5 !px-3 !text-xs"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
                 </div>
+
+                {receipt.status === 'pending' && (
+                  <div className="flex flex-row gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setActionModal({ type: 'confirm', receipt })}
+                      className="btn-primary !py-1.5 !px-3 !text-xs flex-1 sm:flex-initial"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActionModal({ type: 'reject', receipt })}
+                      className="btn-secondary !py-1.5 !px-3 !text-xs flex-1 sm:flex-initial"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+
+                {receipt.status === 'confirmed' && event.hasTickets && (
+                  <div className="flex flex-row gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `${window.location.origin}/payment/${event.slug}/success?id=${receipt.id}`;
+                        navigator.clipboard.writeText(url);
+                        toast('Ticket link copied!', 'success');
+                      }}
+                      className="btn-ghost !py-1.5 !px-3 !text-xs"
+                    >
+                      Copy ticket link
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

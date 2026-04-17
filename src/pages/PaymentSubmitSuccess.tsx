@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useParams, Navigate, Link } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import type { PaymentReceipt, PaymentEvent } from '../types';
+import TicketCard from '../components/TicketCard';
 
 interface LocationState {
   receipt: PaymentReceipt;
@@ -25,7 +26,13 @@ interface StatusResponse {
 
 export default function PaymentSubmitSuccess() {
   const { state } = useLocation() as { state: LocationState | null };
+  const [searchParams] = useSearchParams();
   const { slug } = useParams<{ slug: string }>();
+
+  const stateReceipt = state?.receipt ?? null;
+  const stateEvent = state?.event ?? null;
+  const queryId = searchParams.get('id');
+  const receiptId = stateReceipt?.id ?? queryId;
 
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
   const [confirmedBy, setConfirmedBy] = useState<string | null>(null);
@@ -36,9 +43,10 @@ export default function PaymentSubmitSuccess() {
   const [isClaimed, setIsClaimed] = useState(false);
   const [claimedBy, setClaimedBy] = useState<string | null>(null);
   const [claimedAt, setClaimedAt] = useState<string | null>(null);
-
-  const receipt = state?.receipt;
-  const event = state?.event;
+  const [hydratedName, setHydratedName] = useState<string | null>(null);
+  const [hydratedMatric, setHydratedMatric] = useState<string | null>(null);
+  const [hydratedEventTitle, setHydratedEventTitle] = useState<string | null>(null);
+  const [hydrateError, setHydrateError] = useState(false);
 
   function applyStatusResponse(data: StatusResponse) {
     setStatus(data.status);
@@ -49,20 +57,24 @@ export default function PaymentSubmitSuccess() {
     setIsClaimed(data.isClaimed ?? false);
     setClaimedBy(data.claimedBy ?? null);
     setClaimedAt(data.claimedAt ?? null);
+    setHydratedName(data.fullName);
+    setHydratedMatric(data.matricNumber);
+    setHydratedEventTitle(data.eventTitle);
   }
 
   useEffect(() => {
-    if (!receipt) return;
+    if (!receiptId) return;
 
     async function fetchStatus() {
       try {
-        const res = await api.get<StatusResponse>(`/api/payment-receipts/status/${receipt!.id}`);
+        const res = await api.get<StatusResponse>(`/api/payment-receipts/status/${receiptId}`);
         applyStatusResponse(res.data);
         if (res.data.status !== 'pending') {
           setJustUpdated(true);
         }
         return res.data.status !== 'pending';
       } catch {
+        if (!stateReceipt) setHydrateError(true);
         return false;
       }
     }
@@ -75,11 +87,99 @@ export default function PaymentSubmitSuccess() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [receipt]);
+  }, [receiptId, stateReceipt]);
 
-  if (!receipt || !event) {
+  if (!receiptId) {
     return <Navigate to={`/payment/${slug}`} replace />;
   }
+
+  // URL-only mode (no router state) — hydrate failed or still loading
+  if (!stateReceipt || !stateEvent) {
+    if (hydrateError) {
+      return (
+        <div className="page-base flex flex-col items-center justify-center px-4 py-10">
+          <div className="w-full max-w-sm">
+            <div className="alert-danger text-center">
+              <p className="font-semibold">Ticket not found</p>
+              <p className="text-xs mt-1">This link may be invalid or the receipt was deleted.</p>
+            </div>
+            <Link to={`/payment/${slug}/my-tickets`} className="btn-secondary !py-2 !text-sm w-full mt-4">
+              Look up by matric number
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    const fullName = hydratedName ?? '';
+    const matricNumber = hydratedMatric ?? '';
+    const eventTitle = hydratedEventTitle ?? '';
+
+    return (
+      <div className="page-base flex flex-col items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm space-y-4 animate-fade-up">
+          {status === 'confirmed' && (
+            <div className="alert-success text-center">
+              <p className="font-semibold">Payment confirmed</p>
+              {confirmedBy && <p className="text-xs opacity-80 mt-1">Confirmed by {confirmedBy}</p>}
+              {note && <p className="text-xs opacity-80 mt-1 italic">"{note}"</p>}
+            </div>
+          )}
+
+          {status === 'rejected' && (
+            <div className="alert-danger text-center">
+              <p className="font-semibold">Receipt rejected</p>
+              {confirmedBy && <p className="text-xs opacity-80 mt-1">Reviewed by {confirmedBy}</p>}
+              {note && <p className="text-xs mt-2">Reason: {note}</p>}
+            </div>
+          )}
+
+          {status === 'pending' && fullName && (
+            <div className="card-base px-4 py-3 text-center">
+              <div className="flex items-center justify-center gap-2 text-muted text-sm">
+                <span className="w-2 h-2 rounded-full bg-[color:var(--nx-accent)] inline-block" />
+                Waiting for Fin Sec to confirm your payment…
+              </div>
+            </div>
+          )}
+
+          {fullName && hasTickets && ticketQrCode && (
+            <TicketCard
+              eventTitle={eventTitle}
+              fullName={fullName}
+              matricNumber={matricNumber}
+              receiptId={receiptId}
+              qrCode={ticketQrCode}
+              status={status}
+              isClaimed={isClaimed}
+              claimedBy={claimedBy}
+              claimedAt={claimedAt}
+            />
+          )}
+
+          {fullName && !hasTickets && (
+            <div className="card-base p-6 text-center">
+              <h1 className="text-lg font-semibold tracking-tight">{eventTitle}</h1>
+              <p className="text-sm text-muted mt-2">
+                {fullName} <span className="text-dim">({matricNumber})</span>
+              </p>
+              <p className="text-xs text-dim mt-3">
+                This event doesn't issue collection tickets.
+              </p>
+            </div>
+          )}
+
+          {!fullName && !hydrateError && (
+            <div className="card-base p-6 text-center text-sm text-muted">Loading your ticket…</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Normal post-submit flow (router state present)
+  const receipt = stateReceipt;
+  const event = stateEvent;
 
   const submittedAt = new Date(receipt.submittedAt).toLocaleString('en-GB', {
     day: '2-digit',
@@ -187,7 +287,11 @@ export default function PaymentSubmitSuccess() {
             <p className="text-xs text-dim mt-1">Tap to view full size</p>
           </div>
 
-          <p className="text-xs text-dim">Screenshot this page for your records.</p>
+          {hasTickets ? (
+            <p className="text-xs text-dim">Save your ticket below — you'll need it at the event.</p>
+          ) : (
+            <p className="text-xs text-dim">Bookmark this page to check your status later.</p>
+          )}
         </div>
 
         {hasTickets && ticketQrCode && (
@@ -215,109 +319,6 @@ export default function PaymentSubmitSuccess() {
             </div>
           </div>
         </Link>
-      </div>
-    </div>
-  );
-}
-
-function formatClaimCode(id: string): string {
-  const hex = id.replace(/-/g, '').slice(0, 8).toUpperCase();
-  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
-}
-
-function TicketCard({
-  eventTitle,
-  fullName,
-  matricNumber,
-  receiptId,
-  qrCode,
-  status,
-  isClaimed,
-  claimedBy,
-  claimedAt,
-}: {
-  eventTitle: string;
-  fullName: string;
-  matricNumber: string;
-  receiptId: string;
-  qrCode: string;
-  status: 'pending' | 'confirmed' | 'rejected';
-  isClaimed: boolean;
-  claimedBy: string | null;
-  claimedAt: string | null;
-}) {
-  const claimCode = formatClaimCode(receiptId);
-
-  if (isClaimed) {
-    const claimedTime = claimedAt
-      ? new Date(claimedAt).toLocaleString('en-GB', {
-          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        })
-      : '';
-
-    return (
-      <div className="card-base p-6 text-center border-[color:var(--nx-success)]">
-        <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-3 bg-[color:var(--nx-success-soft)]">
-          <svg className="w-7 h-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p className="font-semibold text-success text-lg">Collected</p>
-        <p className="text-sm text-muted mt-1">
-          Claimed by {claimedBy}{claimedTime ? ` at ${claimedTime}` : ''}
-        </p>
-        <p className="text-xs text-dim mt-3">{eventTitle}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card-base overflow-hidden">
-      <div className="bg-surface-2 border-b border-nx px-5 py-3">
-        <p className="text-xs uppercase tracking-wider font-semibold text-accent">{eventTitle}</p>
-        <p className="text-sm text-muted mt-0.5">Your ticket</p>
-      </div>
-      <div className="p-5">
-        <div className="flex gap-4 items-start">
-          <div className="flex-shrink-0">
-            <img
-              src={qrCode}
-              alt="Ticket QR code"
-              className="w-28 h-28 rounded-lg border border-nx bg-white p-1"
-            />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <div>
-              <p className="text-xs text-dim">Name</p>
-              <p className="text-sm font-semibold">{fullName}</p>
-            </div>
-            <div>
-              <p className="text-xs text-dim">Matric</p>
-              <p className="text-sm font-semibold">{matricNumber}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 text-center">
-          <p className="text-xs text-dim uppercase tracking-wider mb-1">Claim code</p>
-          <p className="text-2xl font-mono font-bold tracking-widest text-accent">{claimCode}</p>
-        </div>
-
-        <div className="mt-4 bg-surface-2 border border-nx rounded-lg px-4 py-2.5 text-center">
-          <p className="text-xs text-muted">Show this at the event to collect your item</p>
-        </div>
-
-        {status === 'pending' && (
-          <div className="mt-3 bg-[color:var(--nx-accent-soft)] border border-[color:var(--nx-accent)] rounded-lg px-4 py-2.5 text-center">
-            <p className="text-xs text-accent font-medium">Your payment is still pending confirmation. The ticket will be active once confirmed.</p>
-          </div>
-        )}
-
-        {status === 'rejected' && (
-          <div className="mt-3 alert-danger text-center">
-            <p className="text-xs font-medium">This ticket is invalid — your receipt was rejected.</p>
-          </div>
-        )}
       </div>
     </div>
   );
