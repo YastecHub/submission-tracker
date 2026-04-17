@@ -15,6 +15,22 @@ function formatNaira(amount: string): string {
   return n.toLocaleString('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 2 });
 }
 
+function formatNairaShort(amount: string): string {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return `₦${amount}`;
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) {
+    const v = abs / 1_000_000;
+    return `${sign}₦${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}M`;
+  }
+  if (abs >= 1_000) {
+    const v = abs / 1_000;
+    return `${sign}₦${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}K`;
+  }
+  return `${sign}₦${abs.toFixed(0)}`;
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
@@ -98,65 +114,70 @@ export default function DashboardLedger() {
 
   return (
     <>
-      <div className="card-base p-5 mb-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+      <div className="card-base p-4 sm:p-5 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-sm text-muted">Class account balance</p>
-            <p className={`text-3xl sm:text-4xl font-semibold tracking-tight mt-1 ${balanceClass}`}>
-              {ledger ? formatNaira(ledger.balance) : '—'}
+            <p className={`text-3xl sm:text-4xl font-semibold tracking-tight mt-1 break-words ${balanceClass}`}>
+              {ledger ? formatNairaShort(ledger.balance) : '—'}
             </p>
+            {ledger && (
+              <p className="text-xs text-dim mt-0.5">{formatNaira(ledger.balance)}</p>
+            )}
           </div>
           <button
             onClick={() => { setEditing(null); setFormOpen(true); }}
-            className="btn-primary !py-2 !text-sm"
+            className="btn-primary !py-2 !text-sm w-full sm:w-auto"
           >
             + New transaction
           </button>
         </div>
         {ledger && (
-          <div className="grid grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
             <div className="card-base bg-surface-2 p-3 text-center">
               <p className="text-xs text-dim uppercase tracking-wider">Money in</p>
-              <p className="text-lg font-semibold text-success mt-1">{formatNaira(ledger.totalCredits)}</p>
+              <p className="text-base sm:text-lg font-semibold text-success mt-1 break-words">{formatNairaShort(ledger.totalCredits)}</p>
             </div>
             <div className="card-base bg-surface-2 p-3 text-center">
               <p className="text-xs text-dim uppercase tracking-wider">Money out</p>
-              <p className="text-lg font-semibold text-danger mt-1">{formatNaira(ledger.totalDebits)}</p>
+              <p className="text-base sm:text-lg font-semibold text-danger mt-1 break-words">{formatNairaShort(ledger.totalDebits)}</p>
             </div>
             <div className="card-base bg-surface-2 p-3 text-center">
               <p className="text-xs text-dim uppercase tracking-wider">Entries</p>
-              <p className="text-lg font-semibold mt-1">{ledger.transactionCount}</p>
+              <p className="text-base sm:text-lg font-semibold mt-1">{ledger.transactionCount}</p>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex gap-2 mb-4 flex-wrap items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
         <input
           type="search"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Search description or category…"
-          className="input-base flex-1 min-w-[180px]"
+          className="input-base flex-1 sm:min-w-[180px]"
         />
-        <select
-          value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value as TransactionType | ''); setPage(1); }}
-          className="input-base !w-auto"
-        >
-          <option value="">All types</option>
-          <option value="credit">Money in</option>
-          <option value="debit">Money out</option>
-        </select>
-        <label className="flex items-center gap-1.5 text-sm text-muted ml-1">
-          <input
-            type="checkbox"
-            checked={includeDeleted}
-            onChange={(e) => { setIncludeDeleted(e.target.checked); setPage(1); }}
-            className="accent-[color:var(--nx-accent)]"
-          />
-          Show deleted
-        </label>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={typeFilter}
+            onChange={(e) => { setTypeFilter(e.target.value as TransactionType | ''); setPage(1); }}
+            className="input-base !w-auto"
+          >
+            <option value="">All types</option>
+            <option value="credit">Money in</option>
+            <option value="debit">Money out</option>
+          </select>
+          <label className="flex items-center gap-1.5 text-sm text-muted">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => { setIncludeDeleted(e.target.checked); setPage(1); }}
+              className="accent-[color:var(--nx-accent)]"
+            />
+            Show deleted
+          </label>
+        </div>
       </div>
 
       {loading ? (

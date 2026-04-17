@@ -180,7 +180,7 @@ export default function DashboardPage() {
   }
 
   const tabClass = (tab: ActiveTab) =>
-    `px-4 py-2 text-sm font-medium rounded-md transition-colors flex-shrink-0 ${
+    `px-2.5 sm:px-4 py-2 text-sm font-medium rounded-md transition-colors flex-1 sm:flex-initial ${
       activeTab === tab
         ? 'bg-surface text-[color:var(--nx-text)] border border-nx'
         : 'text-muted hover:text-[color:var(--nx-text)]'
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit overflow-x-auto">
+        <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit">
           <button type="button" onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
             Submissions
             {!eventsLoading && <span className="ml-2 badge">{events.length}</span>}
