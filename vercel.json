@@ -1,3 +1,10 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/payment/:path*", "destination": "/api/share" },
+    { "source": "/pay/:path*", "destination": "/api/share" },
+    { "source": "/submitit/:path*", "destination": "/api/share" },
+    { "source": "/submit/:path*", "destination": "/api/share" },
+    { "source": "/transparency", "destination": "/api/share" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
