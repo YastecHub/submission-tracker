@@ -5,10 +5,11 @@ import { useToast } from '../context/ToastContext';
 interface Props {
   event: SubmissionEvent;
   onToggleClose: (id: string) => void;
+  onExtend: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export default function EventCard({ event, onToggleClose, onDelete }: Props) {
+export default function EventCard({ event, onToggleClose, onExtend, onDelete }: Props) {
   const { toast } = useToast();
   const deadline = new Date(event.deadline);
   const isExpired = new Date() > deadline;
@@ -78,6 +79,14 @@ export default function EventCard({ event, onToggleClose, onDelete }: Props) {
           className="btn-secondary flex-1 !py-2 !text-sm"
         >
           {event.isClosed ? 'Re-open' : 'Close'}
+        </button>
+        <button
+          type="button"
+          onClick={() => onExtend(event.id)}
+          className="btn-secondary flex-1 !py-2 !text-sm"
+          title={closed ? 'Reopen with a new deadline' : 'Extend deadline'}
+        >
+          {closed ? 'Reopen…' : 'Extend…'}
         </button>
         <button
           type="button"

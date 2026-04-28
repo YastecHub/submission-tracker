@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import EventCard from '../components/EventCard';
 import PaymentEventCard from '../components/PaymentEventCard';
 import ConfirmModal from '../components/ConfirmModal';
+import ExtendDeadlineModal from '../components/ExtendDeadlineModal';
 import DashboardLedger from './DashboardLedger';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +38,11 @@ interface PendingAction {
   kind: 'submission' | 'payment';
 }
 
+interface PendingExtend {
+  event: SubmissionEvent | PaymentEvent;
+  kind: 'submission' | 'payment';
+}
+
 type ActiveTab = 'submissions' | 'payments' | 'ledger';
 
 export default function DashboardPage() {
@@ -65,6 +71,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('submissions');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [pendingExtend, setPendingExtend] = useState<PendingExtend | null>(null);
+  const [extendLoading, setExtendLoading] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -140,6 +148,42 @@ export default function DashboardPage() {
       ? events.find((e) => e.id === id)
       : paymentEvents.find((e) => e.id === id);
     if (event) setPendingAction({ type: 'close', event, kind });
+  }
+
+  function requestExtend(id: string, kind: 'submission' | 'payment'): void {
+    const event = kind === 'submission'
+      ? events.find((e) => e.id === id)
+      : paymentEvents.find((e) => e.id === id);
+    if (event) setPendingExtend({ event, kind });
+  }
+
+  async function handleConfirmExtend(deadline: string): Promise<void> {
+    if (!pendingExtend) return;
+    const { event, kind } = pendingExtend;
+    setExtendLoading(true);
+    try {
+      const base = kind === 'submission' ? '/api/events' : '/api/payment-events';
+      const res = await api.patch<{ deadline: string; isClosed: boolean }>(
+        `${base}/${event.id}/extend`,
+        { deadline },
+      );
+      if (kind === 'submission') {
+        setEvents((prev) => prev.map((e) =>
+          e.id === event.id ? { ...e, deadline: res.data.deadline, isClosed: res.data.isClosed } : e,
+        ));
+      } else {
+        setPaymentEvents((prev) => prev.map((e) =>
+          e.id === event.id ? { ...e, deadline: res.data.deadline, isClosed: res.data.isClosed } : e,
+        ));
+      }
+      setPendingExtend(null);
+      toast('Deadline updated.', 'success');
+    } catch (err: unknown) {
+      const msg = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast(msg ?? 'Failed to update deadline.', 'error');
+    } finally {
+      setExtendLoading(false);
+    }
   }
 
   function requestDelete(id: string, kind: 'submission' | 'payment'): void {
@@ -334,6 +378,7 @@ export default function DashboardPage() {
                     key={event.id}
                     event={event}
                     onToggleClose={(id) => requestToggleClose(id, 'submission')}
+                    onExtend={(id) => requestExtend(id, 'submission')}
                     onDelete={(id) => requestDelete(id, 'submission')}
                   />
                 ))}
@@ -481,6 +526,7 @@ export default function DashboardPage() {
                     key={event.id}
                     event={event}
                     onToggleClose={(id) => requestToggleClose(id, 'payment')}
+                    onExtend={(id) => requestExtend(id, 'payment')}
                     onDelete={(id) => requestDelete(id, 'payment')}
                   />
                 ))}
@@ -519,6 +565,22 @@ export default function DashboardPage() {
           loading={actionLoading}
           onConfirm={handleConfirmAction}
           onCancel={() => setPendingAction(null)}
+        />
+      )}
+
+      {pendingExtend && (
+        <ExtendDeadlineModal
+          title={
+            pendingExtend.event.isClosed ||
+            new Date() > new Date(pendingExtend.event.deadline)
+              ? 'Reopen with new deadline'
+              : 'Extend deadline'
+          }
+          eventTitle={pendingExtend.event.title}
+          currentDeadline={pendingExtend.event.deadline}
+          loading={extendLoading}
+          onConfirm={handleConfirmExtend}
+          onCancel={() => setPendingExtend(null)}
         />
       )}
     </div>

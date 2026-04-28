@@ -140,16 +140,17 @@ function rewriteHead(html, meta, fullUrl) {
     `<meta name="description" content="${desc}" />`
   );
 
+  out = out.replace(/<link\s+rel="icon"[^>]*\/?>\s*/gi, '');
+  out = out.replace(/<link\s+rel="apple-touch-icon"[^>]*\/?>\s*/gi, '');
+
   const ogBlock = `    <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${desc}" />
-    <meta property="og:image" content="/icon-512.png" />
     <meta property="og:url" content="${url}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="NEXIUM" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${desc}" />
-    <meta name="twitter:image" content="/icon-512.png" />
 `;
 
   out = out.replace('</head>', `${ogBlock}  </head>`);
