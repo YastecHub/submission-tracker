@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { fetchPublicLedger, verifyMatricNumber } from '../api/transactions';
 import { useToast } from '../context/ToastContext';
-import type { Ledger, Transaction, TransactionType } from '../types';
+import type { Ledger, PaymentEventTransactionGroup, Transaction, TransactionType } from '../types';
 
 interface Ticket {
   receiptId: string;
@@ -235,10 +235,21 @@ export default function TransparencyPage() {
 
             {ledger && flowTotal > 0 && (
               <div className="mt-5">
-                <div className="flex h-2 rounded-full overflow-hidden bg-surface-2 border border-nx">
-                  <div className="bg-[color:var(--nx-success)] transition-[width]" style={{ width: `${inPct}%` }} />
-                  <div className="bg-[color:var(--nx-danger)] transition-[width]" style={{ width: `${outPct}%` }} />
-                </div>
+                <svg
+                  className="w-full h-2 rounded-full overflow-hidden bg-surface-2 border border-nx"
+                  viewBox="0 0 100 8"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <rect x="0" y="0" width={inPct} height="8" className="fill-[color:var(--nx-success)]" />
+                  <rect
+                    x={inPct}
+                    y="0"
+                    width={outPct}
+                    height="8"
+                    className="fill-[color:var(--nx-danger)]"
+                  />
+                </svg>
                 <div className="flex justify-between mt-2 text-xs">
                   <span className="text-success">In {inPct.toFixed(0)}%</span>
                   <span className="text-danger">Out {outPct.toFixed(0)}%</span>
@@ -312,15 +323,8 @@ export default function TransparencyPage() {
               </div>
             ))}
           </div>
-        ) : ledger && ledger.transactions.length === 0 ? (
-          <div className="card-base p-16 text-center">
-            <p className="font-semibold">No transactions yet</p>
-            <p className="text-sm text-muted mt-1">
-              {typeFilter ? 'Try clearing the filter.' : 'Entries will appear here once the fin sec records them.'}
-            </p>
-          </div>
         ) : ledger ? (
-          <GroupedTransactions transactions={ledger.transactions} onProofClick={setLightboxUrl} />
+          <GroupedTransactions ledger={ledger} onProofClick={setLightboxUrl} />
         ) : null}
 
         {ledger && ledger.totalPages > 1 && (
@@ -393,38 +397,149 @@ function StatCard({
   );
 }
 
-function GroupedTransactions({
-  transactions,
+function PaymentEventGroupCard({
+  group,
   onProofClick,
 }: {
-  transactions: Transaction[];
+  group: PaymentEventTransactionGroup;
   onProofClick: (url: string) => void;
 }) {
-  const groups = useMemo(() => {
-    const map = new Map<string, Transaction[]>();
-    for (const t of transactions) {
-      const key = formatDate(t.occurredAt);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(t);
+  return (
+    <section className="card-base overflow-hidden">
+      <div className="p-4 sm:p-5 border-b border-nx">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-dim">Payment event</p>
+            <h3 className="text-base sm:text-lg font-semibold tracking-tight mt-1 break-words">
+              {group.paymentEventTitle}
+            </h3>
+            <p className="text-xs text-muted mt-1 font-mono break-all">ref: {group.paymentEventReference}</p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-dim">Total collected</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-success mt-1">{formatNaira(group.totalCollected)}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-xs flex-wrap">
+          <span className="badge badge-success">{group.transactionCount} transactions</span>
+        </div>
+      </div>
+
+      <details open>
+        <summary className="cursor-pointer list-none px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-surface-2 transition-colors border-t border-nx">
+          <span className="text-sm font-semibold">Individual Payments</span>
+          <span className="text-muted text-sm">▼</span>
+        </summary>
+        <div className="px-3 sm:px-4 pb-4 pt-2 space-y-2">
+          {group.transactions.map((transaction) => (
+            <TransactionCard key={transaction.id} transaction={transaction} onProofClick={onProofClick} />
+          ))}
+        </div>
+      </details>
+    </section>
+  );
+}
+
+function GroupedTransactions({
+  ledger,
+  onProofClick,
+}: {
+  ledger: Ledger;
+  onProofClick: (url: string) => void;
+}) {
+  const { paymentEventGroups, ungroupedTransactions } = useMemo(() => {
+    if (ledger.paymentEventGroups) {
+      return {
+        paymentEventGroups: ledger.paymentEventGroups,
+        ungroupedTransactions: ledger.ungroupedTransactions ?? ledger.transactions.filter((t) => !t.paymentEventId),
+      };
     }
-    return Array.from(map.entries());
-  }, [transactions]);
+
+    const groups = new Map<
+      string,
+      {
+        paymentEventId: string;
+        paymentEventTitle: string;
+        paymentEventSlug: string;
+        paymentEventReference: string;
+        transactions: Transaction[];
+      }
+    >();
+    const ungrouped: Transaction[] = [];
+
+    for (const transaction of ledger.transactions) {
+      if (!transaction.paymentEventId || !transaction.paymentEventTitle) {
+        ungrouped.push(transaction);
+        continue;
+      }
+
+      if (!groups.has(transaction.paymentEventId)) {
+        groups.set(transaction.paymentEventId, {
+          paymentEventId: transaction.paymentEventId,
+          paymentEventTitle: transaction.paymentEventTitle,
+          paymentEventSlug: transaction.paymentEventSlug ?? transaction.paymentEventReference ?? transaction.paymentEventId,
+          paymentEventReference: transaction.paymentEventReference ?? transaction.paymentEventSlug ?? transaction.paymentEventId,
+          transactions: [],
+        });
+      }
+
+      groups.get(transaction.paymentEventId)!.transactions.push(transaction);
+    }
+
+    return {
+      paymentEventGroups: Array.from(groups.values()).map((group) => ({
+        paymentEventId: group.paymentEventId,
+        paymentEventTitle: group.paymentEventTitle,
+        paymentEventSlug: group.paymentEventSlug,
+        paymentEventReference: group.paymentEventReference,
+        totalCollected: group.transactions.reduce((acc, transaction) => {
+          if (transaction.type !== 'credit') return acc;
+          return acc + Number(transaction.amount);
+        }, 0).toLocaleString('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 2 }),
+        transactionCount: group.transactions.length,
+        transactions: group.transactions,
+      })),
+      ungroupedTransactions: ungrouped,
+    };
+  }, [ledger]);
+
+  if (paymentEventGroups.length === 0 && ungroupedTransactions.length === 0) {
+    return (
+      <div className="card-base p-16 text-center">
+        <p className="font-semibold">No transactions yet</p>
+        <p className="text-sm text-muted mt-1">Entries will appear here once the fin sec records them.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-5">
-      {groups.map(([date, items]) => (
-        <div key={date}>
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <h3 className="text-xs font-semibold text-dim uppercase tracking-wider">{date}</h3>
-            <div className="flex-1 h-px bg-[color:var(--nx-border)]" />
+    <div className="space-y-6">
+      {paymentEventGroups.length > 0 && (
+        <div className="space-y-3">
+          <div className="px-1">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Payment events</h2>
           </div>
-          <div className="space-y-2">
-            {items.map((t) => (
-              <TransactionCard key={t.id} transaction={t} onProofClick={onProofClick} />
+          <div className="space-y-4">
+            {paymentEventGroups.map((group) => (
+              <PaymentEventGroupCard key={group.paymentEventId} group={group} onProofClick={onProofClick} />
             ))}
           </div>
         </div>
-      ))}
+      )}
+
+      {ungroupedTransactions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <h3 className="text-xs font-semibold text-dim uppercase tracking-wider">Other ledger entries</h3>
+            <div className="flex-1 h-px bg-[color:var(--nx-border)]" />
+          </div>
+          <div className="space-y-2">
+            {ungroupedTransactions.map((transaction) => (
+              <TransactionCard key={transaction.id} transaction={transaction} onProofClick={onProofClick} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

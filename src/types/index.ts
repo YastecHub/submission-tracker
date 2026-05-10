@@ -95,10 +95,24 @@ export interface Transaction {
   recorderName?: string | null;
   recorderRole?: string | null;
   receiptId?: string | null;
+  paymentEventId?: string | null;
+  paymentEventTitle?: string | null;
+  paymentEventSlug?: string | null;
+  paymentEventReference?: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
   recordedBy?: string;
+}
+
+export interface PaymentEventTransactionGroup {
+  paymentEventId: string;
+  paymentEventTitle: string;
+  paymentEventSlug: string;
+  paymentEventReference: string;
+  totalCollected: string;
+  transactionCount: number;
+  transactions: Transaction[];
 }
 
 export interface Ledger {
@@ -107,6 +121,8 @@ export interface Ledger {
   totalDebits: string;
   transactionCount: number;
   transactions: Transaction[];
+  paymentEventGroups?: PaymentEventTransactionGroup[];
+  ungroupedTransactions?: Transaction[];
   page: number;
   limit: number;
   totalPages: number;
