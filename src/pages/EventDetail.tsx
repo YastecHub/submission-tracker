@@ -42,7 +42,7 @@ function EventDetailSkeleton() {
 
 const PAGE_SIZE = 50;
 const PRELOAD_PAGE_SIZE = 100;
-const CONFIRM_ALL_MIN_SUBMISSIONS = 100;
+const CONFIRM_ALL_MIN_SUBMISSIONS = 90;
 
 export default function EventDetail() {
   const { toast } = useToast();
