@@ -69,6 +69,7 @@ export interface PaymentReceipt {
   fullName: string;
   matricNumber: string;
   level?: string | null;
+  amountPaid?: string | null;
   receiptUrl: string;
   receiptPublicId: string;
   submittedAt: string;

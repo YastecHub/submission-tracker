@@ -50,9 +50,13 @@ export default function PaymentEventDetail() {
   const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
   const [manualCode, setManualCode] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    const t = setTimeout(() => {
+      const trimmed = search.trim();
+      setDebouncedSearch(trimmed.length >= 2 ? trimmed : '');
+    }, 400);
     return () => clearTimeout(t);
   }, [search]);
 
@@ -160,6 +164,29 @@ export default function PaymentEventDetail() {
       setClaimResult({ type: 'error', message: msg });
     } finally {
       setClaimLoading(false);
+    }
+  }
+
+  async function handleExport(): Promise<void> {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const res = await api.get(`/api/payment-receipts/${id}/export`, { responseType: 'blob' });
+      const contentDisposition = (res.headers['content-disposition'] as string) ?? '';
+      const match = contentDisposition.match(/filename="(.+)"/);
+      const filename = match ? match[1] : `payments_${id}.xlsx`;
+      const url = window.URL.createObjectURL(new Blob([res.data as BlobPart]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast('Export failed.', 'error');
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -371,6 +398,14 @@ export default function PaymentEventDetail() {
             <option value="confirmed">Confirmed</option>
             <option value="rejected">Rejected</option>
           </select>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || stats.total === 0}
+            className="btn-primary !py-3 sm:!py-2 !text-sm whitespace-nowrap"
+          >
+            {exporting ? 'Exporting…' : 'Export sheet'}
+          </button>
         </div>
 
         {receipts.length === 0 ? (
@@ -407,6 +442,16 @@ export default function PaymentEventDetail() {
                     <p className="text-sm text-muted break-words">
                       {receipt.matricNumber}{receipt.level ? ` · ${receipt.level}` : ''}
                     </p>
+                    {receipt.amountPaid && (
+                      <p className="text-xs text-muted mt-0.5">
+                        Amount paid:{' '}
+                        {Number(receipt.amountPaid).toLocaleString('en-NG', {
+                          style: 'currency',
+                          currency: 'NGN',
+                          minimumFractionDigits: 0,
+                        })}
+                      </p>
+                    )}
                     <p className="text-xs text-dim mt-0.5">
                       Submitted {new Date(receipt.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>

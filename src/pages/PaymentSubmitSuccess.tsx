@@ -259,6 +259,18 @@ export default function PaymentSubmitSuccess() {
               <span className="text-dim">Amount:</span>{' '}
               <span className="font-medium">{amount}</span>
             </div>
+            {receipt.amountPaid && (
+              <div>
+                <span className="text-dim">Amount paid:</span>{' '}
+                <span className="font-medium">
+                  {Number(receipt.amountPaid).toLocaleString('en-NG', {
+                    style: 'currency',
+                    currency: 'NGN',
+                    minimumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+            )}
             <div>
               <span className="text-dim">Submitted:</span>{' '}
               <span className="font-medium">{submittedAt}</span>

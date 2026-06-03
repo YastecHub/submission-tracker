@@ -41,6 +41,7 @@ function EventDetailSkeleton() {
 }
 
 const PAGE_SIZE = 50;
+const CONFIRM_ALL_MIN_SUBMISSIONS = 100;
 
 export default function EventDetail() {
   const { toast } = useToast();
@@ -54,12 +55,14 @@ export default function EventDetail() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [confirmingAll, setConfirmingAll] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
+      const trimmed = search.trim();
+      setDebouncedSearch(trimmed.length >= 2 ? trimmed : '');
       setCurrentPage(1);
     }, 400);
     return () => {
@@ -150,12 +153,31 @@ export default function EventDetail() {
     }
   }
 
+  async function handleConfirmAll(): Promise<void> {
+    if (!id) return;
+    setConfirmingAll(true);
+    try {
+      const res = await api.patch<{ confirmedCount: number }>(`/api/submissions/${id}/confirm-all`);
+      toast(`${res.data.confirmedCount} submissions confirmed.`, 'success');
+      await Promise.all([fetchEvent(), fetchSubmissions(currentPage, debouncedSearch, true)]);
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+        : null;
+      toast(msg ?? 'Failed to confirm all submissions.', 'error');
+    } finally {
+      setConfirmingAll(false);
+    }
+  }
+
   if (loading) return <EventDetailSkeleton />;
 
   const totalSubmissions = page?.total ?? 0;
   const confirmedTotal = page?.confirmedTotal ?? 0;
   const pendingTotal = page?.pendingTotal ?? 0;
   const totalPages = page?.totalPages ?? 1;
+  const eventTotalSubmissions = event?.totalSubmissions ?? totalSubmissions;
+  const canConfirmAll = eventTotalSubmissions >= CONFIRM_ALL_MIN_SUBMISSIONS && pendingTotal > 0;
 
   return (
     <div className="page-base">
@@ -226,6 +248,20 @@ export default function EventDetail() {
           <div className="flex gap-2">
             <button onClick={() => setShowScanner(true)} className="btn-secondary flex-1 !py-3">
               Scan QR
+            </button>
+            <button
+              onClick={handleConfirmAll}
+              disabled={!canConfirmAll || confirmingAll}
+              className="btn-secondary flex-1 !py-3"
+              title={
+                eventTotalSubmissions < CONFIRM_ALL_MIN_SUBMISSIONS
+                  ? `Available after ${CONFIRM_ALL_MIN_SUBMISSIONS} submissions`
+                  : pendingTotal === 0
+                  ? 'All submissions are already confirmed'
+                  : 'Confirm all pending submissions'
+              }
+            >
+              {confirmingAll ? 'Confirming...' : 'Confirm all'}
             </button>
             <button
               onClick={handleExport}
