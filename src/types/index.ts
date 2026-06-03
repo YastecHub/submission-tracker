@@ -3,6 +3,7 @@ export type Level = '100L' | '200L' | '300L' | '400L' | '500L' | 'Postgrad';
 
 export type UserRole = 'cr' | 'acr' | 'fin_sec' | 'dev';
 export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
+export type AmountCheckStatus = 'pending' | 'matched' | 'mismatch' | 'unreadable' | 'unavailable';
 
 export interface User {
   id: string;
@@ -69,7 +70,11 @@ export interface PaymentReceipt {
   fullName: string;
   matricNumber: string;
   level?: string | null;
-  amountPaid?: string | null;
+  extractedAmount?: string | null;
+  amountCheckStatus?: AmountCheckStatus;
+  amountCheckConfidence?: number | null;
+  amountCheckNote?: string | null;
+  amountCheckedAt?: string | null;
   receiptUrl: string;
   receiptPublicId: string;
   submittedAt: string;

@@ -12,7 +12,7 @@ export default function PaymentSubmitForm() {
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
-  const [form, setForm] = useState({ fullName: '', matricNumber: '', level: '', amountPaid: '' });
+  const [form, setForm] = useState({ fullName: '', matricNumber: '', level: '' });
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -51,17 +51,6 @@ export default function PaymentSubmitForm() {
       return;
     }
 
-    const expectedKobo = Math.round(Number(event!.amount) * 100);
-    const paidKobo = Math.round(Number(form.amountPaid) * 100);
-    if (!form.amountPaid || !Number.isFinite(paidKobo) || paidKobo <= 0) {
-      setError('Please enter the amount you paid.');
-      return;
-    }
-    if (paidKobo !== expectedKobo) {
-      setError(`The amount paid must match the expected amount of ${event!.amount}.`);
-      return;
-    }
-
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -69,7 +58,6 @@ export default function PaymentSubmitForm() {
       formData.append('fullName', form.fullName.trim());
       formData.append('matricNumber', form.matricNumber.trim().toUpperCase());
       if (form.level) formData.append('level', form.level);
-      formData.append('amountPaid', form.amountPaid);
       formData.append('receipt', receiptFile);
 
       const res = await api.post<{ receipt: PaymentReceipt }>('/api/payment-receipts', formData, {
@@ -209,25 +197,6 @@ export default function PaymentSubmitForm() {
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
-                Amount paid <span className="text-danger">*</span>
-              </label>
-              <input
-                type="number"
-                required
-                min="1"
-                step="0.01"
-                value={form.amountPaid}
-                onChange={(e) => setForm({ ...form, amountPaid: e.target.value })}
-                className="input-base"
-                placeholder={`Expected: ${event.amount}`}
-              />
-              <p className="text-xs text-dim mt-1.5">
-                Enter the exact amount shown on your receipt.
-              </p>
             </div>
 
             <div>

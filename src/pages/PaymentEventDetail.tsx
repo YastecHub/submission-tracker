@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../api/axios';
@@ -29,19 +29,20 @@ interface ClaimResult {
   matricNumber?: string;
 }
 
+const PAGE_SIZE = 50;
+const PRELOAD_PAGE_SIZE = 100;
+
 export default function PaymentEventDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
-  const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
-  const [stats, setStats] = useState({ confirmed: 0, rejected: 0, pending: 0, total: 0, claimed: 0 });
+  const [allReceipts, setAllReceipts] = useState<PaymentReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [actionModal, setActionModal] = useState<ActionModal | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -60,27 +61,34 @@ export default function PaymentEventDetail() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const fetchReceipts = useCallback(async () => {
+  const fetchAllReceipts = useCallback(async () => {
     if (!id) return;
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '50' });
-      if (debouncedSearch) params.set('search', debouncedSearch);
-      if (statusFilter) params.set('status', statusFilter);
-
-      const res = await api.get<ReceiptsResponse>(`/api/payment-receipts/${id}?${params}`);
-      setReceipts(res.data.receipts);
-      setTotalPages(res.data.totalPages);
-      setStats({
-        confirmed: res.data.confirmedTotal,
-        rejected: res.data.rejectedTotal,
-        pending: res.data.pendingTotal,
-        total: res.data.confirmedTotal + res.data.rejectedTotal + res.data.pendingTotal,
-        claimed: res.data.claimedTotal,
-      });
+      const first = await api.get<ReceiptsResponse>(
+        `/api/payment-receipts/${id}?${new URLSearchParams({
+          page: '1',
+          limit: String(PRELOAD_PAGE_SIZE),
+        })}`
+      );
+      const receipts = [...first.data.receipts];
+      const requests = [];
+      for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
+        requests.push(
+          api.get<ReceiptsResponse>(
+            `/api/payment-receipts/${id}?${new URLSearchParams({
+              page: String(pg),
+              limit: String(PRELOAD_PAGE_SIZE),
+            })}`
+          )
+        );
+      }
+      const rest = await Promise.all(requests);
+      for (const res of rest) receipts.push(...res.data.receipts);
+      setAllReceipts(receipts);
     } catch {
       toast('Failed to load receipts', 'error');
     }
-  }, [id, page, debouncedSearch, statusFilter, toast]);
+  }, [id, toast]);
 
   useEffect(() => {
     async function init() {
@@ -97,13 +105,42 @@ export default function PaymentEventDetail() {
   }, [id, toast]);
 
   useEffect(() => {
-    if (!loading) void fetchReceipts();
-  }, [loading, fetchReceipts]);
+    if (!loading) void fetchAllReceipts();
+  }, [loading, fetchAllReceipts]);
 
   useEffect(() => {
-    const interval = setInterval(() => void fetchReceipts(), 30_000);
+    const interval = setInterval(() => void fetchAllReceipts(), 30_000);
     return () => clearInterval(interval);
-  }, [fetchReceipts]);
+  }, [fetchAllReceipts]);
+
+  const filteredReceipts = useMemo(() => {
+    const q = debouncedSearch.toLowerCase();
+    return allReceipts.filter((receipt) => {
+      const matchesSearch =
+        !q ||
+        receipt.fullName.toLowerCase().includes(q) ||
+        receipt.matricNumber.toLowerCase().includes(q);
+      const matchesStatus = !statusFilter || receipt.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [allReceipts, debouncedSearch, statusFilter]);
+
+  const receipts = useMemo(
+    () => filteredReceipts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredReceipts, page]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredReceipts.length / PAGE_SIZE));
+  const stats = useMemo(
+    () => ({
+      confirmed: allReceipts.filter((r) => r.status === 'confirmed').length,
+      rejected: allReceipts.filter((r) => r.status === 'rejected').length,
+      pending: allReceipts.filter((r) => r.status === 'pending').length,
+      total: allReceipts.length,
+      claimed: allReceipts.filter((r) => r.isClaimed).length,
+    }),
+    [allReceipts]
+  );
 
   async function handleAction() {
     if (!actionModal) return;
@@ -112,13 +149,7 @@ export default function PaymentEventDetail() {
     try {
       const endpoint = `/api/payment-receipts/${receipt.id}/${type}`;
       const updated = await api.patch<PaymentReceipt>(endpoint, { note: actionNote.trim() || undefined });
-      setReceipts((prev) => prev.map((r) => (r.id === receipt.id ? updated.data : r)));
-      setStats((prev) => ({
-        ...prev,
-        pending: Math.max(0, prev.pending - 1),
-        confirmed: type === 'confirm' ? prev.confirmed + 1 : prev.confirmed,
-        rejected: type === 'reject' ? prev.rejected + 1 : prev.rejected,
-      }));
+      setAllReceipts((prev) => prev.map((r) => (r.id === receipt.id ? updated.data : r)));
       toast(type === 'confirm' ? 'Payment confirmed!' : 'Receipt rejected.', type === 'confirm' ? 'success' : 'error');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -155,7 +186,7 @@ export default function PaymentEventDetail() {
           fullName: res.data.receipt.fullName,
           matricNumber: res.data.receipt.matricNumber,
         });
-        void fetchReceipts();
+        void fetchAllReceipts();
       }
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err)
@@ -224,6 +255,32 @@ export default function PaymentEventDetail() {
     if (status === 'confirmed') return <span className="badge badge-success">Confirmed</span>;
     if (status === 'rejected') return <span className="badge badge-danger">Rejected</span>;
     return <span className="badge badge-accent">Pending</span>;
+  }
+
+  function formatAmountValue(value: string | null | undefined): string {
+    if (!value) return '-';
+    return Number(value).toLocaleString('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    });
+  }
+
+  function amountCheckBadge(receipt: PaymentReceipt) {
+    const status = receipt.amountCheckStatus ?? 'pending';
+    if (status === 'matched') {
+      return <span className="badge badge-success" title={receipt.amountCheckNote ?? undefined}>Amount matched</span>;
+    }
+    if (status === 'mismatch') {
+      return <span className="badge badge-danger" title={receipt.amountCheckNote ?? undefined}>Amount mismatch</span>;
+    }
+    if (status === 'unreadable') {
+      return <span className="badge badge-accent" title={receipt.amountCheckNote ?? undefined}>Needs review</span>;
+    }
+    if (status === 'unavailable') {
+      return <span className="badge" title={receipt.amountCheckNote ?? undefined}>AI unavailable</span>;
+    }
+    return <span className="badge">Checking amount</span>;
   }
 
   return (
@@ -433,6 +490,7 @@ export default function PaymentEventDetail() {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <p className="font-semibold break-words">{receipt.fullName}</p>
                       {statusBadge(receipt.status)}
+                      {amountCheckBadge(receipt)}
                       {event.hasTickets && receipt.isClaimed && (
                         <span className="badge badge-accent" title={receipt.claimedBy ? `Claimed by ${receipt.claimedBy}` : undefined}>
                           Collected
@@ -442,15 +500,11 @@ export default function PaymentEventDetail() {
                     <p className="text-sm text-muted break-words">
                       {receipt.matricNumber}{receipt.level ? ` · ${receipt.level}` : ''}
                     </p>
-                    {receipt.amountPaid && (
-                      <p className="text-xs text-muted mt-0.5">
-                        Amount paid:{' '}
-                        {Number(receipt.amountPaid).toLocaleString('en-NG', {
-                          style: 'currency',
-                          currency: 'NGN',
-                          minimumFractionDigits: 0,
-                        })}
-                      </p>
+                    <p className="text-xs text-muted mt-0.5">
+                      AI amount: {formatAmountValue(receipt.extractedAmount)}
+                    </p>
+                    {receipt.amountCheckNote && (
+                      <p className="text-xs text-dim mt-0.5 break-words">{receipt.amountCheckNote}</p>
                     )}
                     <p className="text-xs text-dim mt-0.5">
                       Submitted {new Date(receipt.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}

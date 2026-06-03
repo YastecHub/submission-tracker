@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SubmissionsTable from '../components/SubmissionsTable';
@@ -41,13 +41,14 @@ function EventDetailSkeleton() {
 }
 
 const PAGE_SIZE = 50;
+const PRELOAD_PAGE_SIZE = 100;
 const CONFIRM_ALL_MIN_SUBMISSIONS = 100;
 
 export default function EventDetail() {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<SubmissionEvent | null>(null);
-  const [page, setPage] = useState<SubmissionsPage | null>(null);
+  const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,14 +71,31 @@ export default function EventDetail() {
     };
   }, [search]);
 
-  const fetchSubmissions = useCallback(
-    async (pg: number, q: string, silent = false) => {
+  const fetchAllSubmissions = useCallback(
+    async (silent = false) => {
       if (!silent) setTableLoading(true);
       try {
-        const params = new URLSearchParams({ page: String(pg), limit: String(PAGE_SIZE) });
-        if (q) params.set('search', q);
-        const res = await api.get<SubmissionsPage>(`/api/submissions/${id}?${params}`);
-        setPage(res.data);
+        const first = await api.get<SubmissionsPage>(
+          `/api/submissions/${id}?${new URLSearchParams({
+            page: '1',
+            limit: String(PRELOAD_PAGE_SIZE),
+          })}`
+        );
+        const submissions = [...first.data.submissions];
+        const requests = [];
+        for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
+          requests.push(
+            api.get<SubmissionsPage>(
+              `/api/submissions/${id}?${new URLSearchParams({
+                page: String(pg),
+                limit: String(PRELOAD_PAGE_SIZE),
+              })}`
+            )
+          );
+        }
+        const rest = await Promise.all(requests);
+        for (const res of rest) submissions.push(...res.data.submissions);
+        setAllSubmissions(submissions);
       } catch (err) {
         console.error(err);
       } finally {
@@ -98,37 +116,36 @@ export default function EventDetail() {
 
   useEffect(() => {
     async function init() {
-      await Promise.all([fetchEvent(), fetchSubmissions(1, '')]);
+      await Promise.all([fetchEvent(), fetchAllSubmissions()]);
       setLoading(false);
     }
     void init();
-  }, [fetchEvent, fetchSubmissions]);
-
-  useEffect(() => {
-    if (loading) return;
-    void fetchSubmissions(currentPage, debouncedSearch);
-  }, [currentPage, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchEvent, fetchAllSubmissions]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      void fetchSubmissions(currentPage, debouncedSearch, true);
+      void fetchAllSubmissions(true);
     }, 30_000);
     return () => clearInterval(interval);
-  }, [fetchSubmissions, currentPage, debouncedSearch]);
+  }, [fetchAllSubmissions]);
+
+  const filteredSubmissions = useMemo(() => {
+    if (!debouncedSearch) return allSubmissions;
+    const q = debouncedSearch.toLowerCase();
+    return allSubmissions.filter(
+      (s) =>
+        s.fullName.toLowerCase().includes(q) ||
+        s.matricNumber.toLowerCase().includes(q)
+    );
+  }, [allSubmissions, debouncedSearch]);
+
+  const pagedSubmissions = useMemo(
+    () => filteredSubmissions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredSubmissions, currentPage]
+  );
 
   function handleConfirmed(updated: Submission): void {
-    setPage((prev) => {
-      if (!prev) return prev;
-      const wasConfirmed = prev.submissions.find((s) => s.id === updated.id)?.isConfirmed ?? false;
-      const nowConfirmed = updated.isConfirmed;
-      const delta = nowConfirmed && !wasConfirmed ? 1 : 0;
-      return {
-        ...prev,
-        submissions: prev.submissions.map((s) => (s.id === updated.id ? updated : s)),
-        confirmedTotal: prev.confirmedTotal + delta,
-        pendingTotal: prev.pendingTotal - delta,
-      };
-    });
+    setAllSubmissions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   }
 
   async function handleExport(): Promise<void> {
@@ -159,7 +176,7 @@ export default function EventDetail() {
     try {
       const res = await api.patch<{ confirmedCount: number }>(`/api/submissions/${id}/confirm-all`);
       toast(`${res.data.confirmedCount} submissions confirmed.`, 'success');
-      await Promise.all([fetchEvent(), fetchSubmissions(currentPage, debouncedSearch, true)]);
+      await Promise.all([fetchEvent(), fetchAllSubmissions(true)]);
     } catch (err: unknown) {
       const msg = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
@@ -172,10 +189,10 @@ export default function EventDetail() {
 
   if (loading) return <EventDetailSkeleton />;
 
-  const totalSubmissions = page?.total ?? 0;
-  const confirmedTotal = page?.confirmedTotal ?? 0;
-  const pendingTotal = page?.pendingTotal ?? 0;
-  const totalPages = page?.totalPages ?? 1;
+  const totalSubmissions = allSubmissions.length;
+  const confirmedTotal = allSubmissions.filter((s) => s.isConfirmed).length;
+  const pendingTotal = totalSubmissions - confirmedTotal;
+  const totalPages = Math.max(1, Math.ceil(filteredSubmissions.length / PAGE_SIZE));
   const eventTotalSubmissions = event?.totalSubmissions ?? totalSubmissions;
   const canConfirmAll = eventTotalSubmissions >= CONFIRM_ALL_MIN_SUBMISSIONS && pendingTotal > 0;
 
@@ -275,14 +292,14 @@ export default function EventDetail() {
 
         <div className="card-base overflow-hidden">
           <SubmissionsTable
-            submissions={page?.submissions ?? []}
+            submissions={pagedSubmissions}
             onConfirmed={handleConfirmed}
             loading={tableLoading}
             pageOffset={(currentPage - 1) * PAGE_SIZE}
           />
         </div>
 
-        {!tableLoading && search && (page?.submissions.length ?? 0) === 0 && (
+        {!tableLoading && search && filteredSubmissions.length === 0 && (
           <p className="text-center text-sm text-dim mt-4">
             No results for &quot;{search}&quot;
           </p>
@@ -291,7 +308,7 @@ export default function EventDetail() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 text-sm text-muted">
             <span>
-              Page {currentPage} of {totalPages} · {totalSubmissions} total
+              Page {currentPage} of {totalPages} · {filteredSubmissions.length} shown
             </span>
             <div className="flex gap-2">
               <button

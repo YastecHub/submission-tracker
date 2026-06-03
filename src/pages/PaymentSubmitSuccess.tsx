@@ -22,6 +22,11 @@ interface StatusResponse {
   isClaimed: boolean;
   claimedAt: string | null;
   claimedBy: string | null;
+  extractedAmount: string | null;
+  amountCheckStatus: 'pending' | 'matched' | 'mismatch' | 'unreadable' | 'unavailable';
+  amountCheckConfidence: number | null;
+  amountCheckNote: string | null;
+  amountCheckedAt: string | null;
 }
 
 export default function PaymentSubmitSuccess() {
@@ -46,6 +51,11 @@ export default function PaymentSubmitSuccess() {
   const [hydratedName, setHydratedName] = useState<string | null>(null);
   const [hydratedMatric, setHydratedMatric] = useState<string | null>(null);
   const [hydratedEventTitle, setHydratedEventTitle] = useState<string | null>(null);
+  const [extractedAmount, setExtractedAmount] = useState<string | null>(stateReceipt?.extractedAmount ?? null);
+  const [amountCheckStatus, setAmountCheckStatus] = useState<StatusResponse['amountCheckStatus']>(
+    stateReceipt?.amountCheckStatus ?? 'pending'
+  );
+  const [amountCheckNote, setAmountCheckNote] = useState<string | null>(stateReceipt?.amountCheckNote ?? null);
   const [hydrateError, setHydrateError] = useState(false);
 
   function applyStatusResponse(data: StatusResponse) {
@@ -60,6 +70,9 @@ export default function PaymentSubmitSuccess() {
     setHydratedName(data.fullName);
     setHydratedMatric(data.matricNumber);
     setHydratedEventTitle(data.eventTitle);
+    setExtractedAmount(data.extractedAmount);
+    setAmountCheckStatus(data.amountCheckStatus);
+    setAmountCheckNote(data.amountCheckNote);
   }
 
   useEffect(() => {
@@ -72,7 +85,7 @@ export default function PaymentSubmitSuccess() {
         if (res.data.status !== 'pending') {
           setJustUpdated(true);
         }
-        return res.data.status !== 'pending';
+        return res.data.status !== 'pending' && res.data.amountCheckStatus !== 'pending';
       } catch {
         if (!stateReceipt) setHydrateError(true);
         return false;
@@ -195,6 +208,14 @@ export default function PaymentSubmitSuccess() {
     minimumFractionDigits: 0,
   });
 
+  function amountCheckLabel(): string {
+    if (amountCheckStatus === 'matched') return 'Receipt amount matched';
+    if (amountCheckStatus === 'mismatch') return 'Receipt amount needs admin review';
+    if (amountCheckStatus === 'unreadable') return 'Receipt amount needs manual review';
+    if (amountCheckStatus === 'unavailable') return 'Receipt amount will be reviewed manually';
+    return 'Checking receipt amount';
+  }
+
   return (
     <div className="page-base flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm space-y-4 animate-fade-up">
@@ -259,16 +280,26 @@ export default function PaymentSubmitSuccess() {
               <span className="text-dim">Amount:</span>{' '}
               <span className="font-medium">{amount}</span>
             </div>
-            {receipt.amountPaid && (
+            {extractedAmount && (
               <div>
-                <span className="text-dim">Amount paid:</span>{' '}
+                <span className="text-dim">Receipt amount:</span>{' '}
                 <span className="font-medium">
-                  {Number(receipt.amountPaid).toLocaleString('en-NG', {
+                  {Number(extractedAmount).toLocaleString('en-NG', {
                     style: 'currency',
                     currency: 'NGN',
                     minimumFractionDigits: 0,
                   })}
                 </span>
+              </div>
+            )}
+            <div>
+              <span className="text-dim">Amount check:</span>{' '}
+              <span className="font-medium">{amountCheckLabel()}</span>
+            </div>
+            {amountCheckNote && (
+              <div>
+                <span className="text-dim">Check note:</span>{' '}
+                <span className="font-medium">{amountCheckNote}</span>
               </div>
             )}
             <div>
