@@ -49,10 +49,24 @@ function normalizeReceiptName(name: string): string {
   return name.replace(/\s+/g, ' ').trim();
 }
 
-function preferReceipt(existing: DisplayPaymentReceipt, next: DisplayPaymentReceipt): DisplayPaymentReceipt {
-  if (existing.status !== 'confirmed' && next.status === 'confirmed') return next;
-  if (existing.sourceEventId === PICNIC_LEGACY_EVENT_ID && next.sourceEventId === PICNIC_PAYMENT_EVENT_ID) return next;
-  return existing;
+function getPaidAt(receipt: DisplayPaymentReceipt): number {
+  return new Date(receipt.confirmedAt ?? receipt.submittedAt).getTime();
+}
+
+function mergeReceiptSources(existing: DisplayPaymentReceipt, next: DisplayPaymentReceipt): string | undefined {
+  const sources = [existing.sourceEventTitle, next.sourceEventTitle].filter(Boolean) as string[];
+  return Array.from(new Set(sources)).join(' + ') || undefined;
+}
+
+function mergePicnicReceipt(existing: DisplayPaymentReceipt, next: DisplayPaymentReceipt): DisplayPaymentReceipt {
+  const preferred = getPaidAt(next) < getPaidAt(existing) ? next : existing;
+  return {
+    ...preferred,
+    sourceEventTitle: mergeReceiptSources(existing, next),
+    isClaimed: Boolean(existing.isClaimed || next.isClaimed),
+    claimedAt: existing.claimedAt ?? next.claimedAt,
+    claimedBy: existing.claimedBy ?? next.claimedBy,
+  };
 }
 
 function dedupePicnicReceipts(receipts: DisplayPaymentReceipt[]): DisplayPaymentReceipt[] {
@@ -60,9 +74,9 @@ function dedupePicnicReceipts(receipts: DisplayPaymentReceipt[]): DisplayPayment
   for (const receipt of receipts) {
     const key = receipt.matricNumber.trim().toUpperCase();
     const existing = byMatric.get(key);
-    byMatric.set(key, existing ? preferReceipt(existing, receipt) : receipt);
+    byMatric.set(key, existing ? mergePicnicReceipt(existing, receipt) : receipt);
   }
-  return Array.from(byMatric.values()).sort((a, b) => normalizeReceiptName(a.fullName).localeCompare(normalizeReceiptName(b.fullName)));
+  return Array.from(byMatric.values()).sort((a, b) => getPaidAt(a) - getPaidAt(b));
 }
 
 function csvValue(value: string | number | null | undefined): string {
