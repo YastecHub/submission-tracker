@@ -29,15 +29,65 @@ interface ClaimResult {
   matricNumber?: string;
 }
 
+type DisplayPaymentReceipt = PaymentReceipt & {
+  sourceEventTitle?: string;
+  sourceEventId?: string;
+};
+
 const PAGE_SIZE = 50;
 const PRELOAD_PAGE_SIZE = 100;
+const PICNIC_PAYMENT_EVENT_ID = 'cafd3826-985d-42d5-96bd-7c0cfd0b623d';
+const PICNIC_LEGACY_EVENT_ID = '7d4b6050-9681-4917-989c-82ae015b755e';
+const PICNIC_LEGACY_EVENT_TITLE = 'Picnic & Class dues';
+const PICNIC_EXPORT_AMOUNT = '4000';
+
+function isPicnicPaymentEvent(eventId: string | undefined): boolean {
+  return eventId === PICNIC_PAYMENT_EVENT_ID;
+}
+
+function normalizeReceiptName(name: string): string {
+  return name.replace(/\s+/g, ' ').trim();
+}
+
+function preferReceipt(existing: DisplayPaymentReceipt, next: DisplayPaymentReceipt): DisplayPaymentReceipt {
+  if (existing.status !== 'confirmed' && next.status === 'confirmed') return next;
+  if (existing.sourceEventId === PICNIC_LEGACY_EVENT_ID && next.sourceEventId === PICNIC_PAYMENT_EVENT_ID) return next;
+  return existing;
+}
+
+function dedupePicnicReceipts(receipts: DisplayPaymentReceipt[]): DisplayPaymentReceipt[] {
+  const byMatric = new Map<string, DisplayPaymentReceipt>();
+  for (const receipt of receipts) {
+    const key = receipt.matricNumber.trim().toUpperCase();
+    const existing = byMatric.get(key);
+    byMatric.set(key, existing ? preferReceipt(existing, receipt) : receipt);
+  }
+  return Array.from(byMatric.values()).sort((a, b) => normalizeReceiptName(a.fullName).localeCompare(normalizeReceiptName(b.fullName)));
+}
+
+function csvValue(value: string | number | null | undefined): string {
+  const raw = value == null ? '' : String(value);
+  return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+}
+
+function downloadCsv(filename: string, rows: Array<Array<string | number | null | undefined>>): void {
+  const csv = rows.map((row) => row.map(csvValue).join(',')).join('\n');
+  const url = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
 
 export default function PaymentEventDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
-  const [allReceipts, setAllReceipts] = useState<PaymentReceipt[]>([]);
+  const [allReceipts, setAllReceipts] = useState<DisplayPaymentReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -52,6 +102,7 @@ export default function PaymentEventDetail() {
   const [manualCode, setManualCode] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const combinedPicnicMode = isPicnicPaymentEvent(id);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -64,31 +115,58 @@ export default function PaymentEventDetail() {
   const fetchAllReceipts = useCallback(async () => {
     if (!id) return;
     try {
-      const first = await api.get<ReceiptsResponse>(
-        `/api/payment-receipts/${id}?${new URLSearchParams({
-          page: '1',
-          limit: String(PRELOAD_PAGE_SIZE),
-        })}`
-      );
-      const receipts = [...first.data.receipts];
-      const requests = [];
-      for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
-        requests.push(
-          api.get<ReceiptsResponse>(
-            `/api/payment-receipts/${id}?${new URLSearchParams({
-              page: String(pg),
-              limit: String(PRELOAD_PAGE_SIZE),
-            })}`
-          )
+      async function fetchEventReceipts(eventId: string): Promise<DisplayPaymentReceipt[]> {
+        const first = await api.get<ReceiptsResponse>(
+          `/api/payment-receipts/${eventId}?${new URLSearchParams({
+            page: '1',
+            limit: String(PRELOAD_PAGE_SIZE),
+          })}`
         );
+        const receipts: DisplayPaymentReceipt[] = first.data.receipts.map((receipt) => ({
+          ...receipt,
+          sourceEventId: eventId,
+          sourceEventTitle: eventId === PICNIC_LEGACY_EVENT_ID ? PICNIC_LEGACY_EVENT_TITLE : event?.title,
+        }));
+        const requests = [];
+        for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
+          requests.push(
+            api.get<ReceiptsResponse>(
+              `/api/payment-receipts/${eventId}?${new URLSearchParams({
+                page: String(pg),
+                limit: String(PRELOAD_PAGE_SIZE),
+              })}`
+            )
+          );
+        }
+        const rest = await Promise.all(requests);
+        for (const res of rest) {
+          receipts.push(
+            ...res.data.receipts.map((receipt) => ({
+              ...receipt,
+              sourceEventId: eventId,
+              sourceEventTitle: eventId === PICNIC_LEGACY_EVENT_ID ? PICNIC_LEGACY_EVENT_TITLE : event?.title,
+            }))
+          );
+        }
+        return receipts;
       }
-      const rest = await Promise.all(requests);
-      for (const res of rest) receipts.push(...res.data.receipts);
-      setAllReceipts(receipts);
+
+      const currentReceipts = await fetchEventReceipts(id);
+      if (!combinedPicnicMode) {
+        setAllReceipts(currentReceipts);
+        return;
+      }
+
+      const legacyReceipts = await fetchEventReceipts(PICNIC_LEGACY_EVENT_ID);
+      const combinedReceipts = dedupePicnicReceipts([
+        ...currentReceipts,
+        ...legacyReceipts.filter((receipt) => receipt.status === 'confirmed'),
+      ]);
+      setAllReceipts(combinedReceipts);
     } catch {
       toast('Failed to load receipts', 'error');
     }
-  }, [id, toast]);
+  }, [combinedPicnicMode, event?.title, id, toast]);
 
   useEffect(() => {
     async function init() {
@@ -202,6 +280,26 @@ export default function PaymentEventDetail() {
     if (!id) return;
     setExporting(true);
     try {
+      if (combinedPicnicMode) {
+        const confirmedPicnicReceipts = dedupePicnicReceipts(allReceipts.filter((receipt) => receipt.status === 'confirmed'));
+        downloadCsv(
+          'picnic_payments_combined.csv',
+          [
+            ['S/N', 'Full Name', 'Matric Number', 'Level', 'Expected Picnic Amount', 'Status', 'Source Event'],
+            ...confirmedPicnicReceipts.map((receipt, index) => [
+              index + 1,
+              normalizeReceiptName(receipt.fullName),
+              receipt.matricNumber,
+              receipt.level ?? '100L',
+              PICNIC_EXPORT_AMOUNT,
+              'Confirmed',
+              receipt.sourceEventTitle ?? event?.title ?? 'Picnic payment',
+            ]),
+          ]
+        );
+        return;
+      }
+
       const res = await api.get(`/api/payment-receipts/${id}/export`, { responseType: 'blob' });
       const contentDisposition = (res.headers['content-disposition'] as string) ?? '';
       const match = contentDisposition.match(/filename="(.+)"/);

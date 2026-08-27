@@ -8,7 +8,7 @@ import ExtendDeadlineModal from '../components/ExtendDeadlineModal';
 import DashboardLedger from './DashboardLedger';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import type { SubmissionEvent, EventType, PaymentEvent } from '../types';
+import type { SubmissionEvent, EventType, PaymentEvent, PaymentReceipt } from '../types';
 import { useToast } from '../context/ToastContext';
 
 const EVENT_TYPES: EventType[] = ['assignment', 'attendance', 'lab', 'other'];
@@ -44,6 +44,60 @@ interface PendingExtend {
 }
 
 type ActiveTab = 'submissions' | 'payments' | 'ledger';
+
+interface ReceiptsResponse {
+  receipts: PaymentReceipt[];
+  totalPages: number;
+}
+
+const PRELOAD_PAGE_SIZE = 100;
+const PICNIC_PAYMENT_EVENT_ID = 'cafd3826-985d-42d5-96bd-7c0cfd0b623d';
+const PICNIC_LEGACY_EVENT_ID = '7d4b6050-9681-4917-989c-82ae015b755e';
+
+async function fetchPaymentReceipts(eventId: string): Promise<PaymentReceipt[]> {
+  const first = await api.get<ReceiptsResponse>(
+    `/api/payment-receipts/${eventId}?${new URLSearchParams({
+      page: '1',
+      limit: String(PRELOAD_PAGE_SIZE),
+    })}`
+  );
+  const receipts = [...first.data.receipts];
+  const requests = [];
+  for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
+    requests.push(
+      api.get<ReceiptsResponse>(
+        `/api/payment-receipts/${eventId}?${new URLSearchParams({
+          page: String(pg),
+          limit: String(PRELOAD_PAGE_SIZE),
+        })}`
+      )
+    );
+  }
+  const rest = await Promise.all(requests);
+  for (const res of rest) receipts.push(...res.data.receipts);
+  return receipts;
+}
+
+async function applyCombinedPicnicCounts(events: PaymentEvent[]): Promise<PaymentEvent[]> {
+  if (!events.some((event) => event.id === PICNIC_PAYMENT_EVENT_ID)) return events;
+
+  const [currentReceipts, legacyReceipts] = await Promise.all([
+    fetchPaymentReceipts(PICNIC_PAYMENT_EVENT_ID),
+    fetchPaymentReceipts(PICNIC_LEGACY_EVENT_ID),
+  ]);
+  const confirmedMatricNumbers = new Set(
+    [...currentReceipts, ...legacyReceipts]
+      .filter((receipt) => receipt.status === 'confirmed')
+      .map((receipt) => receipt.matricNumber.trim().toUpperCase())
+  );
+  const actualPayers = confirmedMatricNumbers.size;
+
+  return events.map((event) =>
+    event.id === PICNIC_PAYMENT_EVENT_ID
+      ? { ...event, totalReceipts: actualPayers, confirmedCount: actualPayers }
+      : event
+  );
+}
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -93,7 +147,7 @@ export default function DashboardPage() {
   async function fetchPaymentEvents(): Promise<void> {
     try {
       const res = await api.get<{ events: PaymentEvent[] }>('/api/payment-events');
-      setPaymentEvents(res.data.events);
+      setPaymentEvents(await applyCombinedPicnicCounts(res.data.events));
     } catch (err) {
       console.error(err);
     } finally {
