@@ -1,4 +1,5 @@
 import React from 'react';
+import { Analytics } from '@vercel/analytics/react';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -39,6 +40,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <ToastProvider>
           <InstallBanner />
+          <Analytics />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
