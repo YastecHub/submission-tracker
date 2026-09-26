@@ -16,8 +16,21 @@ api.interceptors.response.use(
   (res) => res,
   (err: unknown) => {
     if (axios.isAxiosError(err) && err.response?.status === 401) {
+      const requestUrl = String(err.config?.url ?? '');
+      const isAuthBootstrap = requestUrl.includes('/api/auth/me');
+      const isLogin = requestUrl.includes('/api/auth/login');
+      const isPublicApi =
+        requestUrl.includes('/api/events/') ||
+        requestUrl.includes('/api/payment-events/slug/') ||
+        requestUrl.includes('/api/submissions/status/') ||
+        requestUrl.includes('/api/payment-receipts/status/') ||
+        requestUrl.includes('/api/payment-receipts/my-tickets') ||
+        requestUrl.includes('/api/transparency/');
+
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      if (!isLogin && !isAuthBootstrap && !isPublicApi && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
