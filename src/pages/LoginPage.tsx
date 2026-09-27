@@ -50,7 +50,11 @@ export default function LoginPage() {
       navigate('/dashboard');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error ?? 'Login failed. Please try again.');
+        if (!err.response) {
+          setError('Sign in is taking longer than expected. Please check your connection and try again.');
+        } else {
+          setError(err.response.data?.error ?? 'Login failed. Please try again.');
+        }
       } else {
         setError('Login failed. Please try again.');
       }
