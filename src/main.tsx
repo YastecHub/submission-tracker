@@ -1,5 +1,4 @@
 import React from 'react';
-import { Analytics } from '@vercel/analytics/react';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -34,13 +33,22 @@ import PaymentEventDetail from './pages/PaymentEventDetail';
 import TransparencyPage from './pages/TransparencyPage';
 import InstallBanner from './components/InstallBanner';
 
+const enableAnalytics = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+const Analytics = React.lazy(() =>
+  import('@vercel/analytics/react').then((mod) => ({ default: mod.Analytics }))
+);
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ToastProvider>
           <InstallBanner />
-          <Analytics />
+          {enableAnalytics && (
+            <React.Suspense fallback={null}>
+              <Analytics />
+            </React.Suspense>
+          )}
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route

@@ -18,7 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const publicPath = /^(\/login|\/submitit\/|\/submit\/|\/payment\/|\/pay\/|\/transparency)/.test(
+      window.location.pathname
+    );
+
+    if (token && !publicPath) {
       api
         .get<User>('/api/auth/me')
         .then((res) => setUser(res.data))

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SubmissionsTable from '../components/SubmissionsTable';
@@ -41,14 +41,14 @@ function EventDetailSkeleton() {
 }
 
 const PAGE_SIZE = 50;
-const PRELOAD_PAGE_SIZE = 100;
 const CONFIRM_ALL_MIN_SUBMISSIONS = 90;
 
 export default function EventDetail() {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<SubmissionEvent | null>(null);
-  const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissionStats, setSubmissionStats] = useState({ total: 0, confirmed: 0, pending: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,38 +71,31 @@ export default function EventDetail() {
     };
   }, [search]);
 
-  const fetchAllSubmissions = useCallback(
+  const fetchSubmissions = useCallback(
     async (silent = false) => {
       if (!silent) setTableLoading(true);
       try {
-        const first = await api.get<SubmissionsPage>(
+        const res = await api.get<SubmissionsPage>(
           `/api/submissions/${id}?${new URLSearchParams({
-            page: '1',
-            limit: String(PRELOAD_PAGE_SIZE),
+            page: String(currentPage),
+            limit: String(PAGE_SIZE),
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
           })}`
         );
-        const submissions = [...first.data.submissions];
-        const requests = [];
-        for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
-          requests.push(
-            api.get<SubmissionsPage>(
-              `/api/submissions/${id}?${new URLSearchParams({
-                page: String(pg),
-                limit: String(PRELOAD_PAGE_SIZE),
-              })}`
-            )
-          );
-        }
-        const rest = await Promise.all(requests);
-        for (const res of rest) submissions.push(...res.data.submissions);
-        setAllSubmissions(submissions);
+        setSubmissions(res.data.submissions);
+        setSubmissionStats({
+          total: res.data.total,
+          confirmed: res.data.confirmedTotal,
+          pending: res.data.pendingTotal,
+          totalPages: Math.max(1, res.data.totalPages),
+        });
       } catch (err) {
         console.error(err);
       } finally {
         setTableLoading(false);
       }
     },
-    [id]
+    [currentPage, debouncedSearch, id]
   );
 
   const fetchEvent = useCallback(async () => {
@@ -116,36 +109,24 @@ export default function EventDetail() {
 
   useEffect(() => {
     async function init() {
-      await Promise.all([fetchEvent(), fetchAllSubmissions()]);
+      await Promise.all([fetchEvent(), fetchSubmissions()]);
       setLoading(false);
     }
     void init();
-  }, [fetchEvent, fetchAllSubmissions]);
+  }, [fetchEvent, fetchSubmissions]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      void fetchAllSubmissions(true);
+      void fetchSubmissions(true);
     }, 30_000);
     return () => clearInterval(interval);
-  }, [fetchAllSubmissions]);
-
-  const filteredSubmissions = useMemo(() => {
-    if (!debouncedSearch) return allSubmissions;
-    const q = debouncedSearch.toLowerCase();
-    return allSubmissions.filter(
-      (s) =>
-        s.fullName.toLowerCase().includes(q) ||
-        s.matricNumber.toLowerCase().includes(q)
-    );
-  }, [allSubmissions, debouncedSearch]);
-
-  const pagedSubmissions = useMemo(
-    () => filteredSubmissions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filteredSubmissions, currentPage]
-  );
+  }, [fetchSubmissions]);
 
   function handleConfirmed(updated: Submission): void {
-    setAllSubmissions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    setSubmissions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    setSubmissionStats((prev) =>
+      updated.isConfirmed ? { ...prev, confirmed: prev.confirmed + 1, pending: Math.max(0, prev.pending - 1) } : prev
+    );
   }
 
   async function handleExport(): Promise<void> {
@@ -176,7 +157,7 @@ export default function EventDetail() {
     try {
       const res = await api.patch<{ confirmedCount: number }>(`/api/submissions/${id}/confirm-all`);
       toast(`${res.data.confirmedCount} submissions confirmed.`, 'success');
-      await Promise.all([fetchEvent(), fetchAllSubmissions(true)]);
+      await Promise.all([fetchEvent(), fetchSubmissions(true)]);
     } catch (err: unknown) {
       const msg = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
@@ -189,10 +170,10 @@ export default function EventDetail() {
 
   if (loading) return <EventDetailSkeleton />;
 
-  const totalSubmissions = allSubmissions.length;
-  const confirmedTotal = allSubmissions.filter((s) => s.isConfirmed).length;
-  const pendingTotal = totalSubmissions - confirmedTotal;
-  const totalPages = Math.max(1, Math.ceil(filteredSubmissions.length / PAGE_SIZE));
+  const totalSubmissions = event?.totalSubmissions ?? submissionStats.total;
+  const confirmedTotal = submissionStats.confirmed;
+  const pendingTotal = submissionStats.pending;
+  const totalPages = submissionStats.totalPages;
   const eventTotalSubmissions = event?.totalSubmissions ?? totalSubmissions;
   const canConfirmAll = eventTotalSubmissions >= CONFIRM_ALL_MIN_SUBMISSIONS && pendingTotal > 0;
 
@@ -292,14 +273,14 @@ export default function EventDetail() {
 
         <div className="card-base overflow-hidden">
           <SubmissionsTable
-            submissions={pagedSubmissions}
+            submissions={submissions}
             onConfirmed={handleConfirmed}
             loading={tableLoading}
             pageOffset={(currentPage - 1) * PAGE_SIZE}
           />
         </div>
 
-        {!tableLoading && search && filteredSubmissions.length === 0 && (
+        {!tableLoading && search && submissions.length === 0 && (
           <p className="text-center text-sm text-dim mt-4">
             No results for &quot;{search}&quot;
           </p>
@@ -308,7 +289,7 @@ export default function EventDetail() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 text-sm text-muted">
             <span>
-              Page {currentPage} of {totalPages} · {filteredSubmissions.length} shown
+              Page {currentPage} of {totalPages} · {totalSubmissions} total
             </span>
             <div className="flex gap-2">
               <button

@@ -102,6 +102,7 @@ export default function PaymentEventDetail() {
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
   const [allReceipts, setAllReceipts] = useState<DisplayPaymentReceipt[]>([]);
+  const [receiptStats, setReceiptStats] = useState({ total: 0, confirmed: 0, rejected: 0, pending: 0, claimed: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -129,6 +130,27 @@ export default function PaymentEventDetail() {
   const fetchAllReceipts = useCallback(async () => {
     if (!id) return;
     try {
+      if (!combinedPicnicMode) {
+        const res = await api.get<ReceiptsResponse>(
+          `/api/payment-receipts/${id}?${new URLSearchParams({
+            page: String(page),
+            limit: String(PAGE_SIZE),
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            ...(statusFilter ? { status: statusFilter } : {}),
+          })}`
+        );
+        setAllReceipts(res.data.receipts);
+        setReceiptStats({
+          total: res.data.total,
+          confirmed: res.data.confirmedTotal,
+          rejected: res.data.rejectedTotal,
+          pending: res.data.pendingTotal,
+          claimed: res.data.claimedTotal,
+          totalPages: Math.max(1, res.data.totalPages),
+        });
+        return;
+      }
+
       async function fetchEventReceipts(eventId: string): Promise<DisplayPaymentReceipt[]> {
         const first = await api.get<ReceiptsResponse>(
           `/api/payment-receipts/${eventId}?${new URLSearchParams({
@@ -177,10 +199,18 @@ export default function PaymentEventDetail() {
         ...legacyReceipts.filter((receipt) => receipt.status === 'confirmed'),
       ]);
       setAllReceipts(combinedReceipts);
+      setReceiptStats({
+        total: combinedReceipts.length,
+        confirmed: combinedReceipts.filter((r) => r.status === 'confirmed').length,
+        rejected: combinedReceipts.filter((r) => r.status === 'rejected').length,
+        pending: combinedReceipts.filter((r) => r.status === 'pending').length,
+        claimed: combinedReceipts.filter((r) => r.isClaimed).length,
+        totalPages: Math.max(1, Math.ceil(combinedReceipts.length / PAGE_SIZE)),
+      });
     } catch {
       toast('Failed to load receipts', 'error');
     }
-  }, [combinedPicnicMode, event?.title, id, toast]);
+  }, [combinedPicnicMode, debouncedSearch, event?.title, id, page, statusFilter, toast]);
 
   useEffect(() => {
     async function init() {
@@ -206,6 +236,7 @@ export default function PaymentEventDetail() {
   }, [fetchAllReceipts]);
 
   const filteredReceipts = useMemo(() => {
+    if (!combinedPicnicMode) return allReceipts;
     const q = debouncedSearch.toLowerCase();
     return allReceipts.filter((receipt) => {
       const matchesSearch =
@@ -215,24 +246,17 @@ export default function PaymentEventDetail() {
       const matchesStatus = !statusFilter || receipt.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [allReceipts, debouncedSearch, statusFilter]);
+  }, [allReceipts, combinedPicnicMode, debouncedSearch, statusFilter]);
 
   const receipts = useMemo(
-    () => filteredReceipts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [filteredReceipts, page]
+    () => combinedPicnicMode ? filteredReceipts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : filteredReceipts,
+    [combinedPicnicMode, filteredReceipts, page]
   );
 
-  const totalPages = Math.max(1, Math.ceil(filteredReceipts.length / PAGE_SIZE));
-  const stats = useMemo(
-    () => ({
-      confirmed: allReceipts.filter((r) => r.status === 'confirmed').length,
-      rejected: allReceipts.filter((r) => r.status === 'rejected').length,
-      pending: allReceipts.filter((r) => r.status === 'pending').length,
-      total: allReceipts.length,
-      claimed: allReceipts.filter((r) => r.isClaimed).length,
-    }),
-    [allReceipts]
-  );
+  const totalPages = combinedPicnicMode ? Math.max(1, Math.ceil(filteredReceipts.length / PAGE_SIZE)) : receiptStats.totalPages;
+  const stats = combinedPicnicMode
+    ? receiptStats
+    : { ...receiptStats, total: event?.totalReceipts ?? receiptStats.total };
 
   async function handleAction() {
     if (!actionModal) return;
@@ -242,6 +266,7 @@ export default function PaymentEventDetail() {
       const endpoint = `/api/payment-receipts/${receipt.id}/${type}`;
       const updated = await api.patch<PaymentReceipt>(endpoint, { note: actionNote.trim() || undefined });
       setAllReceipts((prev) => prev.map((r) => (r.id === receipt.id ? updated.data : r)));
+      void fetchAllReceipts();
       toast(type === 'confirm' ? 'Payment confirmed!' : 'Receipt rejected.', type === 'confirm' ? 'success' : 'error');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

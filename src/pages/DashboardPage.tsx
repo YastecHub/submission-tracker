@@ -54,11 +54,12 @@ const PRELOAD_PAGE_SIZE = 100;
 const PICNIC_PAYMENT_EVENT_ID = 'cafd3826-985d-42d5-96bd-7c0cfd0b623d';
 const PICNIC_LEGACY_EVENT_ID = '7d4b6050-9681-4917-989c-82ae015b755e';
 
-async function fetchPaymentReceipts(eventId: string): Promise<PaymentReceipt[]> {
+async function fetchPaymentReceipts(eventId: string, status?: string): Promise<PaymentReceipt[]> {
   const first = await api.get<ReceiptsResponse>(
     `/api/payment-receipts/${eventId}?${new URLSearchParams({
       page: '1',
       limit: String(PRELOAD_PAGE_SIZE),
+      ...(status ? { status } : {}),
     })}`
   );
   const receipts = [...first.data.receipts];
@@ -69,6 +70,7 @@ async function fetchPaymentReceipts(eventId: string): Promise<PaymentReceipt[]> 
         `/api/payment-receipts/${eventId}?${new URLSearchParams({
           page: String(pg),
           limit: String(PRELOAD_PAGE_SIZE),
+          ...(status ? { status } : {}),
         })}`
       )
     );
@@ -82,12 +84,11 @@ async function applyCombinedPicnicCounts(events: PaymentEvent[]): Promise<Paymen
   if (!events.some((event) => event.id === PICNIC_PAYMENT_EVENT_ID)) return events;
 
   const [currentReceipts, legacyReceipts] = await Promise.all([
-    fetchPaymentReceipts(PICNIC_PAYMENT_EVENT_ID),
-    fetchPaymentReceipts(PICNIC_LEGACY_EVENT_ID),
+    fetchPaymentReceipts(PICNIC_PAYMENT_EVENT_ID, 'confirmed'),
+    fetchPaymentReceipts(PICNIC_LEGACY_EVENT_ID, 'confirmed'),
   ]);
   const confirmedMatricNumbers = new Set(
     [...currentReceipts, ...legacyReceipts]
-      .filter((receipt) => receipt.status === 'confirmed')
       .map((receipt) => receipt.matricNumber.trim().toUpperCase())
   );
   const actualPayers = confirmedMatricNumbers.size;
