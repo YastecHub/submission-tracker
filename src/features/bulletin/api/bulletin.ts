@@ -8,6 +8,7 @@ import type {
   AnnouncementStatus,
   AnnouncementWriteInput,
   BulletinArticle,
+  BulletinAiOrganizationResponse,
   BulletinFeedResponse,
   PaymentOption,
 } from '../model/types';
@@ -79,4 +80,8 @@ export async function archiveAdminAnnouncement(id: string, expectedVersion: numb
 
 export async function listBulletinPaymentOptions(signal?: AbortSignal) {
   return (await api.get<PaymentOption[]>('/api/bulletin/admin/payment-options', { signal })).data;
+}
+
+export async function organizeBulletinSource(input: { rawSource: string; announcementId?: string }) {
+  return (await api.post<BulletinAiOrganizationResponse>('/api/bulletin/admin/organize', input)).data;
 }

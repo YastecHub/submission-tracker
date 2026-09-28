@@ -6,11 +6,13 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import AnnouncementContent from '../features/bulletin/components/AnnouncementContent';
+import AiOrganizationReview from '../features/bulletin/components/AiOrganizationReview';
 import {
   archiveAdminAnnouncement,
   createAdminAnnouncement,
   getAdminAnnouncement,
   listBulletinPaymentOptions,
+  organizeBulletinSource,
   publishAdminAnnouncement,
   updateAdminAnnouncement,
 } from '../features/bulletin/api/bulletin';
@@ -22,9 +24,13 @@ import type {
   AnnouncementSection,
   AnnouncementSourceType,
   AnnouncementWriteInput,
+  BulletinAiOrganizationResponse,
+  BulletinAiReview,
+  BulletinAiReviewField,
   PaymentOption,
 } from '../features/bulletin/model/types';
 import { canEditAnnouncement, canPublishAnnouncement } from '../features/bulletin/model/permissions';
+import { applyAiSuggestion } from '../features/bulletin/model/applyAiSuggestion';
 
 interface ComposerForm {
   title: string;
@@ -55,6 +61,12 @@ function errorMessage(error: unknown): string {
   return axios.isAxiosError(error) ? error.response?.data?.error ?? 'Unable to save this announcement.' : 'Unable to save this announcement.';
 }
 
+function assistantErrorMessage(error: unknown): string {
+  return axios.isAxiosError(error)
+    ? error.response?.data?.error ?? 'Unable to organize this source right now.'
+    : 'Unable to organize this source right now.';
+}
+
 export default function BulletinComposerPage() {
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'new';
@@ -69,6 +81,12 @@ export default function BulletinComposerPage() {
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
   const [pendingAction, setPendingAction] = useState<'publish' | 'archive' | null>(null);
+  const [organizing, setOrganizing] = useState(false);
+  const [aiResponse, setAiResponse] = useState<BulletinAiOrganizationResponse | null>(null);
+  const [selectedAiFields, setSelectedAiFields] = useState<Set<BulletinAiReviewField>>(new Set());
+  const [selectedAiSections, setSelectedAiSections] = useState<Set<string>>(new Set());
+  const [aiReview, setAiReview] = useState<BulletinAiReview | null>(null);
+  const [aiApplied, setAiApplied] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,6 +115,9 @@ export default function BulletinComposerPage() {
           sections: data.content.sections,
           changeNote: '',
         });
+        setAiResponse(null);
+        setAiReview(null);
+        setAiApplied(false);
       })
       .catch((caught) => setError(errorMessage(caught)))
       .finally(() => setLoading(false));
@@ -121,11 +142,90 @@ export default function BulletinComposerPage() {
 
   function change<K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+    if (aiReview?.acceptedFields.includes(key as BulletinAiReviewField)) {
+      setAiReview(null);
+      setAiResponse(null);
+      setAiApplied(false);
+    }
     setDirty(true);
   }
 
   function changeSection(index: number, patch: Partial<AnnouncementSection>) {
     change('sections', form.sections.map((section, position) => position === index ? { ...section, ...patch } : section));
+  }
+
+  function changeRawSource(value: string) {
+    change('rawSource', value);
+    setAiResponse(null);
+    setAiReview(null);
+    setAiApplied(false);
+  }
+
+  async function organizeSource() {
+    if (organizing || readOnly) return;
+    setOrganizing(true);
+    setError('');
+    setAiResponse(null);
+    setAiReview(null);
+    setAiApplied(false);
+    try {
+      const response = await organizeBulletinSource({
+        rawSource: form.rawSource,
+        announcementId: announcement?.id,
+      });
+      setAiResponse(response);
+      setSelectedAiFields(new Set(['title', 'summary', 'category', 'priority']));
+      setSelectedAiSections(new Set(response.suggestion.sections.map((section) => section.id)));
+    } catch (caught) {
+      const message = assistantErrorMessage(caught);
+      setError(message);
+      toast(message, 'error');
+    } finally {
+      setOrganizing(false);
+    }
+  }
+
+  function selectAiField(field: BulletinAiReviewField, checked: boolean) {
+    setSelectedAiFields((current) => {
+      const next = new Set(current);
+      if (checked) next.add(field); else next.delete(field);
+      return next;
+    });
+    setAiApplied(false);
+  }
+
+  function selectAiSection(id: string, checked: boolean) {
+    setSelectedAiSections((current) => {
+      const next = new Set(current);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+    setAiApplied(false);
+  }
+
+  function applySelectedAiSuggestions() {
+    if (!aiResponse) return;
+    const acceptedFields = Array.from(selectedAiFields);
+    if (selectedAiSections.size > 0) acceptedFields.push('sections');
+    if (acceptedFields.length === 0) return;
+
+    const applied = applyAiSuggestion(
+      {
+        title: form.title,
+        summary: form.summary,
+        category: form.category,
+        priority: form.priority,
+        sections: form.sections,
+      },
+      aiResponse,
+      acceptedFields,
+      Array.from(selectedAiSections),
+    );
+    setForm((current) => ({ ...current, ...applied.draft }));
+    setAiReview(applied.review);
+    setAiApplied(true);
+    setDirty(true);
+    toast('Selected suggestions were applied to the draft. Review and save when ready.', 'info');
   }
 
   function payload(version?: number): AnnouncementWriteInput {
@@ -143,6 +243,7 @@ export default function BulletinComposerPage() {
       content: { version: 1, sections: form.sections },
       expectedVersion: version,
       changeNote: form.changeNote,
+      aiReview: aiReview ?? undefined,
     };
   }
 
@@ -155,6 +256,9 @@ export default function BulletinComposerPage() {
         : await createAdminAnnouncement(payload());
       setAnnouncement(saved);
       setDirty(false);
+      setAiReview(null);
+      setAiResponse(null);
+      setAiApplied(false);
       if (!announcement) navigate(`/dashboard/bulletin/${saved.id}`, { replace: true });
       if (showToast) toast(saved.status === 'published' ? 'Announcement updated.' : 'Draft saved.', 'success');
       return saved;
@@ -211,12 +315,13 @@ export default function BulletinComposerPage() {
               <h1 className="text-3xl font-semibold tracking-tight">{announcement ? 'Edit announcement' : 'Create announcement'}</h1>
               {announcement && <span className={`badge ${announcement.status === 'published' ? 'badge-success' : announcement.status === 'draft' ? 'badge-accent' : ''}`}>{announcement.status}</span>}
               {dirty && <span className="badge">Unsaved changes</span>}
+              {aiReview && <span className="badge badge-accent">Assistant suggestions applied</span>}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {!readOnly && <button type="button" onClick={() => void save()} disabled={saving} className="btn-secondary">{saving ? 'Saving…' : 'Save'}</button>}
+            {!readOnly && <button type="button" onClick={() => void save()} disabled={saving || organizing} className="btn-secondary">{saving ? 'Saving…' : 'Save'}</button>}
             {(!announcement || announcement.status === 'draft') && (
-              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || !canPublish} className="btn-primary" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : undefined}>Publish</button>
+              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || !canPublish} className="btn-primary" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : undefined}>Publish</button>
             )}
             {announcement?.status === 'published' && canPublish && <button type="button" onClick={() => setPendingAction('archive')} disabled={saving} className="btn-ghost text-danger">Archive</button>}
           </div>
@@ -228,15 +333,47 @@ export default function BulletinComposerPage() {
         {error && <div role="alert" className="alert-danger mb-5">{error}</div>}
         {readOnly && <div className="card-base p-4 mb-5 text-sm text-muted">{announcement?.status === 'archived' ? 'This announcement is archived and retained as a read-only record.' : 'You have view-only access to this announcement.'}</div>}
 
+        <section className="card-base p-5 sm:p-6 mb-6" aria-labelledby="source-heading">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 id="source-heading" className="text-lg font-semibold">Source material</h2>
+              <p id="source-help" className="text-sm text-muted mt-1">Keep the original messages or notes here. Students never see this field.</p>
+            </div>
+            {!readOnly && (
+              <button
+                type="button"
+                className="btn-primary shrink-0"
+                onClick={() => void organizeSource()}
+                disabled={saving || organizing || form.rawSource.trim().length < 20 || form.rawSource.trim().length > 30_000}
+              >
+                {organizing ? 'Organizing…' : 'Organize with assistant'}
+              </button>
+            )}
+          </div>
+          <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider" htmlFor="raw-source">Raw source</label>
+          <textarea id="raw-source" rows={9} className="input-base" value={form.rawSource} disabled={readOnly || organizing} aria-describedby="source-help source-limit" onChange={(event) => changeRawSource(event.target.value)} placeholder="Paste WhatsApp messages, notes or the original announcement…" />
+          <div id="source-limit" className="flex flex-col sm:flex-row sm:justify-between gap-1 mt-2 text-xs text-dim">
+            <span>The assistant proposes organization only. It cannot save or publish.</span>
+            <span>{form.rawSource.length.toLocaleString()}/30,000 characters for organization</span>
+          </div>
+        </section>
+
+        {aiResponse && (
+          <AiOrganizationReview
+            current={{ title: form.title, summary: form.summary, category: form.category, priority: form.priority, sections: form.sections }}
+            response={aiResponse}
+            selectedFields={selectedAiFields}
+            selectedSectionIds={selectedAiSections}
+            applied={aiApplied}
+            onFieldChange={selectAiField}
+            onSectionChange={selectAiSection}
+            onApply={applySelectedAiSuggestions}
+            onDismiss={() => { setAiResponse(null); setAiApplied(false); }}
+          />
+        )}
+
         <div className="grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] gap-6 items-start">
           <div className="space-y-5">
-            <section className="card-base p-5 sm:p-6" aria-labelledby="source-heading">
-              <h2 id="source-heading" className="text-lg font-semibold mb-1">Source material</h2>
-              <p className="text-sm text-muted mb-4">Keep the original messages or notes here. Students never see this field.</p>
-              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider" htmlFor="raw-source">Raw source</label>
-              <textarea id="raw-source" rows={7} className="input-base" value={form.rawSource} disabled={readOnly} onChange={(event) => change('rawSource', event.target.value)} placeholder="Paste WhatsApp messages, notes or the original announcement…" />
-            </section>
-
             <section className="card-base p-5 sm:p-6" aria-labelledby="basics-heading">
               <h2 id="basics-heading" className="text-lg font-semibold mb-4">Student-facing details</h2>
               <div className="space-y-4">

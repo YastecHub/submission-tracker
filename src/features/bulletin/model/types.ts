@@ -152,4 +152,45 @@ export interface AnnouncementWriteInput {
   paymentEventId: string;
   expectedVersion?: number;
   changeNote?: string;
+  aiReview?: BulletinAiReview;
+}
+
+export type BulletinAiReviewField = 'title' | 'summary' | 'category' | 'priority' | 'sections';
+
+export interface BulletinAiReview {
+  runId: string;
+  acceptedFields: BulletinAiReviewField[];
+  acceptedSectionIds: string[];
+}
+
+export interface AiSuggestedText {
+  value: string;
+  sourceQuotes: string[];
+}
+
+export interface AiSuggestedSection extends AnnouncementSection {
+  sourceQuotes: string[];
+}
+
+export interface BulletinAiOrganizationResponse {
+  runId: string;
+  suggestion: {
+    title: AiSuggestedText;
+    summary: AiSuggestedText;
+    category: { value: AnnouncementCategory; reason: string };
+    priority: { value: AnnouncementPriority; reason: string };
+    sections: AiSuggestedSection[];
+    warnings: Array<{
+      code: 'missing_detail' | 'ambiguous_detail' | 'conflicting_detail' | 'verify_wording' | 'possible_multiple_announcements' | 'human_review_required';
+      message: string;
+      sourceQuote: string | null;
+    }>;
+    splitSuggestions: Array<{ title: string; reason: string; sourceQuote: string }>;
+  };
+  audit: {
+    provider: string;
+    model: string;
+    promptVersion: string;
+    createdAt: string;
+  };
 }
