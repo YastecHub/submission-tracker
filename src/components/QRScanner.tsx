@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import api from '../api/axios';
 import type { Submission } from '../types';
+import { useTicketCamera } from '../features/payments/hooks/useTicketCamera';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 interface ScanResult {
   type: 'success' | 'warning' | 'error';
@@ -14,40 +16,7 @@ interface Props {
 }
 
 export default function QRScanner({ onClose, onConfirmed }: Props) {
-  const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [error, setError] = useState('');
-  const scanningRef = useRef(true);
-
-  useEffect(() => {
-    startScanner();
-    return () => {
-      instanceRef.current?.stop().catch(() => {});
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function startScanner(): Promise<void> {
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const qrCode = new Html5Qrcode('qr-reader');
-      instanceRef.current = qrCode;
-
-      await qrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText: string) => {
-          if (!scanningRef.current) return;
-          scanningRef.current = false;
-          await qrCode.stop();
-          await handleScanResult(decodedText);
-        },
-        () => {}
-      );
-    } catch {
-      setError('Camera access denied or not available.');
-    }
-  }
 
   async function handleScanResult(submissionId: string): Promise<void> {
     try {
@@ -72,18 +41,19 @@ export default function QRScanner({ onClose, onConfirmed }: Props) {
 
   async function handleScanAgain(): Promise<void> {
     setResult(null);
-    setError('');
-    scanningRef.current = true;
-    await startScanner();
   }
 
+  const error = useTicketCamera(!result, (code) => { void handleScanResult(code); }, 'qr-reader');
+  const panelRef = useDialogFocus(onClose);
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="card-base w-full max-w-sm overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" role="dialog" aria-modal="true" aria-labelledby="submission-scanner-title">
+      <div ref={panelRef} className="card-base w-full max-w-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-nx">
-          <h2 className="font-semibold">Scan QR Code</h2>
+          <h2 id="submission-scanner-title" className="font-semibold">Scan QR Code</h2>
           <button
             onClick={onClose}
+            aria-label="Close scanner"
             className="text-dim hover:text-[color:var(--nx-text)] text-2xl leading-none"
           >
             &times;

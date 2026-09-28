@@ -1,9 +1,10 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import api from '../api/axios';
 import type { PaymentEvent } from '../types';
 import TicketCard from '../components/TicketCard';
+import { useStudentAuth } from '../context/StudentAuthContext';
+import { getPublicPaymentEvent, getStudentTickets } from '../features/payments/api/receipts';
 
 interface TicketDto {
   receiptId: string;
@@ -20,35 +21,32 @@ interface TicketDto {
 
 export default function PaymentMyTickets() {
   const { slug } = useParams<{ slug: string }>();
+  const { student, token, logout } = useStudentAuth();
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [eventError, setEventError] = useState<string | null>(null);
 
-  const [matric, setMatric] = useState('');
   const [searching, setSearching] = useState(false);
   const [tickets, setTickets] = useState<TicketDto[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
-    api
-      .get<PaymentEvent>(`/api/payment-events/slug/${slug}`)
-      .then((res) => setEvent(res.data))
+    const controller = new AbortController();
+    getPublicPaymentEvent(slug!, controller.signal)
+      .then(setEvent)
       .catch(() => setEventError('Payment event not found.'))
       .finally(() => setLoadingEvent(false));
+    return () => controller.abort();
   }, [slug]);
 
-  async function handleSearch(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!matric.trim()) return;
+  async function loadTickets() {
+    if (!token) return;
     setSearching(true);
     setSearchError(null);
     setTickets(null);
     try {
-      const res = await api.get<{ tickets: TicketDto[] }>(
-        `/api/payment-receipts/my-tickets`,
-        { params: { matricNumber: matric.trim() } },
-      );
+      const res = await getStudentTickets<{ tickets: TicketDto[] }>(token);
       const filtered = res.data.tickets.filter((t) => t.eventSlug === slug);
       setTickets(filtered);
     } catch (err) {
@@ -61,6 +59,8 @@ export default function PaymentMyTickets() {
       setSearching(false);
     }
   }
+
+  useEffect(() => { if (event && token) void loadTickets(); }, [event, token]);
 
   if (loadingEvent) {
     return (
@@ -106,29 +106,15 @@ export default function PaymentMyTickets() {
           <span className="badge badge-accent">Find my ticket</span>
           <h1 className="text-lg font-semibold tracking-tight mt-3">{event.title}</h1>
           <p className="text-xs text-dim mt-2">
-            Enter the matric number you used when submitting your receipt to retrieve your ticket.
+            Signed in as {student?.fullName} ({student?.matricNumber}).
           </p>
         </div>
 
         <div className="card-base p-5">
-          <form onSubmit={handleSearch} className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
-                Matric number
-              </label>
-              <input
-                type="text"
-                required
-                value={matric}
-                onChange={(e) => setMatric(e.target.value)}
-                className="input-base uppercase"
-                placeholder="e.g. 251100000"
-              />
-            </div>
-            <button type="submit" disabled={searching || !matric.trim()} className="btn-primary w-full">
-              {searching ? 'Searching…' : 'Find my ticket'}
-            </button>
-          </form>
+          <button type="button" disabled={searching} onClick={() => void loadTickets()} className="btn-primary w-full">
+            {searching ? 'Loading…' : 'Refresh my tickets'}
+          </button>
+          <button type="button" onClick={logout} className="btn-ghost w-full mt-2">Use another student account</button>
         </div>
 
         {searchError && (

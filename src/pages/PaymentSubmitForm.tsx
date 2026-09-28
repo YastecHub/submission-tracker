@@ -1,49 +1,44 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import api from '../api/axios';
-import type { PaymentEvent, Level, PaymentReceipt } from '../types';
+import type { Level } from '../types';
+import { createPaymentReceipt } from '../features/payments/api/receipts';
+import { usePublicPaymentEvent } from '../features/payments/hooks/usePublicPaymentEvent';
+import { useObjectUrl } from '../hooks/useObjectUrl';
+import { useStudentAuth } from '../context/StudentAuthContext';
 
 const LEVELS: Level[] = ['100L', '200L', '300L', '400L', '500L', 'Postgrad'];
 
 export default function PaymentSubmitForm() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { student, token } = useStudentAuth();
 
-  const [event, setEvent] = useState<PaymentEvent | null>(null);
-  const [loadingEvent, setLoadingEvent] = useState(true);
-  const [form, setForm] = useState({ fullName: '', matricNumber: '', level: '' });
+  const eventState = usePublicPaymentEvent(slug!);
+  const event = eventState.data;
+  const [level, setLevel] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrl = useObjectUrl(receiptFile);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submitInFlight = useRef(false);
 
   useEffect(() => {
-    api
-      .get<PaymentEvent>(`/api/payment-events/slug/${slug}`)
-      .then((res) => {
-        const ev = res.data;
-        const isClosed = ev.isClosed || new Date() > new Date(ev.deadline);
-        if (isClosed || ev.isDeleted) {
-          navigate(`/payment/${slug}/closed`, { replace: true });
-        } else {
-          setEvent(ev);
-        }
-      })
-      .catch(() => navigate(`/payment/${slug}/closed`, { replace: true }))
-      .finally(() => setLoadingEvent(false));
-  }, [slug, navigate]);
+    if (event && (event.isClosed || new Date() > new Date(event.deadline) || event.isDeleted)) {
+      navigate(`/payment/${slug}/closed`, { replace: true });
+    }
+  }, [event, slug, navigate]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setReceiptFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
+    if (!event || !student || !token || submitInFlight.current) return;
     setError('');
 
     if (!receiptFile) {
@@ -51,21 +46,15 @@ export default function PaymentSubmitForm() {
       return;
     }
 
+    submitInFlight.current = true;
     setSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append('eventId', event!.id);
-      formData.append('fullName', form.fullName.trim());
-      formData.append('matricNumber', form.matricNumber.trim().toUpperCase());
-      if (form.level) formData.append('level', form.level);
-      formData.append('receipt', receiptFile);
-
-      const res = await api.post<{ receipt: PaymentReceipt }>('/api/payment-receipts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const receipt = await createPaymentReceipt({
+        eventId: event.id, level: level || undefined, receipt: receiptFile, studentToken: token,
       });
 
-      navigate(`/payment/${slug}/success?id=${res.data.receipt.id}`, {
-        state: { receipt: res.data.receipt, event },
+      navigate(`/payment/${slug}/success?id=${receipt.id}`, {
+        state: { receipt, event },
         replace: true,
       });
     } catch (err: unknown) {
@@ -82,10 +71,11 @@ export default function PaymentSubmitForm() {
       }
     } finally {
       setSubmitting(false);
+      submitInFlight.current = false;
     }
   }
 
-  if (loadingEvent) {
+  if (eventState.loading) {
     return (
       <div className="page-base flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-nx" />
@@ -93,7 +83,11 @@ export default function PaymentSubmitForm() {
     );
   }
 
-  if (!event) return null;
+  if (eventState.error || !event) return (
+    <div className="page-base flex items-center justify-center px-4">
+      <div role="alert" className="alert-danger">Unable to load this payment form. <button className="btn-secondary ml-2" onClick={() => void eventState.refresh()}>Try again</button></div>
+    </div>
+  );
 
   const deadline = new Date(event.deadline).toLocaleString('en-GB', {
     day: '2-digit',
@@ -161,8 +155,8 @@ export default function PaymentSubmitForm() {
               <input
                 type="text"
                 required
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                value={student?.fullName ?? ''}
+                disabled
                 autoComplete="name"
                 className="input-base"
                 placeholder="e.g. Amina Bello"
@@ -176,8 +170,8 @@ export default function PaymentSubmitForm() {
               <input
                 type="text"
                 required
-                value={form.matricNumber}
-                onChange={(e) => setForm({ ...form, matricNumber: e.target.value })}
+                value={student?.matricNumber ?? ''}
+                disabled
                 className="input-base uppercase"
                 placeholder="e.g. 251100000"
               />
@@ -188,8 +182,8 @@ export default function PaymentSubmitForm() {
                 Level <span className="text-dim font-normal normal-case">(optional)</span>
               </label>
               <select
-                value={form.level}
-                onChange={(e) => setForm({ ...form, level: e.target.value })}
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
                 className="input-base"
               >
                 <option value="">Select level</option>
@@ -219,7 +213,7 @@ export default function PaymentSubmitForm() {
                   />
                   <button
                     type="button"
-                    onClick={() => { setReceiptFile(null); setPreviewUrl(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    onClick={() => { setReceiptFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                     className="absolute top-2 right-2 btn-secondary !text-xs !py-1 !px-2"
                   >
                     Change

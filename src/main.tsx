@@ -17,6 +17,9 @@ function RedirectWithSlug({ to }: { to: (slug: string) => string }) {
 
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { StudentAuthProvider } from './context/StudentAuthContext';
+import StudentProtectedRoute from './components/StudentProtectedRoute';
+import StudentLoginPage from './pages/StudentLoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -42,7 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <ToastProvider>
+        <StudentAuthProvider><ToastProvider>
           <InstallBanner />
           {enableAnalytics && (
             <React.Suspense fallback={null}>
@@ -51,6 +54,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           )}
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/student/login" element={<StudentLoginPage />} />
             <Route
               path="/dashboard"
               element={
@@ -78,10 +82,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/submitit/:slug" element={<SubmissionForm />} />
             <Route path="/submitit/:slug/success" element={<SubmissionSuccess />} />
             <Route path="/submitit/:slug/closed" element={<SubmissionClosed />} />
-            <Route path="/payment/:slug" element={<PaymentSubmitForm />} />
-            <Route path="/payment/:slug/success" element={<PaymentSubmitSuccess />} />
+            <Route path="/payment/:slug" element={<StudentProtectedRoute><PaymentSubmitForm /></StudentProtectedRoute>} />
+            <Route path="/payment/:slug/success" element={<StudentProtectedRoute><PaymentSubmitSuccess /></StudentProtectedRoute>} />
             <Route path="/payment/:slug/closed" element={<PaymentSubmitClosed />} />
-            <Route path="/payment/:slug/my-tickets" element={<PaymentMyTickets />} />
+            <Route path="/payment/:slug/my-tickets" element={<StudentProtectedRoute><PaymentMyTickets /></StudentProtectedRoute>} />
             <Route path="/submit/:slug" element={<RedirectWithSlug to={(s) => `/submitit/${s}`} />} />
             <Route path="/submit/:slug/success" element={<RedirectWithSlug to={(s) => `/submitit/${s}/success`} />} />
             <Route path="/submit/:slug/closed" element={<RedirectWithSlug to={(s) => `/submitit/${s}/closed`} />} />
@@ -89,7 +93,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/pay/:slug/success" element={<RedirectWithSlug to={(s) => `/payment/${s}/success`} />} />
             <Route path="/pay/:slug/closed" element={<RedirectWithSlug to={(s) => `/payment/${s}/closed`} />} />
             <Route path="/pay/:slug/my-tickets" element={<RedirectWithSlug to={(s) => `/payment/${s}/my-tickets`} />} />
-            <Route path="/transparency" element={<TransparencyPage />} />
+            <Route path="/transparency" element={<StudentProtectedRoute><TransparencyPage /></StudentProtectedRoute>} />
             <Route
               path="/dashboard/payments/:id"
               element={
@@ -100,7 +104,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-        </ToastProvider>
+        </ToastProvider></StudentAuthProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

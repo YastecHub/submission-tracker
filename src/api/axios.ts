@@ -6,7 +6,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -27,6 +27,10 @@ api.interceptors.response.use(
         requestUrl.includes('/api/payment-receipts/my-tickets') ||
         requestUrl.includes('/api/transparency/');
 
+      // A failed old bootstrap must not discard a newer successful login.
+      const sentToken = err.config?.headers?.Authorization;
+      const currentToken = localStorage.getItem('token');
+      if (isLogin || isPublicApi || sentToken !== `Bearer ${currentToken}`) return Promise.reject(err);
       localStorage.removeItem('token');
       if (!isLogin && !isAuthBootstrap && !isPublicApi && window.location.pathname !== '/login') {
         window.location.href = '/login';

@@ -8,15 +8,11 @@ export interface LedgerQuery {
   category?: string;
 }
 
-export async function fetchPublicLedger(params: LedgerQuery = {}): Promise<Ledger> {
-  const { data } = await api.get<Ledger>('/api/transparency/ledger', { params });
-  return data;
-}
-
-export async function verifyMatricNumber(
-  matricNumber: string
-): Promise<{ verified: boolean; displayName?: string; matricNumber?: string }> {
-  const { data } = await api.post('/api/transparency/verify-matric', { matricNumber });
+export async function fetchPublicLedger(params: LedgerQuery = {}, studentToken?: string): Promise<Ledger> {
+  const { data } = await api.get<Ledger>('/api/transparency/ledger', {
+    params,
+    headers: studentToken ? { Authorization: `Bearer ${studentToken}` } : undefined,
+  });
   return data;
 }
 
@@ -25,8 +21,8 @@ export interface AdminLedgerQuery extends LedgerQuery {
   search?: string;
 }
 
-export async function fetchAdminTransactions(params: AdminLedgerQuery = {}): Promise<Ledger> {
-  const { data } = await api.get<Ledger>('/api/transactions', { params });
+export async function fetchAdminTransactions(params: AdminLedgerQuery = {}, signal?: AbortSignal): Promise<Ledger> {
+  const { data } = await api.get<Ledger>('/api/transactions', { params, signal });
   return data;
 }
 

@@ -1,83 +1,25 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { useToast } from '../context/ToastContext';
 import type { PaymentEvent, PaymentReceipt } from '../types';
+import { useReceiptList } from '../features/payments/hooks/useReceiptList';
+import { claimTicket, reviewReceipt } from '../features/payments/api/actions';
+import { ReceiptReviewModal, type ReceiptAction } from '../features/payments/components/ReceiptReviewModal';
+import { TicketScannerModal, type ClaimResult } from '../features/payments/components/TicketScannerModal';
+import { type DisplayPaymentReceipt,
+  PICNIC_EXPORT_AMOUNT, PICNIC_LEGACY_EVENT_ID, PICNIC_LEGACY_EVENT_TITLE,
+  isPicnicPaymentEvent, dedupePicnicReceipts } from '../features/payments/model/picnic';
 
-interface ReceiptsResponse {
-  receipts: PaymentReceipt[];
-  total: number;
-  confirmedTotal: number;
-  rejectedTotal: number;
-  pendingTotal: number;
-  claimedTotal: number;
-  page: number;
-  totalPages: number;
-}
-
-interface ActionModal {
-  type: 'confirm' | 'reject';
-  receipt: PaymentReceipt;
-}
-
-interface ClaimResult {
-  type: 'success' | 'warning' | 'error';
-  message: string;
-  fullName?: string;
-  matricNumber?: string;
-}
-
-type DisplayPaymentReceipt = PaymentReceipt & {
-  sourceEventTitle?: string;
-  sourceEventId?: string;
-};
 
 const PAGE_SIZE = 50;
-const PRELOAD_PAGE_SIZE = 100;
-const PICNIC_PAYMENT_EVENT_ID = 'cafd3826-985d-42d5-96bd-7c0cfd0b623d';
-const PICNIC_LEGACY_EVENT_ID = '7d4b6050-9681-4917-989c-82ae015b755e';
-const PICNIC_LEGACY_EVENT_TITLE = 'Picnic & Class dues';
-const PICNIC_EXPORT_AMOUNT = '4000';
-
-function isPicnicPaymentEvent(eventId: string | undefined): boolean {
-  return eventId === PICNIC_PAYMENT_EVENT_ID;
-}
 
 function normalizeReceiptName(name: string): string {
   return name.replace(/\s+/g, ' ').trim();
 }
 
-function getPaidAt(receipt: DisplayPaymentReceipt): number {
-  return new Date(receipt.confirmedAt ?? receipt.submittedAt).getTime();
-}
-
-function mergeReceiptSources(existing: DisplayPaymentReceipt, next: DisplayPaymentReceipt): string | undefined {
-  const sources = [existing.sourceEventTitle, next.sourceEventTitle].filter(Boolean) as string[];
-  return Array.from(new Set(sources)).join(' + ') || undefined;
-}
-
-function mergePicnicReceipt(existing: DisplayPaymentReceipt, next: DisplayPaymentReceipt): DisplayPaymentReceipt {
-  const preferred = getPaidAt(next) < getPaidAt(existing) ? next : existing;
-  return {
-    ...preferred,
-    sourceEventTitle: mergeReceiptSources(existing, next),
-    isClaimed: Boolean(existing.isClaimed || next.isClaimed),
-    claimedAt: existing.claimedAt ?? next.claimedAt,
-    claimedBy: existing.claimedBy ?? next.claimedBy,
-  };
-}
-
-function dedupePicnicReceipts(receipts: DisplayPaymentReceipt[]): DisplayPaymentReceipt[] {
-  const byMatric = new Map<string, DisplayPaymentReceipt>();
-  for (const receipt of receipts) {
-    const key = receipt.matricNumber.trim().toUpperCase();
-    const existing = byMatric.get(key);
-    byMatric.set(key, existing ? mergePicnicReceipt(existing, receipt) : receipt);
-  }
-  return Array.from(byMatric.values()).sort((a, b) => getPaidAt(a) - getPaidAt(b));
-}
 
 function csvValue(value: string | number | null | undefined): string {
   const raw = value == null ? '' : String(value);
@@ -101,14 +43,12 @@ export default function PaymentEventDetail() {
   const { toast } = useToast();
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
-  const [allReceipts, setAllReceipts] = useState<DisplayPaymentReceipt[]>([]);
-  const [receiptStats, setReceiptStats] = useState({ total: 0, confirmed: 0, rejected: 0, pending: 0, claimed: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [actionModal, setActionModal] = useState<ActionModal | null>(null);
+  const [actionModal, setActionModal] = useState<ReceiptAction | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -117,6 +57,9 @@ export default function PaymentEventDetail() {
   const [manualCode, setManualCode] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [updatingTickets, setUpdatingTickets] = useState(false);
+  const actionInFlight = useRef(false);
+  const claimInFlight = useRef(false);
   const combinedPicnicMode = isPicnicPaymentEvent(id);
 
   useEffect(() => {
@@ -127,113 +70,36 @@ export default function PaymentEventDetail() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const fetchAllReceipts = useCallback(async () => {
-    if (!id) return;
-    try {
-      if (!combinedPicnicMode) {
-        const res = await api.get<ReceiptsResponse>(
-          `/api/payment-receipts/${id}?${new URLSearchParams({
-            page: String(page),
-            limit: String(PAGE_SIZE),
-            ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            ...(statusFilter ? { status: statusFilter } : {}),
-          })}`
-        );
-        setAllReceipts(res.data.receipts);
-        setReceiptStats({
-          total: res.data.total,
-          confirmed: res.data.confirmedTotal,
-          rejected: res.data.rejectedTotal,
-          pending: res.data.pendingTotal,
-          claimed: res.data.claimedTotal,
-          totalPages: Math.max(1, res.data.totalPages),
-        });
-        return;
-      }
-
-      async function fetchEventReceipts(eventId: string): Promise<DisplayPaymentReceipt[]> {
-        const first = await api.get<ReceiptsResponse>(
-          `/api/payment-receipts/${eventId}?${new URLSearchParams({
-            page: '1',
-            limit: String(PRELOAD_PAGE_SIZE),
-          })}`
-        );
-        const receipts: DisplayPaymentReceipt[] = first.data.receipts.map((receipt) => ({
-          ...receipt,
-          sourceEventId: eventId,
-          sourceEventTitle: eventId === PICNIC_LEGACY_EVENT_ID ? PICNIC_LEGACY_EVENT_TITLE : event?.title,
-        }));
-        const requests = [];
-        for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
-          requests.push(
-            api.get<ReceiptsResponse>(
-              `/api/payment-receipts/${eventId}?${new URLSearchParams({
-                page: String(pg),
-                limit: String(PRELOAD_PAGE_SIZE),
-              })}`
-            )
-          );
-        }
-        const rest = await Promise.all(requests);
-        for (const res of rest) {
-          receipts.push(
-            ...res.data.receipts.map((receipt) => ({
-              ...receipt,
-              sourceEventId: eventId,
-              sourceEventTitle: eventId === PICNIC_LEGACY_EVENT_ID ? PICNIC_LEGACY_EVENT_TITLE : event?.title,
-            }))
-          );
-        }
-        return receipts;
-      }
-
-      const currentReceipts = await fetchEventReceipts(id);
-      if (!combinedPicnicMode) {
-        setAllReceipts(currentReceipts);
-        return;
-      }
-
-      const legacyReceipts = await fetchEventReceipts(PICNIC_LEGACY_EVENT_ID);
-      const combinedReceipts = dedupePicnicReceipts([
-        ...currentReceipts,
-        ...legacyReceipts.filter((receipt) => receipt.status === 'confirmed'),
-      ]);
-      setAllReceipts(combinedReceipts);
-      setReceiptStats({
-        total: combinedReceipts.length,
-        confirmed: combinedReceipts.filter((r) => r.status === 'confirmed').length,
-        rejected: combinedReceipts.filter((r) => r.status === 'rejected').length,
-        pending: combinedReceipts.filter((r) => r.status === 'pending').length,
-        claimed: combinedReceipts.filter((r) => r.isClaimed).length,
-        totalPages: Math.max(1, Math.ceil(combinedReceipts.length / PAGE_SIZE)),
-      });
-    } catch {
-      toast('Failed to load receipts', 'error');
-    }
-  }, [combinedPicnicMode, debouncedSearch, event?.title, id, page, statusFilter, toast]);
+  const receiptState = useReceiptList(id!, combinedPicnicMode, page, debouncedSearch, statusFilter);
+  const allReceipts: DisplayPaymentReceipt[] = receiptState.data?.receipts ?? [];
+  const receiptStats = {
+    total: (receiptState.data?.confirmedTotal ?? 0) + (receiptState.data?.rejectedTotal ?? 0) + (receiptState.data?.pendingTotal ?? 0),
+    confirmed: receiptState.data?.confirmedTotal ?? 0,
+    rejected: receiptState.data?.rejectedTotal ?? 0,
+    pending: receiptState.data?.pendingTotal ?? 0,
+    claimed: receiptState.data?.claimedTotal ?? 0,
+    totalPages: Math.max(1, receiptState.data?.totalPages ?? 1),
+  };
+  const fetchAllReceipts = receiptState.refresh;
 
   useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setEvent(null);
     async function init() {
       try {
-        const res = await api.get<PaymentEvent>(`/api/payment-events/id/${id}`);
-        setEvent(res.data);
+        const res = await api.get<PaymentEvent>(`/api/payment-events/id/${id}`, { signal: controller.signal });
+        if (!controller.signal.aborted) setEvent(res.data);
       } catch {
-        toast('Payment event not found', 'error');
+        if (!controller.signal.aborted) toast('Payment event not found', 'error');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
     void init();
+    return () => controller.abort();
   }, [id, toast]);
 
-  useEffect(() => {
-    if (!loading) void fetchAllReceipts();
-  }, [loading, fetchAllReceipts]);
-
-  useEffect(() => {
-    const interval = setInterval(() => void fetchAllReceipts(), 30_000);
-    return () => clearInterval(interval);
-  }, [fetchAllReceipts]);
 
   const filteredReceipts = useMemo(() => {
     if (!combinedPicnicMode) return allReceipts;
@@ -254,18 +120,18 @@ export default function PaymentEventDetail() {
   );
 
   const totalPages = combinedPicnicMode ? Math.max(1, Math.ceil(filteredReceipts.length / PAGE_SIZE)) : receiptStats.totalPages;
-  const stats = combinedPicnicMode
-    ? receiptStats
-    : { ...receiptStats, total: event?.totalReceipts ?? receiptStats.total };
+  useEffect(() => {
+    if (receiptState.data && !receiptState.loading && page > totalPages) setPage(totalPages);
+  }, [receiptState.data, receiptState.loading, page, totalPages]);
+  const stats = receiptStats;
 
   async function handleAction() {
-    if (!actionModal) return;
+    if (!actionModal || actionInFlight.current) return;
+    actionInFlight.current = true;
     setActionLoading(true);
     const { type, receipt } = actionModal;
     try {
-      const endpoint = `/api/payment-receipts/${receipt.id}/${type}`;
-      const updated = await api.patch<PaymentReceipt>(endpoint, { note: actionNote.trim() || undefined });
-      setAllReceipts((prev) => prev.map((r) => (r.id === receipt.id ? updated.data : r)));
+      await reviewReceipt(receipt.id, type, actionNote);
       void fetchAllReceipts();
       toast(type === 'confirm' ? 'Payment confirmed!' : 'Receipt rejected.', type === 'confirm' ? 'success' : 'error');
     } catch (err: unknown) {
@@ -276,32 +142,32 @@ export default function PaymentEventDetail() {
       }
     } finally {
       setActionLoading(false);
+      actionInFlight.current = false;
       setActionModal(null);
       setActionNote('');
     }
   }
 
   async function handleClaim(code: string): Promise<void> {
+    if (claimInFlight.current) return;
+    claimInFlight.current = true;
     setClaimLoading(true);
     try {
-      const res = await api.post<{
-        alreadyClaimed: boolean;
-        receipt: { fullName: string; matricNumber: string; claimedBy: string | null; claimedAt: string | null };
-      }>('/api/payment-receipts/scan', { code });
+      const data = await claimTicket(code);
 
-      if (res.data.alreadyClaimed) {
+      if (data.alreadyClaimed) {
         setClaimResult({
           type: 'warning',
-          message: `Already collected by ${res.data.receipt.claimedBy}`,
-          fullName: res.data.receipt.fullName,
-          matricNumber: res.data.receipt.matricNumber,
+          message: `Already collected by ${data.receipt.claimedBy}`,
+          fullName: data.receipt.fullName,
+          matricNumber: data.receipt.matricNumber,
         });
       } else {
         setClaimResult({
           type: 'success',
           message: 'Collected!',
-          fullName: res.data.receipt.fullName,
-          matricNumber: res.data.receipt.matricNumber,
+          fullName: data.receipt.fullName,
+          matricNumber: data.receipt.matricNumber,
         });
         void fetchAllReceipts();
       }
@@ -312,6 +178,7 @@ export default function PaymentEventDetail() {
       setClaimResult({ type: 'error', message: msg });
     } finally {
       setClaimLoading(false);
+      claimInFlight.current = false;
     }
   }
 
@@ -332,7 +199,9 @@ export default function PaymentEventDetail() {
               receipt.level ?? '100L',
               PICNIC_EXPORT_AMOUNT,
               'Confirmed',
-              receipt.sourceEventTitle ?? event?.title ?? 'Picnic payment',
+              receipt.sourceEventIds?.includes(PICNIC_LEGACY_EVENT_ID)
+                ? (receipt.sourceEventIds.length > 1 ? `${event?.title ?? 'Picnic payment'} + ${PICNIC_LEGACY_EVENT_TITLE}` : PICNIC_LEGACY_EVENT_TITLE)
+                : event?.title ?? 'Picnic payment',
             ]),
           ]
         );
@@ -510,14 +379,18 @@ export default function PaymentEventDetail() {
             <input
               type="checkbox"
               checked={event.hasTickets}
+              disabled={updatingTickets}
               onChange={async (e) => {
                 const val = e.target.checked;
+                setUpdatingTickets(true);
                 try {
                   await api.patch(`/api/payment-events/${event.id}`, { hasTickets: val });
                   setEvent({ ...event, hasTickets: val });
                   toast(val ? 'Collection tickets enabled' : 'Collection tickets disabled', 'success');
                 } catch {
                   toast('Failed to update', 'error');
+                } finally {
+                  setUpdatingTickets(false);
                 }
               }}
               className="w-4 h-4 rounded border-[color:var(--nx-border)] bg-surface-2 accent-[color:var(--nx-accent)]"
@@ -602,10 +475,14 @@ export default function PaymentEventDetail() {
           </button>
         </div>
 
-        {receipts.length === 0 ? (
+        {receiptState.error ? (
+          <div role="alert" className="alert-danger">Unable to load receipts. <button className="btn-secondary" onClick={() => void fetchAllReceipts()}>Try again</button></div>
+        ) : receiptState.loading ? (
+          <p role="status" className="text-center text-dim py-10">Loading receipts…</p>
+        ) : receipts.length === 0 ? (
           <div className="card-base p-10 text-center text-dim">
-            <p className="font-medium">No receipts yet</p>
-            <p className="text-sm mt-1">Share the student link for them to submit.</p>
+            <p className="font-medium">{debouncedSearch || statusFilter ? 'No receipts match your filters' : 'No receipts yet'}</p>
+            <p className="text-sm mt-1">{debouncedSearch || statusFilter ? 'Try a different search or status.' : 'Share the student link for them to submit.'}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -727,157 +604,10 @@ export default function PaymentEventDetail() {
       )}
 
       {actionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => { setActionModal(null); setActionNote(''); }} />
-          <div className="relative card-base w-full max-w-sm p-6 z-10 animate-fade-up">
-            <h3 className="text-lg font-semibold mb-2">
-              {actionModal.type === 'confirm' ? 'Confirm payment' : 'Reject receipt'}
-            </h3>
-            <p className="text-sm text-muted mb-4">
-              {actionModal.type === 'confirm'
-                ? `Confirm payment from ${actionModal.receipt.fullName} (${actionModal.receipt.matricNumber})?`
-                : `Reject receipt from ${actionModal.receipt.fullName} (${actionModal.receipt.matricNumber})?`}
-            </p>
-
-            <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
-              Note (optional)
-            </label>
-            <textarea
-              value={actionNote}
-              onChange={(e) => setActionNote(e.target.value)}
-              rows={2}
-              placeholder={actionModal.type === 'reject' ? 'Reason for rejection…' : 'Any note for the student…'}
-              className="input-base mb-4 resize-none"
-            />
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setActionModal(null); setActionNote(''); }}
-                disabled={actionLoading}
-                className="btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAction}
-                disabled={actionLoading}
-                className="btn-primary flex-1"
-              >
-                {actionLoading ? 'Please wait…' : actionModal.type === 'confirm' ? 'Confirm' : 'Reject'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReceiptReviewModal action={actionModal} note={actionNote} loading={actionLoading}
+          onNoteChange={setActionNote} onSubmit={() => void handleAction()}
+          onClose={() => { setActionModal(null); setActionNote(''); }} />
       )}
-    </div>
-  );
-}
-
-function TicketScannerModal({
-  onScan,
-  onClose,
-  result,
-  onScanAgain,
-}: {
-  onScan: (code: string) => void;
-  onClose: () => void;
-  result: ClaimResult | null;
-  onScanAgain: () => void;
-}) {
-  const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null);
-  const [error, setError] = useState('');
-  const scanningRef = useRef(true);
-
-  useEffect(() => {
-    if (!result) startScanner();
-    return () => { instanceRef.current?.stop().catch(() => {}); };
-  }, [result]);
-
-  async function startScanner(): Promise<void> {
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const qr = new Html5Qrcode('ticket-qr-reader');
-      instanceRef.current = qr;
-      scanningRef.current = true;
-
-      await qr.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText: string) => {
-          if (!scanningRef.current) return;
-          scanningRef.current = false;
-          await qr.stop();
-          onScan(decodedText);
-        },
-        () => {},
-      );
-    } catch {
-      setError('Camera access denied or not available.');
-    }
-  }
-
-  function handleScanAgain() {
-    setError('');
-    onScanAgain();
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative card-base w-full max-w-sm overflow-hidden z-10 animate-fade-up">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-nx">
-          <h2 className="font-semibold">Scan ticket</h2>
-          <button onClick={onClose} className="text-muted hover:text-[color:var(--nx-text)] text-2xl leading-none">&times;</button>
-        </div>
-        <div className="p-4">
-          {error ? (
-            <div className="text-center py-8 text-danger text-sm">{error}</div>
-          ) : result ? (
-            <div className="text-center py-4">
-              {result.type === 'success' && (
-                <>
-                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-success-soft)] rounded-full flex items-center justify-center mb-3">
-                    <svg className="w-7 h-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p className="font-semibold text-success mb-1">{result.message}</p>
-                </>
-              )}
-              {result.type === 'warning' && (
-                <>
-                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-accent-soft)] rounded-full flex items-center justify-center mb-3">
-                    <span className="text-2xl text-accent">!</span>
-                  </div>
-                  <p className="font-semibold text-accent mb-1">{result.message}</p>
-                </>
-              )}
-              {result.type === 'error' && (
-                <>
-                  <div className="mx-auto w-14 h-14 bg-[color:var(--nx-danger-soft)] rounded-full flex items-center justify-center mb-3">
-                    <span className="text-2xl text-danger">!</span>
-                  </div>
-                  <p className="font-semibold text-danger mb-1">{result.message}</p>
-                </>
-              )}
-              {result.fullName && (
-                <>
-                  <p className="text-sm">{result.fullName}</p>
-                  <p className="text-xs text-muted">{result.matricNumber}</p>
-                </>
-              )}
-              <button onClick={handleScanAgain} className="btn-primary mt-4 !py-2 !text-sm">
-                Scan next
-              </button>
-            </div>
-          ) : (
-            <>
-              <p className="text-center text-sm text-muted mb-3">Point camera at student&apos;s ticket QR</p>
-              <div id="ticket-qr-reader" className="w-full rounded-xl overflow-hidden" />
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

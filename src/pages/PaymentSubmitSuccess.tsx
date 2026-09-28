@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
-import api from '../api/axios';
+import axios from 'axios';
 import type { PaymentReceipt, PaymentEvent } from '../types';
 import TicketCard from '../components/TicketCard';
+import { useStudentAuth } from '../context/StudentAuthContext';
+import { getPaymentReceiptStatus } from '../features/payments/api/receipts';
 
 interface LocationState {
   receipt: PaymentReceipt;
@@ -33,6 +35,7 @@ export default function PaymentSubmitSuccess() {
   const { state } = useLocation() as { state: LocationState | null };
   const [searchParams] = useSearchParams();
   const { slug } = useParams<{ slug: string }>();
+  const { token } = useStudentAuth();
 
   const stateReceipt = state?.receipt ?? null;
   const stateEvent = state?.event ?? null;
@@ -56,7 +59,8 @@ export default function PaymentSubmitSuccess() {
     stateReceipt?.amountCheckStatus ?? 'pending'
   );
   const [amountCheckNote, setAmountCheckNote] = useState<string | null>(stateReceipt?.amountCheckNote ?? null);
-  const [hydrateError, setHydrateError] = useState(false);
+  const [hydrateError, setHydrateError] = useState<'' | 'not-found' | 'unavailable'>('');
+  const [retryVersion, setRetryVersion] = useState(0);
 
   function applyStatusResponse(data: StatusResponse) {
     setStatus(data.status);
@@ -76,31 +80,36 @@ export default function PaymentSubmitSuccess() {
   }
 
   useEffect(() => {
-    if (!receiptId) return;
+    if (!receiptId || !token) return;
+    const statusReceiptId = receiptId;
+    const studentToken = token;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     async function fetchStatus() {
       try {
-        const res = await api.get<StatusResponse>(`/api/payment-receipts/status/${receiptId}`);
+        const res = await getPaymentReceiptStatus<StatusResponse>(statusReceiptId, studentToken, controller.signal);
+        if (controller.signal.aborted) return;
+        setHydrateError('');
         applyStatusResponse(res.data);
         if (res.data.status !== 'pending') {
           setJustUpdated(true);
         }
-        return res.data.status !== 'pending' && res.data.amountCheckStatus !== 'pending';
-      } catch {
-        if (!stateReceipt) setHydrateError(true);
-        return false;
+        const done = res.data.status !== 'pending' && res.data.amountCheckStatus !== 'pending';
+        if (!done) timer = setTimeout(() => { void fetchStatus(); }, 5000);
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
+        if (!stateReceipt) setHydrateError(axios.isAxiosError(error) && error.response?.status === 404 ? 'not-found' : 'unavailable');
+        else timer = setTimeout(() => { void fetchStatus(); }, 5000);
       }
     }
 
     void fetchStatus();
-
-    const interval = setInterval(async () => {
-      const done = await fetchStatus();
-      if (done) clearInterval(interval);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [receiptId, stateReceipt]);
+    return () => {
+      controller.abort();
+      if (timer) clearTimeout(timer);
+    };
+  }, [receiptId, stateReceipt, retryVersion, token]);
 
   if (!receiptId) {
     return <Navigate to={`/payment/${slug}`} replace />;
@@ -113,9 +122,10 @@ export default function PaymentSubmitSuccess() {
         <div className="page-base flex flex-col items-center justify-center px-4 py-10">
           <div className="w-full max-w-sm">
             <div className="alert-danger text-center">
-              <p className="font-semibold">Ticket not found</p>
-              <p className="text-xs mt-1">This link may be invalid or the receipt was deleted.</p>
+              <p className="font-semibold">{hydrateError === 'not-found' ? 'Ticket not found' : 'Unable to load your ticket'}</p>
+              <p className="text-xs mt-1">{hydrateError === 'not-found' ? 'This link may be invalid or the receipt was deleted.' : 'Please check your connection and try again.'}</p>
             </div>
+            {hydrateError === 'unavailable' && <button type="button" className="btn-primary w-full mt-4" onClick={() => { setHydrateError(''); setRetryVersion((value) => value + 1); }}>Try again</button>}
             <Link to={`/payment/${slug}/my-tickets`} className="btn-secondary !py-2 !text-sm w-full mt-4">
               Look up by matric number
             </Link>

@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useCallback, FormEvent, useRef } from 'react';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import EventCard from '../components/EventCard';
@@ -6,10 +6,13 @@ import PaymentEventCard from '../components/PaymentEventCard';
 import ConfirmModal from '../components/ConfirmModal';
 import ExtendDeadlineModal from '../components/ExtendDeadlineModal';
 import DashboardLedger from './DashboardLedger';
-import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import type { SubmissionEvent, EventType, PaymentEvent, PaymentReceipt } from '../types';
+import type { SubmissionEvent, EventType, PaymentEvent } from '../types';
 import { useToast } from '../context/ToastContext';
+import { useRemoteData } from '../hooks/useRemoteData';
+import { listSubmissionEvents, createSubmissionEvent, extendSubmissionEvent, toggleSubmissionEvent, deleteSubmissionEvent } from '../features/submissions/api/events';
+import { listPaymentEvents, createPaymentEvent, extendPaymentEvent, togglePaymentEvent, deletePaymentEvent } from '../features/payments/api/events';
+import { dashboardCapabilities } from '../features/auth/model/capabilities';
 
 const EVENT_TYPES: EventType[] = ['assignment', 'attendance', 'lab', 'other'];
 
@@ -45,68 +48,15 @@ interface PendingExtend {
 
 type ActiveTab = 'submissions' | 'payments' | 'ledger';
 
-interface ReceiptsResponse {
-  receipts: PaymentReceipt[];
-  totalPages: number;
-}
-
-const PRELOAD_PAGE_SIZE = 100;
-const PICNIC_PAYMENT_EVENT_ID = 'cafd3826-985d-42d5-96bd-7c0cfd0b623d';
-const PICNIC_LEGACY_EVENT_ID = '7d4b6050-9681-4917-989c-82ae015b755e';
-
-async function fetchPaymentReceipts(eventId: string, status?: string): Promise<PaymentReceipt[]> {
-  const first = await api.get<ReceiptsResponse>(
-    `/api/payment-receipts/${eventId}?${new URLSearchParams({
-      page: '1',
-      limit: String(PRELOAD_PAGE_SIZE),
-      ...(status ? { status } : {}),
-    })}`
-  );
-  const receipts = [...first.data.receipts];
-  const requests = [];
-  for (let pg = 2; pg <= first.data.totalPages; pg += 1) {
-    requests.push(
-      api.get<ReceiptsResponse>(
-        `/api/payment-receipts/${eventId}?${new URLSearchParams({
-          page: String(pg),
-          limit: String(PRELOAD_PAGE_SIZE),
-          ...(status ? { status } : {}),
-        })}`
-      )
-    );
-  }
-  const rest = await Promise.all(requests);
-  for (const res of rest) receipts.push(...res.data.receipts);
-  return receipts;
-}
-
-async function applyCombinedPicnicCounts(events: PaymentEvent[]): Promise<PaymentEvent[]> {
-  if (!events.some((event) => event.id === PICNIC_PAYMENT_EVENT_ID)) return events;
-
-  const [currentReceipts, legacyReceipts] = await Promise.all([
-    fetchPaymentReceipts(PICNIC_PAYMENT_EVENT_ID, 'confirmed'),
-    fetchPaymentReceipts(PICNIC_LEGACY_EVENT_ID, 'confirmed'),
-  ]);
-  const confirmedMatricNumbers = new Set(
-    [...currentReceipts, ...legacyReceipts]
-      .map((receipt) => receipt.matricNumber.trim().toUpperCase())
-  );
-  const actualPayers = confirmedMatricNumbers.size;
-
-  return events.map((event) =>
-    event.id === PICNIC_PAYMENT_EVENT_ID
-      ? { ...event, totalReceipts: actualPayers, confirmedCount: actualPayers }
-      : event
-  );
-}
-
 export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const canCreate = user?.role !== 'fin_sec';
+  const access = dashboardCapabilities(user?.role);
 
-  const [events, setEvents] = useState<SubmissionEvent[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(true);
+  const loadEvents = useCallback((signal: AbortSignal) => listSubmissionEvents(signal), []);
+  const eventState = useRemoteData(loadEvents, 0, access.submissions);
+  const events = eventState.data ?? [];
+  const eventsLoading = eventState.loading;
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState<EventForm>({
     title: '', courseCode: '', type: 'assignment', description: '', deadline: '',
@@ -114,8 +64,10 @@ export default function DashboardPage() {
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [eventFormError, setEventFormError] = useState('');
 
-  const [paymentEvents, setPaymentEvents] = useState<PaymentEvent[]>([]);
-  const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const loadPaymentEvents = useCallback((signal: AbortSignal) => listPaymentEvents(signal), []);
+  const paymentEventState = useRemoteData(loadPaymentEvents, 0, access.payments);
+  const paymentEvents = paymentEventState.data ?? [];
+  const paymentsLoading = paymentEventState.loading;
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentForm, setPaymentForm] = useState<PaymentForm>({
     title: '', description: '', amount: '', accountNumber: '', accountName: '', bankName: '', deadline: '', hasTickets: false,
@@ -123,49 +75,25 @@ export default function DashboardPage() {
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [paymentFormError, setPaymentFormError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('submissions');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => access.submissions ? 'submissions' : access.payments ? 'payments' : 'ledger');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [pendingExtend, setPendingExtend] = useState<PendingExtend | null>(null);
   const [extendLoading, setExtendLoading] = useState(false);
-
-  useEffect(() => {
-    fetchEvents();
-    fetchPaymentEvents();
-  }, []);
-
-  async function fetchEvents(): Promise<void> {
-    try {
-      const res = await api.get<{ events: SubmissionEvent[] }>('/api/events');
-      setEvents(res.data.events);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setEventsLoading(false);
-    }
-  }
-
-  async function fetchPaymentEvents(): Promise<void> {
-    try {
-      const res = await api.get<{ events: PaymentEvent[] }>('/api/payment-events');
-      setPaymentEvents(await applyCombinedPicnicCounts(res.data.events));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPaymentsLoading(false);
-    }
-  }
+  const mutationInFlight = useRef(false);
 
   async function handleCreateEvent(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
+    if (mutationInFlight.current) return;
+    mutationInFlight.current = true;
     setEventFormError('');
     setCreatingEvent(true);
     try {
-      const res = await api.post<SubmissionEvent>('/api/events', eventForm);
-      setEvents([res.data, ...events]);
+      await createSubmissionEvent(eventForm);
+      const refreshed = await eventState.refresh(true);
       setShowEventForm(false);
       setEventForm({ title: '', courseCode: '', type: 'assignment', description: '', deadline: '' });
-      toast('Event created!', 'success');
+      toast(refreshed ? 'Event created!' : 'Event created, but the list could not refresh.', refreshed ? 'success' : 'info');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setEventFormError(err.response?.data?.error ?? 'Failed to create event.');
@@ -174,19 +102,22 @@ export default function DashboardPage() {
       }
     } finally {
       setCreatingEvent(false);
+      mutationInFlight.current = false;
     }
   }
 
   async function handleCreatePayment(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
+    if (mutationInFlight.current) return;
+    mutationInFlight.current = true;
     setPaymentFormError('');
     setCreatingPayment(true);
     try {
-      const res = await api.post<PaymentEvent>('/api/payment-events', paymentForm);
-      setPaymentEvents([res.data, ...paymentEvents]);
+      await createPaymentEvent(paymentForm);
+      const refreshed = await paymentEventState.refresh(true);
       setShowPaymentForm(false);
       setPaymentForm({ title: '', description: '', amount: '', accountNumber: '', accountName: '', bankName: '', deadline: '', hasTickets: false });
-      toast('Payment collection created!', 'success');
+      toast(refreshed ? 'Payment collection created!' : 'Payment collection created, but the list could not refresh.', refreshed ? 'success' : 'info');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setPaymentFormError(err.response?.data?.error ?? 'Failed to create payment collection.');
@@ -195,6 +126,7 @@ export default function DashboardPage() {
       }
     } finally {
       setCreatingPayment(false);
+      mutationInFlight.current = false;
     }
   }
 
@@ -217,22 +149,16 @@ export default function DashboardPage() {
     const { event, kind } = pendingExtend;
     setExtendLoading(true);
     try {
-      const base = kind === 'submission' ? '/api/events' : '/api/payment-events';
-      const res = await api.patch<{ deadline: string; isClosed: boolean }>(
-        `${base}/${event.id}/extend`,
-        { deadline },
-      );
+      let refreshed: boolean;
       if (kind === 'submission') {
-        setEvents((prev) => prev.map((e) =>
-          e.id === event.id ? { ...e, deadline: res.data.deadline, isClosed: res.data.isClosed } : e,
-        ));
+        await extendSubmissionEvent(event.id, deadline);
+        refreshed = await eventState.refresh(true);
       } else {
-        setPaymentEvents((prev) => prev.map((e) =>
-          e.id === event.id ? { ...e, deadline: res.data.deadline, isClosed: res.data.isClosed } : e,
-        ));
+        await extendPaymentEvent(event.id, deadline);
+        refreshed = await paymentEventState.refresh(true);
       }
       setPendingExtend(null);
-      toast('Deadline updated.', 'success');
+      toast(refreshed ? 'Deadline updated.' : 'Deadline updated, but the list could not refresh.', refreshed ? 'success' : 'info');
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast(msg ?? 'Failed to update deadline.', 'error');
@@ -253,22 +179,17 @@ export default function DashboardPage() {
     const { type, event, kind } = pendingAction;
     setActionLoading(true);
     try {
-      const base = kind === 'submission' ? '/api/events' : '/api/payment-events';
       if (type === 'delete') {
-        await api.delete(`${base}/${event.id}`);
-        if (kind === 'submission') {
-          setEvents((prev) => prev.filter((e) => e.id !== event.id));
-        } else {
-          setPaymentEvents((prev) => prev.filter((e) => e.id !== event.id));
-        }
+        if (kind === 'submission') await deleteSubmissionEvent(event.id);
+        else await deletePaymentEvent(event.id);
       } else {
-        const res = await api.patch<{ isClosed: boolean }>(`${base}/${event.id}/close`);
-        if (kind === 'submission') {
-          setEvents((prev) => prev.map((e) => e.id === event.id ? { ...e, isClosed: res.data.isClosed } : e));
-        } else {
-          setPaymentEvents((prev) => prev.map((e) => e.id === event.id ? { ...e, isClosed: res.data.isClosed } : e));
-        }
+        if (kind === 'submission') await toggleSubmissionEvent(event.id);
+        else await togglePaymentEvent(event.id);
       }
+      const refreshed = kind === 'submission'
+        ? await eventState.refresh(true)
+        : await paymentEventState.refresh(true);
+      if (!refreshed) toast(`${type === 'delete' ? 'Deleted' : 'Updated'}, but the list could not refresh.`, 'info');
       setPendingAction(null);
     } catch {
       setPendingAction(null);
@@ -291,7 +212,7 @@ export default function DashboardPage() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          {canCreate && (
+          {((activeTab === 'submissions' && access.submissions) || (activeTab === 'payments' && access.payments)) && (
             <div className="flex gap-2 w-full sm:w-auto">
               {activeTab === 'submissions' && (
                 <button
@@ -316,17 +237,17 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit">
-          <button type="button" onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
+          {access.submissions && <button type="button" onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
             Submissions
             {!eventsLoading && <span className="ml-2 badge">{events.length}</span>}
-          </button>
-          <button type="button" onClick={() => setActiveTab('payments')} className={tabClass('payments')}>
+          </button>}
+          {access.payments && <button type="button" onClick={() => setActiveTab('payments')} className={tabClass('payments')}>
             Payments
             {!paymentsLoading && <span className="ml-2 badge">{paymentEvents.length}</span>}
-          </button>
-          <button type="button" onClick={() => setActiveTab('ledger')} className={tabClass('ledger')}>
+          </button>}
+          {access.ledger && <button type="button" onClick={() => setActiveTab('ledger')} className={tabClass('ledger')}>
             Ledger
-          </button>
+          </button>}
         </div>
 
         {activeTab === 'submissions' && (
@@ -402,7 +323,9 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {eventsLoading ? (
+            {eventState.error ? (
+              <div role="alert" className="alert-danger">Unable to load submission events. <button className="btn-secondary ml-2" onClick={() => void eventState.refresh()}>Try again</button></div>
+            ) : eventsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="card-base p-5 animate-pulse">
@@ -424,7 +347,7 @@ export default function DashboardPage() {
             ) : events.length === 0 ? (
               <div className="text-center py-20 text-muted">
                 <p className="text-lg font-medium">No submission events yet</p>
-                {canCreate && <p className="text-sm text-dim mt-2">Create your first submission event to get started.</p>}
+                {access.submissions && <p className="text-sm text-dim mt-2">Create your first submission event to get started.</p>}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -553,7 +476,9 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {paymentsLoading ? (
+            {paymentEventState.error ? (
+              <div role="alert" className="alert-danger">Unable to load payment collections. <button className="btn-secondary ml-2" onClick={() => void paymentEventState.refresh()}>Try again</button></div>
+            ) : paymentsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="card-base p-5 animate-pulse">
@@ -572,7 +497,7 @@ export default function DashboardPage() {
             ) : paymentEvents.length === 0 ? (
               <div className="text-center py-20 text-muted">
                 <p className="text-lg font-medium">No payment collections yet</p>
-                {canCreate && <p className="text-sm text-dim mt-2">Create one to start collecting payment receipts.</p>}
+                {access.payments && <p className="text-sm text-dim mt-2">Create one to start collecting payment receipts.</p>}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

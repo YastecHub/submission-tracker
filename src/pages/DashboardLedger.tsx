@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  fetchAdminTransactions,
   deleteTransactionRequest,
 } from '../api/transactions';
 import TransactionFormModal from '../components/TransactionFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
-import type { Ledger, Transaction, TransactionType } from '../types';
+import type { Transaction, TransactionType } from '../types';
+import { useAdminLedger } from '../features/ledger/hooks/useAdminLedger';
 
 function formatNaira(amount: string): string {
   const n = Number(amount);
@@ -37,8 +37,6 @@ function formatDate(iso: string): string {
 
 export default function DashboardLedger() {
   const { toast } = useToast();
-  const [ledger, setLedger] = useState<Ledger | null>(null);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<TransactionType | ''>('');
   const [search, setSearch] = useState('');
@@ -56,36 +54,12 @@ export default function DashboardLedger() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const loadLedger = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchAdminTransactions({
-        page,
-        limit: 30,
-        type: typeFilter || undefined,
-        search: debouncedSearch || undefined,
-        includeDeleted,
-      });
-      setLedger(data);
-    } catch {
-      toast('Failed to load ledger', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, typeFilter, debouncedSearch, includeDeleted, toast]);
+  const { data: ledger, loading, error, refresh: loadLedger } = useAdminLedger({
+    page, limit: 30, type: typeFilter || undefined, search: debouncedSearch || undefined, includeDeleted,
+  });
+  useEffect(() => { if (error) toast('Failed to load ledger', 'error'); }, [error, toast]);
 
-  useEffect(() => {
-    void loadLedger();
-  }, [loadLedger]);
-
-  function handleSaved(updated: Transaction) {
-    if (editing) {
-      setLedger((prev) =>
-        prev
-          ? { ...prev, transactions: prev.transactions.map((t) => (t.id === updated.id ? updated : t)) }
-          : prev
-      );
-    }
+  function handleSaved() {
     void loadLedger();
     setEditing(null);
   }

@@ -1,30 +1,9 @@
-import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
-import api from '../api/axios';
-import { fetchPublicLedger, verifyMatricNumber } from '../api/transactions';
+import { fetchPublicLedger } from '../api/transactions';
 import { useToast } from '../context/ToastContext';
+import { useStudentAuth } from '../context/StudentAuthContext';
 import type { Ledger, PaymentEventTransactionGroup, Transaction, TransactionType } from '../types';
-
-interface Ticket {
-  receiptId: string;
-  eventTitle: string;
-  eventSlug: string;
-  amount: string;
-  fullName: string;
-  matricNumber: string;
-  ticketQrCode: string;
-  isClaimed: boolean;
-  claimedAt: string | null;
-  claimedBy: string | null;
-}
-
-const STORAGE_KEY = 'classLedgerVerifiedMatric';
-
-interface Verified {
-  matricNumber: string;
-  displayName: string;
-}
 
 function formatNaira(amount: string | number, opts: { compact?: boolean } = {}): string {
   const n = typeof amount === 'number' ? amount : Number(amount);
@@ -39,11 +18,9 @@ function formatNaira(amount: string | number, opts: { compact?: boolean } = {}):
   }
   return n.toLocaleString('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 2 });
 }
-
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -58,16 +35,7 @@ function formatRelative(iso: string): string {
 
 export default function TransparencyPage() {
   const { toast } = useToast();
-  const [verified, setVerified] = useState<Verified | null>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Verified) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [matricInput, setMatricInput] = useState('');
-  const [verifying, setVerifying] = useState(false);
+  const { student, token, logout } = useStudentAuth();
 
   const [ledger, setLedger] = useState<Ledger | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +43,6 @@ export default function TransparencyPage() {
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<TransactionType | ''>('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
 
   const loadLedger = useCallback(async () => {
     setLoading(true);
@@ -84,111 +51,31 @@ export default function TransparencyPage() {
         page,
         limit: 20,
         type: typeFilter || undefined,
-      });
+      }, token ?? undefined);
       setLedger(data);
       setLastLoadedAt(new Date());
-    } catch {
-      toast('Failed to load ledger — the server may still be starting up.', 'error');
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        logout();
+        setLedger(null);
+        toast('Your student session expired. Please sign in again.', 'info');
+      } else {
+        toast('Failed to load ledger — the server may still be starting up.', 'error');
+      }
     } finally {
       setLoading(false);
     }
-  }, [page, typeFilter, toast]);
+  }, [page, typeFilter, toast, token, logout]);
 
   useEffect(() => {
-    if (verified) {
+    if (student && token) {
       void loadLedger();
-      api
-        .get<{ tickets: Ticket[] }>(`/api/payment-receipts/my-tickets?matricNumber=${verified.matricNumber}`)
-        .then((res) => setTickets(res.data.tickets))
-        .catch(() => {});
     }
-  }, [verified, loadLedger]);
-
-  async function handleVerify(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const matric = matricInput.trim().toUpperCase();
-    if (!matric) return;
-    setVerifying(true);
-    try {
-      const res = await verifyMatricNumber(matric);
-      if (res.verified && res.displayName && res.matricNumber) {
-        const v: Verified = { matricNumber: res.matricNumber, displayName: res.displayName };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
-        setVerified(v);
-        toast('Ledger unlocked', 'success');
-      } else {
-        toast('Matric not found in class records', 'error');
-      }
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
-        toast('Matric not found in class records', 'error');
-      } else {
-        toast('Verification failed', 'error');
-      }
-    } finally {
-      setVerifying(false);
-    }
-  }
+  }, [student, token, loadLedger]);
 
   function handleLogOut() {
-    localStorage.removeItem(STORAGE_KEY);
-    setVerified(null);
+    logout();
     setLedger(null);
-    setMatricInput('');
-  }
-
-  if (!verified) {
-    return (
-      <div className="page-base flex items-center justify-center p-4">
-        <div className="w-full max-w-md animate-fade-up">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">Class account</h1>
-            <p className="text-muted text-sm mt-1.5">Full transparency. Every kobo accounted for.</p>
-          </div>
-
-          <div className="card-base p-6">
-            <h2 className="text-base font-semibold mb-1">Verify your matric</h2>
-            <p className="text-sm text-muted mb-5">Only verified class members can view the ledger.</p>
-
-            <form onSubmit={handleVerify} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">
-                  Matric number
-                </label>
-                <input
-                  type="text"
-                  value={matricInput}
-                  onChange={(e) => setMatricInput(e.target.value)}
-                  placeholder="e.g. 251100000"
-                  className="input-base uppercase"
-                  autoFocus
-                />
-                <p className="text-xs text-dim mt-1.5">
-                  Must match a matric that has submitted an assignment or payment.
-                </p>
-              </div>
-              <button
-                type="submit"
-                disabled={verifying || !matricInput.trim()}
-                className="btn-primary w-full"
-              >
-                {verifying ? 'Verifying…' : 'View ledger'}
-              </button>
-            </form>
-
-            <div className="mt-6 pt-5 border-t border-nx text-center">
-              <Link to="/login" className="text-xs text-muted hover:text-accent transition-colors">
-                Are you an admin? Log in →
-              </Link>
-            </div>
-          </div>
-
-          <p className="text-center text-xs text-dim mt-5">
-            Your matric is only used to unlock this page. Nothing is tracked.
-          </p>
-        </div>
-      </div>
-    );
   }
 
   const balance = ledger ? Number(ledger.balance) : 0;
@@ -210,13 +97,13 @@ export default function TransparencyPage() {
             </div>
             <div className="text-right">
               <p className="text-xs text-dim uppercase tracking-wider">Viewing as</p>
-              <p className="text-sm font-semibold truncate max-w-[160px]">{verified.matricNumber}</p>
+              <p className="text-sm font-semibold truncate max-w-[160px]">{student?.matricNumber}</p>
               <button
                 type="button"
                 onClick={handleLogOut}
                 className="text-xs text-muted hover:text-accent underline mt-0.5 transition-colors"
               >
-                Use different matric
+                Sign out
               </button>
             </div>
           </div>
@@ -278,15 +165,6 @@ export default function TransparencyPage() {
             tone="neutral"
           />
         </div>
-
-        {tickets.length > 0 && (
-          <div className="mb-6 space-y-3">
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider px-1">Your tickets</h2>
-            {tickets.map((t) => (
-              <StudentTicketCard key={t.receiptId} ticket={t} />
-            ))}
-          </div>
-        )}
 
         <div className="card-base p-3 mb-4 flex gap-2 items-center">
           <h2 className="text-base font-semibold flex-1 pl-2">Transactions</h2>
@@ -598,91 +476,6 @@ function TransactionCard({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function formatClaimCode(id: string): string {
-  const hex = id.replace(/-/g, '').slice(0, 8).toUpperCase();
-  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
-}
-
-function StudentTicketCard({ ticket }: { ticket: Ticket }) {
-  const [expanded, setExpanded] = useState(false);
-  const claimCode = formatClaimCode(ticket.receiptId);
-
-  if (ticket.isClaimed) {
-    const claimedTime = ticket.claimedAt
-      ? new Date(ticket.claimedAt).toLocaleString('en-GB', {
-          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        })
-      : '';
-
-    return (
-      <div className="card-base p-4 border-[color:var(--nx-success)]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[color:var(--nx-success-soft)] flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-success">Collected</p>
-            <p className="text-xs text-muted">{ticket.eventTitle}</p>
-            <p className="text-xs text-dim">Claimed by {ticket.claimedBy}{claimedTime ? ` · ${claimedTime}` : ''}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card-base overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-2 transition-colors"
-      >
-        <div className="w-10 h-10 rounded-lg bg-[color:var(--nx-accent-soft)] flex items-center justify-center flex-shrink-0">
-          <span className="text-accent text-lg font-semibold">🎟</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">{ticket.eventTitle}</p>
-          <p className="text-xs text-muted">Tap to {expanded ? 'hide' : 'show'} your ticket</p>
-        </div>
-        <span className={`text-muted text-sm transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
-      </button>
-
-      {expanded && (
-        <div className="border-t border-nx p-5">
-          <div className="flex gap-4 items-start">
-            <div className="flex-shrink-0">
-              <img
-                src={ticket.ticketQrCode}
-                alt="Ticket QR code"
-                className="w-28 h-28 rounded-lg border border-nx bg-white p-1"
-              />
-            </div>
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <div>
-                <p className="text-xs text-dim">Name</p>
-                <p className="text-sm font-semibold">{ticket.fullName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-dim">Matric</p>
-                <p className="text-sm font-semibold">{ticket.matricNumber}</p>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 text-center">
-            <p className="text-xs text-dim uppercase tracking-wider mb-1">Claim code</p>
-            <p className="text-2xl font-mono font-bold tracking-widest text-accent">{claimCode}</p>
-          </div>
-          <div className="mt-3 bg-surface-2 border border-nx rounded-lg px-4 py-2.5 text-center">
-            <p className="text-xs text-muted">Show this at the event to collect your item</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

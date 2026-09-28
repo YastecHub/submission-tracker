@@ -1,20 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SubmissionsTable from '../components/SubmissionsTable';
 import QRScanner from '../components/QRScanner';
-import api from '../api/axios';
-import type { SubmissionEvent, Submission } from '../types';
+import { confirmAllSubmissions, exportSubmissions } from '../features/submissions/api/submissions';
+import { useSubmissionDetail } from '../features/submissions/hooks/useSubmissionDetail';
 import { useToast } from '../context/ToastContext';
 
-interface SubmissionsPage {
-  submissions: Submission[];
-  total: number;
-  confirmedTotal: number;
-  pendingTotal: number;
-  page: number;
-  totalPages: number;
-}
 
 function EventDetailSkeleton() {
   return (
@@ -46,93 +38,17 @@ const CONFIRM_ALL_MIN_SUBMISSIONS = 90;
 export default function EventDetail() {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
-  const [event, setEvent] = useState<SubmissionEvent | null>(null);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [submissionStats, setSubmissionStats] = useState({ total: 0, confirmed: 0, pending: 0, totalPages: 1 });
-  const [loading, setLoading] = useState(true);
-  const [tableLoading, setTableLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const { event, submissions, submissionStats, loading, tableLoading, currentPage,
+    setCurrentPage, search, setSearch, refresh, error, retry } = useSubmissionDetail(id!);
   const [showScanner, setShowScanner] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [confirmingAll, setConfirmingAll] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const trimmed = search.trim();
-      setDebouncedSearch(trimmed.length >= 2 ? trimmed : '');
-      setCurrentPage(1);
-    }, 400);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
-
-  const fetchSubmissions = useCallback(
-    async (silent = false) => {
-      if (!silent) setTableLoading(true);
-      try {
-        const res = await api.get<SubmissionsPage>(
-          `/api/submissions/${id}?${new URLSearchParams({
-            page: String(currentPage),
-            limit: String(PAGE_SIZE),
-            ...(debouncedSearch ? { search: debouncedSearch } : {}),
-          })}`
-        );
-        setSubmissions(res.data.submissions);
-        setSubmissionStats({
-          total: res.data.total,
-          confirmed: res.data.confirmedTotal,
-          pending: res.data.pendingTotal,
-          totalPages: Math.max(1, res.data.totalPages),
-        });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setTableLoading(false);
-      }
-    },
-    [currentPage, debouncedSearch, id]
-  );
-
-  const fetchEvent = useCallback(async () => {
-    try {
-      const res = await api.get<SubmissionEvent>(`/api/events/id/${id}`);
-      setEvent(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    async function init() {
-      await Promise.all([fetchEvent(), fetchSubmissions()]);
-      setLoading(false);
-    }
-    void init();
-  }, [fetchEvent, fetchSubmissions]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      void fetchSubmissions(true);
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchSubmissions]);
-
-  function handleConfirmed(updated: Submission): void {
-    setSubmissions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    setSubmissionStats((prev) =>
-      updated.isConfirmed ? { ...prev, confirmed: prev.confirmed + 1, pending: Math.max(0, prev.pending - 1) } : prev
-    );
-  }
+  const handleConfirmed = () => { void refresh(); };
 
   async function handleExport(): Promise<void> {
     setExporting(true);
     try {
-      const res = await api.get(`/api/submissions/${id}/export`, { responseType: 'blob' });
+      const res = await exportSubmissions(id!);
       const contentDisposition = (res.headers['content-disposition'] as string) ?? '';
       const match = contentDisposition.match(/filename="(.+)"/);
       const filename = match ? match[1] : `export_${id}.xlsx`;
@@ -155,9 +71,9 @@ export default function EventDetail() {
     if (!id) return;
     setConfirmingAll(true);
     try {
-      const res = await api.patch<{ confirmedCount: number }>(`/api/submissions/${id}/confirm-all`);
-      toast(`${res.data.confirmedCount} submissions confirmed.`, 'success');
-      await Promise.all([fetchEvent(), fetchSubmissions(true)]);
+      const result = await confirmAllSubmissions(id);
+      toast(`${result.confirmedCount} submissions confirmed.`, 'success');
+      await refresh();
     } catch (err: unknown) {
       const msg = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
@@ -170,11 +86,11 @@ export default function EventDetail() {
 
   if (loading) return <EventDetailSkeleton />;
 
-  const totalSubmissions = event?.totalSubmissions ?? submissionStats.total;
+  const totalSubmissions = submissionStats.confirmed + submissionStats.pending;
   const confirmedTotal = submissionStats.confirmed;
   const pendingTotal = submissionStats.pending;
   const totalPages = submissionStats.totalPages;
-  const eventTotalSubmissions = event?.totalSubmissions ?? totalSubmissions;
+  const eventTotalSubmissions = totalSubmissions;
   const canConfirmAll = eventTotalSubmissions >= CONFIRM_ALL_MIN_SUBMISSIONS && pendingTotal > 0;
 
   return (
@@ -183,11 +99,12 @@ export default function EventDetail() {
       {showScanner && (
         <QRScanner
           onClose={() => setShowScanner(false)}
-          onConfirmed={(updated) => handleConfirmed(updated)}
+          onConfirmed={handleConfirmed}
         />
       )}
 
       <main className="max-w-5xl mx-auto px-4 py-8">
+        {error && <div role="alert" className="alert-danger mb-4">Unable to load submissions. <button className="btn-secondary" onClick={() => void retry()}>Try again</button></div>}
         <Link to="/dashboard" className="btn-ghost !px-0 mb-4">
           ← Back to dashboard
         </Link>

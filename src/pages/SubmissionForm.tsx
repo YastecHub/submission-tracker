@@ -1,8 +1,9 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import api from '../api/axios';
-import type { SubmissionEvent, Level, Submission } from '../types';
+import type { Level } from '../types';
+import { createSubmission } from '../features/submissions/api/submissions';
+import { usePublicSubmissionEvent } from '../features/submissions/hooks/usePublicSubmissionEvent';
 
 const LEVELS: Level[] = ['100L', '200L', '300L', '400L', '500L', 'Postgrad'];
 
@@ -10,41 +11,34 @@ export default function SubmissionForm() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const [event, setEvent] = useState<SubmissionEvent | null>(null);
-  const [loadingEvent, setLoadingEvent] = useState(true);
+  const eventState = usePublicSubmissionEvent(slug!);
+  const event = eventState.data;
   const [form, setForm] = useState({ fullName: '', matricNumber: '', level: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const submitInFlight = useRef(false);
 
   useEffect(() => {
-    api
-      .get<SubmissionEvent>(`/api/events/${slug}`)
-      .then((res) => {
-        const ev = res.data;
-        const isClosed = ev.isClosed || new Date() > new Date(ev.deadline);
-        if (isClosed || ev.isDeleted) {
-          navigate(`/submitit/${slug}/closed`, { replace: true });
-        } else {
-          setEvent(ev);
-        }
-      })
-      .catch(() => navigate(`/submitit/${slug}/closed`, { replace: true }))
-      .finally(() => setLoadingEvent(false));
-  }, [slug, navigate]);
+    if (event && (event.isClosed || new Date() > new Date(event.deadline) || event.isDeleted)) {
+      navigate(`/submitit/${slug}/closed`, { replace: true });
+    }
+  }, [event, slug, navigate]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
+    if (!event || submitInFlight.current) return;
+    submitInFlight.current = true;
     setError('');
     setSubmitting(true);
     try {
-      const res = await api.post<{ submission: Submission }>('/api/submissions', {
-        eventId: event!.id,
+      const submission = await createSubmission({
+        eventId: event.id,
         fullName: form.fullName.trim(),
         matricNumber: form.matricNumber.trim().toUpperCase(),
         level: form.level || undefined,
       });
       navigate(`/submitit/${slug}/success`, {
-        state: { submission: res.data.submission },
+        state: { submission },
         replace: true,
       });
     } catch (err: unknown) {
@@ -61,10 +55,11 @@ export default function SubmissionForm() {
       }
     } finally {
       setSubmitting(false);
+      submitInFlight.current = false;
     }
   }
 
-  if (loadingEvent) {
+  if (eventState.loading) {
     return (
       <div className="page-base flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-nx" />
@@ -72,7 +67,11 @@ export default function SubmissionForm() {
     );
   }
 
-  if (!event) return null;
+  if (eventState.error || !event) return (
+    <div className="page-base flex items-center justify-center px-4">
+      <div role="alert" className="alert-danger">Unable to load this submission form. <button className="btn-secondary ml-2" onClick={() => void eventState.refresh()}>Try again</button></div>
+    </div>
+  );
 
   const deadline = new Date(event.deadline).toLocaleString('en-GB', {
     day: '2-digit',

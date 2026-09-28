@@ -30,22 +30,31 @@ export default function SubmissionSuccess() {
       setConfirmedBy(submission.confirmedBy ?? null);
       return;
     }
+    const submissionId = submission.id;
 
-    const interval = setInterval(async () => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function poll() {
       try {
-        const res = await api.get<StatusResponse>(`/api/submissions/status/${submission.id}`);
+        const res = await api.get<StatusResponse>(`/api/submissions/status/${submissionId}`, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         if (res.data.isConfirmed) {
-          clearInterval(interval);
           setConfirmedBy(res.data.confirmedBy ?? null);
           setConfirmed(true);
           setJustConfirmed(true);
+          return;
         }
       } catch {
-        // silent — student has no auth, just keep polling
+        if (controller.signal.aborted) return;
       }
-    }, 5000);
+      timer = setTimeout(() => { void poll(); }, 5000);
+    }
+    timer = setTimeout(() => { void poll(); }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      controller.abort();
+      if (timer) clearTimeout(timer);
+    };
   }, [submission]);
 
   if (!submission) {
