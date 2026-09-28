@@ -35,6 +35,10 @@ src/features/payments/api/        # Receipt queries and bounded legacy fetching
 src/features/payments/hooks/      # Receipt request lifecycle
 src/features/payments/model/      # Pure legacy reconciliation rules
 src/features/payments/components/ # Payment-specific dialogs and scanner UI
+src/features/bulletin/api/         # Student and staff Bulletin request contracts
+src/features/bulletin/hooks/       # Cancellable Bulletin feed state
+src/features/bulletin/model/       # Announcement wire types and presentation rules
+src/features/bulletin/components/  # Student shell, article renderer and feed cards
 src/features/ledger/hooks/        # Admin ledger loading
 src/hooks/useRemoteData.ts        # Domain-neutral cancellable component state
 src/pages/                       # Route composition and local interaction state
@@ -68,6 +72,12 @@ submissions API → Axios. Search is debounced and resets the page. Metadata loa
 independently. ConfirmButton/QRScanner perform the existing mutation and the page
 refreshes authoritative list counts. Bulk confirmation also refreshes the list.
 Export keeps the existing XLSX request/download contract. Failures have a retry UI.
+
+Nexium Bulletin uses separate role shells: staff routes compose the management list
+and structured composer, while `/student` owns the student shell, home, feed,
+article and tickets routes. Bulletin route modules are lazy-loaded. Feed filters
+live in URL query parameters, article content is rendered from validated structured
+sections, and the server remains authoritative for publication and unread versions.
 
 ## Verification
 

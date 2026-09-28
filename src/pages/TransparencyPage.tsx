@@ -73,11 +73,6 @@ export default function TransparencyPage() {
     }
   }, [student, token, loadLedger]);
 
-  function handleLogOut() {
-    logout();
-    setLedger(null);
-  }
-
   const balance = ledger ? Number(ledger.balance) : 0;
   const totalIn = ledger ? Number(ledger.totalCredits) : 0;
   const totalOut = ledger ? Number(ledger.totalDebits) : 0;
@@ -98,13 +93,6 @@ export default function TransparencyPage() {
             <div className="text-right">
               <p className="text-xs text-dim uppercase tracking-wider">Viewing as</p>
               <p className="text-sm font-semibold truncate max-w-[160px]">{student?.matricNumber}</p>
-              <button
-                type="button"
-                onClick={handleLogOut}
-                className="text-xs text-muted hover:text-accent underline mt-0.5 transition-colors"
-              >
-                Sign out
-              </button>
             </div>
           </div>
 

@@ -15,8 +15,8 @@ export default function StudentLoginPage() {
   const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const requested = params.get('returnTo') ?? '/transparency';
-  const returnTo = requested.startsWith('/payment/') || requested === '/transparency' ? requested : '/transparency';
+  const requested = params.get('returnTo') ?? '/student';
+  const returnTo = requested.startsWith('/payment/') || requested.startsWith('/student') || requested === '/transparency' ? requested : '/student';
   if (student) return <Navigate to={returnTo} replace />;
 
   async function submit(event: FormEvent) {
@@ -43,7 +43,7 @@ export default function StudentLoginPage() {
     <div className="page-base flex items-center justify-center px-4 py-10">
       <div className="card-base p-6 w-full max-w-sm">
         <h1 className="text-xl font-semibold">Student account</h1>
-        <p className="text-sm text-muted mt-1">Sign in to submit receipts and retrieve your tickets.</p>
+        <p className="text-sm text-muted mt-1">Sign in to read Nexium Bulletin, manage payments and retrieve your tickets.</p>
         <div className="grid grid-cols-2 gap-1 bg-surface-2 p-1 rounded-lg mt-5">
           <button type="button" className={mode === 'login' ? 'btn-secondary' : 'btn-ghost'} onClick={() => { setMode('login'); setCodeSent(false); setError(''); }}>Sign in</button>
           <button type="button" className={mode === 'register' ? 'btn-secondary' : 'btn-ghost'} onClick={() => { setMode('register'); setCodeSent(false); setError(''); }}>Register</button>

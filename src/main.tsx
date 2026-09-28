@@ -36,6 +36,14 @@ import PaymentEventDetail from './pages/PaymentEventDetail';
 import TransparencyPage from './pages/TransparencyPage';
 import InstallBanner from './components/InstallBanner';
 
+const StudentShell = React.lazy(() => import('./features/bulletin/components/StudentShell'));
+const StudentHomePage = React.lazy(() => import('./pages/StudentHomePage'));
+const BulletinFeedPage = React.lazy(() => import('./pages/BulletinFeedPage'));
+const BulletinArticlePage = React.lazy(() => import('./pages/BulletinArticlePage'));
+const StudentTicketsPage = React.lazy(() => import('./pages/StudentTicketsPage'));
+const BulletinManagementPage = React.lazy(() => import('./pages/BulletinManagementPage'));
+const BulletinComposerPage = React.lazy(() => import('./pages/BulletinComposerPage'));
+
 const enableAnalytics = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
 const Analytics = React.lazy(() =>
   import('@vercel/analytics/react').then((mod) => ({ default: mod.Analytics }))
@@ -52,9 +60,19 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Analytics />
             </React.Suspense>
           )}
+          <React.Suspense fallback={<div className="page-base flex items-center justify-center"><div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin border-[color:var(--nx-accent)]" /></div>}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/student/login" element={<StudentLoginPage />} />
+            <Route
+              path="/student"
+              element={<StudentProtectedRoute><StudentShell /></StudentProtectedRoute>}
+            >
+              <Route index element={<StudentHomePage />} />
+              <Route path="news" element={<BulletinFeedPage />} />
+              <Route path="news/:slug" element={<BulletinArticlePage />} />
+              <Route path="tickets" element={<StudentTicketsPage />} />
+            </Route>
             <Route
               path="/dashboard"
               element={
@@ -70,6 +88,18 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                   <EventDetail />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/dashboard/bulletin"
+              element={<ProtectedRoute><BulletinManagementPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/dashboard/bulletin/new"
+              element={<ProtectedRoute><BulletinComposerPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/dashboard/bulletin/:id"
+              element={<ProtectedRoute><BulletinComposerPage /></ProtectedRoute>}
             />
             <Route
               path="/profile"
@@ -93,7 +123,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/pay/:slug/success" element={<RedirectWithSlug to={(s) => `/payment/${s}/success`} />} />
             <Route path="/pay/:slug/closed" element={<RedirectWithSlug to={(s) => `/payment/${s}/closed`} />} />
             <Route path="/pay/:slug/my-tickets" element={<RedirectWithSlug to={(s) => `/payment/${s}/my-tickets`} />} />
-            <Route path="/transparency" element={<StudentProtectedRoute><TransparencyPage /></StudentProtectedRoute>} />
+            <Route path="/transparency" element={<StudentProtectedRoute><StudentShell><TransparencyPage /></StudentShell></StudentProtectedRoute>} />
             <Route
               path="/dashboard/payments/:id"
               element={
@@ -104,6 +134,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
+          </React.Suspense>
         </ToastProvider></StudentAuthProvider>
       </AuthProvider>
     </BrowserRouter>

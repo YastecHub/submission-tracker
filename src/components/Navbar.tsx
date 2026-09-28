@@ -73,21 +73,29 @@ export default function Navbar() {
   }
 
   const roleLabel =
-    user?.role === 'acr' ? 'Asst. CR' : user?.role === 'dev' ? 'Developer' : 'Class Rep';
+    user?.role === 'acr' ? 'Asst. CR' : user?.role === 'fin_sec' ? 'Fin Sec' : user?.role === 'dev' ? 'Developer' : 'Class Rep';
 
   const roleLongLabel =
     user?.role === 'acr'
       ? 'Assistant Class Rep'
+      : user?.role === 'fin_sec'
+      ? 'Financial Secretary'
       : user?.role === 'dev'
       ? 'Developer'
       : 'Class Representative';
 
   return (
     <nav className="bg-surface border-b border-nx px-4 py-3 flex items-center justify-between">
-      <Link to="/dashboard" className="text-base font-semibold tracking-tight flex items-center gap-2">
-        <img src="/icon.svg" alt="" className="w-7 h-7 rounded-md" />
-        NEXIUM
-      </Link>
+      <div className="flex items-center gap-2 sm:gap-5">
+        <Link to="/dashboard" className="text-base font-semibold tracking-tight flex items-center gap-2">
+          <img src="/icon.svg" alt="" className="w-7 h-7 rounded-md" />
+          <span className="hidden sm:inline">NEXIUM</span>
+        </Link>
+        <div className="flex items-center gap-1">
+          <Link to="/dashboard" className="btn-ghost !px-2.5 !py-2 text-sm">Dashboard</Link>
+          <Link to="/dashboard/bulletin" className="btn-ghost !px-2.5 !py-2 text-sm">Bulletin</Link>
+        </div>
+      </div>
 
       {user && (
         <div className="relative" ref={menuRef}>
