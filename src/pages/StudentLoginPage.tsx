@@ -17,7 +17,7 @@ export default function StudentLoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const requested = params.get('returnTo') ?? '/student';
-  const returnTo = requested.startsWith('/payment/') || requested.startsWith('/student') || requested === '/transparency' ? requested : '/student';
+  const returnTo = requested.startsWith('/payment/') ? requested : '/student';
   if (student) return <Navigate to={returnTo} replace />;
 
   async function submit(event: FormEvent) {

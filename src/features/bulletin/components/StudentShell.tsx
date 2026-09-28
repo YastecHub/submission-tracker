@@ -20,6 +20,7 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
   const { student, token, logout } = useStudentAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const firstName = student?.fullName.trim().split(/\s+/)[0] || 'Student';
 
   const loadUnread = useCallback(() => {
     if (!token) return;
@@ -43,13 +44,13 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
   return (
     <div className="page-base pb-24 md:pb-0">
       <header className="sticky top-0 z-40 bg-[color:rgba(9,9,11,0.94)] backdrop-blur border-b border-nx">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2 lg:gap-4">
           <Link to="/student" className="flex items-center gap-2 font-semibold tracking-tight shrink-0">
             <img src="/icon.svg" alt="" className="w-8 h-8 rounded-lg" />
-            <span className="hidden sm:inline">NEXIUM</span>
+            <span className="hidden lg:inline">NEXIUM</span>
           </Link>
 
-          <nav aria-label="Student navigation" className="hidden md:flex items-center gap-1">
+          <nav aria-label="Student navigation" className="hidden md:flex flex-1 items-center justify-center gap-1">
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>
                 {item.label}
@@ -60,13 +61,24 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="hidden sm:block text-right min-w-0">
-              <p className="text-sm font-medium truncate max-w-44">{student?.fullName}</p>
-              <p className="text-xs text-dim">{student?.matricNumber}</p>
+          <details className="relative shrink-0 group">
+            <summary className="list-none min-h-11 flex items-center gap-2 rounded-lg px-2 sm:px-3 cursor-pointer text-right hover:bg-surface-2 transition-colors [&::-webkit-details-marker]:hidden">
+              <span className="min-w-0">
+                <span className="block text-sm font-medium truncate max-w-28">{firstName}</span>
+                <span className="block text-xs text-dim">{student?.matricNumber}</span>
+              </span>
+              <svg className="w-4 h-4 text-dim transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="absolute right-0 mt-2 w-64 card-base p-3 shadow-xl">
+              <p className="text-sm font-semibold truncate">{student?.fullName}</p>
+              <p className="text-xs text-muted mt-1">{student?.matricNumber}</p>
+              <p className="text-xs text-dim mt-1 truncate">{student?.email}</p>
+              <div className="divider my-3" />
+              <button type="button" onClick={signOut} className="btn-ghost text-danger w-full justify-start">Sign out</button>
             </div>
-            <button type="button" onClick={signOut} className="btn-ghost !px-3 min-h-11">Sign out</button>
-          </div>
+          </details>
         </div>
       </header>
 
