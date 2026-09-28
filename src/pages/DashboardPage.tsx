@@ -1,6 +1,8 @@
 import { useState, useCallback, FormEvent, useRef } from 'react';
 import axios from 'axios';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import DashboardSectionNav from '../components/DashboardSectionNav';
 import EventCard from '../components/EventCard';
 import PaymentEventCard from '../components/PaymentEventCard';
 import ConfirmModal from '../components/ConfirmModal';
@@ -12,7 +14,7 @@ import { useToast } from '../context/ToastContext';
 import { useRemoteData } from '../hooks/useRemoteData';
 import { listSubmissionEvents, createSubmissionEvent, extendSubmissionEvent, toggleSubmissionEvent, deleteSubmissionEvent } from '../features/submissions/api/events';
 import { listPaymentEvents, createPaymentEvent, extendPaymentEvent, togglePaymentEvent, deletePaymentEvent } from '../features/payments/api/events';
-import { dashboardCapabilities } from '../features/auth/model/capabilities';
+import { canManagePaymentEvent, canManageSubmissionEvent, dashboardCapabilities } from '../features/auth/model/capabilities';
 
 const EVENT_TYPES: EventType[] = ['assignment', 'attendance', 'lab', 'other'];
 
@@ -46,12 +48,14 @@ interface PendingExtend {
   kind: 'submission' | 'payment';
 }
 
-type ActiveTab = 'submissions' | 'payments' | 'ledger';
-
 export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const access = dashboardCapabilities(user?.role);
+  const [searchParams] = useSearchParams();
+  const requestedSection = searchParams.get('section');
+  const activeTab: 'submissions' | 'payments' | 'ledger' =
+    requestedSection === 'payments' || requestedSection === 'ledger' ? requestedSection : 'submissions';
 
   const loadEvents = useCallback((signal: AbortSignal) => listSubmissionEvents(signal), []);
   const eventState = useRemoteData(loadEvents, 0, access.submissions);
@@ -75,7 +79,6 @@ export default function DashboardPage() {
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [paymentFormError, setPaymentFormError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>(() => access.submissions ? 'submissions' : access.payments ? 'payments' : 'ledger');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [pendingExtend, setPendingExtend] = useState<PendingExtend | null>(null);
@@ -199,20 +202,13 @@ export default function DashboardPage() {
     }
   }
 
-  const tabClass = (tab: ActiveTab) =>
-    `px-2.5 sm:px-4 py-2 text-sm font-medium rounded-md transition-colors flex-1 sm:flex-initial ${
-      activeTab === tab
-        ? 'bg-surface text-[color:var(--nx-text)] border border-nx'
-        : 'text-muted hover:text-[color:var(--nx-text)]'
-    }`;
-
   return (
     <div className="page-base">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          {((activeTab === 'submissions' && access.submissions) || (activeTab === 'payments' && access.payments)) && (
+          {((activeTab === 'submissions' && access.createSubmissions) || (activeTab === 'payments' && access.createPayments)) && (
             <div className="flex gap-2 w-full sm:w-auto">
               {activeTab === 'submissions' && (
                 <button
@@ -236,19 +232,13 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit">
-          {access.submissions && <button type="button" onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
-            Submissions
-            {!eventsLoading && <span className="ml-2 badge">{events.length}</span>}
-          </button>}
-          {access.payments && <button type="button" onClick={() => setActiveTab('payments')} className={tabClass('payments')}>
-            Payments
-            {!paymentsLoading && <span className="ml-2 badge">{paymentEvents.length}</span>}
-          </button>}
-          {access.ledger && <button type="button" onClick={() => setActiveTab('ledger')} className={tabClass('ledger')}>
-            Ledger
-          </button>}
-        </div>
+        <DashboardSectionNav
+          active={activeTab}
+          counts={{
+            ...(!eventsLoading ? { submissions: events.length } : {}),
+            ...(!paymentsLoading ? { payments: paymentEvents.length } : {}),
+          }}
+        />
 
         {activeTab === 'submissions' && (
           <>
@@ -347,7 +337,7 @@ export default function DashboardPage() {
             ) : events.length === 0 ? (
               <div className="text-center py-20 text-muted">
                 <p className="text-lg font-medium">No submission events yet</p>
-                {access.submissions && <p className="text-sm text-dim mt-2">Create your first submission event to get started.</p>}
+                {access.createSubmissions && <p className="text-sm text-dim mt-2">Create your first submission event to get started.</p>}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -358,6 +348,7 @@ export default function DashboardPage() {
                     onToggleClose={(id) => requestToggleClose(id, 'submission')}
                     onExtend={(id) => requestExtend(id, 'submission')}
                     onDelete={(id) => requestDelete(id, 'submission')}
+                    canManage={canManageSubmissionEvent(user?.role, user?.id, event.createdBy)}
                   />
                 ))}
               </div>
@@ -497,7 +488,7 @@ export default function DashboardPage() {
             ) : paymentEvents.length === 0 ? (
               <div className="text-center py-20 text-muted">
                 <p className="text-lg font-medium">No payment collections yet</p>
-                {access.payments && <p className="text-sm text-dim mt-2">Create one to start collecting payment receipts.</p>}
+                {access.createPayments && <p className="text-sm text-dim mt-2">Create one to start collecting payment receipts.</p>}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -508,6 +499,7 @@ export default function DashboardPage() {
                     onToggleClose={(id) => requestToggleClose(id, 'payment')}
                     onExtend={(id) => requestExtend(id, 'payment')}
                     onDelete={(id) => requestDelete(id, 'payment')}
+                    canManage={canManagePaymentEvent(user?.role, user?.id, event.createdBy)}
                   />
                 ))}
               </div>
@@ -515,7 +507,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {activeTab === 'ledger' && <DashboardLedger />}
+        {activeTab === 'ledger' && <DashboardLedger canManage={access.manageLedger} />}
       </main>
 
       {pendingAction && (

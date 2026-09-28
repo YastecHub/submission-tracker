@@ -6,6 +6,8 @@ import QRScanner from '../components/QRScanner';
 import { confirmAllSubmissions, exportSubmissions } from '../features/submissions/api/submissions';
 import { useSubmissionDetail } from '../features/submissions/hooks/useSubmissionDetail';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { canManageSubmissionEvent } from '../features/auth/model/capabilities';
 
 
 function EventDetailSkeleton() {
@@ -37,6 +39,7 @@ const CONFIRM_ALL_MIN_SUBMISSIONS = 90;
 
 export default function EventDetail() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const { event, submissions, submissionStats, loading, tableLoading, currentPage,
     setCurrentPage, search, setSearch, refresh, error, retry } = useSubmissionDetail(id!);
@@ -92,11 +95,12 @@ export default function EventDetail() {
   const totalPages = submissionStats.totalPages;
   const eventTotalSubmissions = totalSubmissions;
   const canConfirmAll = eventTotalSubmissions >= CONFIRM_ALL_MIN_SUBMISSIONS && pendingTotal > 0;
+  const canManage = canManageSubmissionEvent(user?.role, user?.id, event?.createdBy);
 
   return (
     <div className="page-base">
       <Navbar />
-      {showScanner && (
+      {canManage && showScanner && (
         <QRScanner
           onClose={() => setShowScanner(false)}
           onConfirmed={handleConfirmed}
@@ -105,7 +109,7 @@ export default function EventDetail() {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         {error && <div role="alert" className="alert-danger mb-4">Unable to load submissions. <button className="btn-secondary" onClick={() => void retry()}>Try again</button></div>}
-        <Link to="/dashboard" className="btn-ghost !px-0 mb-4">
+        <Link to="/dashboard?section=submissions" className="btn-ghost !px-0 mb-4">
           ← Back to dashboard
         </Link>
 
@@ -161,23 +165,25 @@ export default function EventDetail() {
             )}
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setShowScanner(true)} className="btn-secondary flex-1 !py-3">
-              Scan QR
-            </button>
-            <button
-              onClick={handleConfirmAll}
-              disabled={!canConfirmAll || confirmingAll}
-              className="btn-secondary flex-1 !py-3"
-              title={
-                eventTotalSubmissions < CONFIRM_ALL_MIN_SUBMISSIONS
-                  ? `Available after ${CONFIRM_ALL_MIN_SUBMISSIONS} submissions`
-                  : pendingTotal === 0
-                  ? 'All submissions are already confirmed'
-                  : 'Confirm all pending submissions'
-              }
-            >
-              {confirmingAll ? 'Confirming...' : 'Confirm all'}
-            </button>
+            {canManage && <>
+              <button onClick={() => setShowScanner(true)} className="btn-secondary flex-1 !py-3">
+                Scan QR
+              </button>
+              <button
+                onClick={handleConfirmAll}
+                disabled={!canConfirmAll || confirmingAll}
+                className="btn-secondary flex-1 !py-3"
+                title={
+                  eventTotalSubmissions < CONFIRM_ALL_MIN_SUBMISSIONS
+                    ? `Available after ${CONFIRM_ALL_MIN_SUBMISSIONS} submissions`
+                    : pendingTotal === 0
+                    ? 'All submissions are already confirmed'
+                    : 'Confirm all pending submissions'
+                }
+              >
+                {confirmingAll ? 'Confirming...' : 'Confirm all'}
+              </button>
+            </>}
             <button
               onClick={handleExport}
               disabled={exporting || totalSubmissions === 0}
@@ -194,6 +200,7 @@ export default function EventDetail() {
             onConfirmed={handleConfirmed}
             loading={tableLoading}
             pageOffset={(currentPage - 1) * PAGE_SIZE}
+            canConfirm={canManage}
           />
         </div>
 

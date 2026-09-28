@@ -6,9 +6,10 @@ interface Props {
   onConfirmed: (updated: Submission) => void;
   loading?: boolean;
   pageOffset?: number;
+  canConfirm?: boolean;
 }
 
-function SkeletonRows() {
+function SkeletonRows({ canConfirm }: { canConfirm: boolean }) {
   return (
     <>
       {/* Mobile skeleton */}
@@ -23,7 +24,7 @@ function SkeletonRows() {
                 <div className="h-5 w-16 bg-surface-2 rounded-full" />
               </div>
             </div>
-            <div className="h-8 w-20 bg-surface-2 rounded-lg flex-shrink-0" />
+            {canConfirm && <div className="h-8 w-20 bg-surface-2 rounded-lg flex-shrink-0" />}
           </li>
         ))}
       </ul>
@@ -32,7 +33,7 @@ function SkeletonRows() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-surface-2 border-b border-nx">
-              {['#', 'Full Name', 'Matric No.', 'Level', 'Submitted At', 'Status', 'Action'].map((h) => (
+              {['#', 'Full Name', 'Matric No.', 'Level', 'Submitted At', 'Status', ...(canConfirm ? ['Action'] : [])].map((h) => (
                 <th key={h} className="text-left px-4 py-3 font-semibold text-muted">{h}</th>
               ))}
             </tr>
@@ -46,7 +47,7 @@ function SkeletonRows() {
                 <td className="px-4 py-3"><div className="h-3 bg-surface-2 rounded w-10" /></td>
                 <td className="px-4 py-3"><div className="h-3 bg-surface-2 rounded w-20" /></td>
                 <td className="px-4 py-3"><div className="h-5 w-16 bg-surface-2 rounded-full" /></td>
-                <td className="px-4 py-3"><div className="h-8 w-20 bg-surface-2 rounded-lg" /></td>
+                {canConfirm && <td className="px-4 py-3"><div className="h-8 w-20 bg-surface-2 rounded-lg" /></td>}
               </tr>
             ))}
           </tbody>
@@ -56,8 +57,8 @@ function SkeletonRows() {
   );
 }
 
-export default function SubmissionsTable({ submissions, onConfirmed, loading, pageOffset = 0 }: Props) {
-  if (loading) return <SkeletonRows />;
+export default function SubmissionsTable({ submissions, onConfirmed, loading, pageOffset = 0, canConfirm = true }: Props) {
+  if (loading) return <SkeletonRows canConfirm={canConfirm} />;
 
   if (submissions.length === 0) {
     return (
@@ -101,9 +102,9 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
                   )}
                 </div>
               </div>
-              <div className="flex-shrink-0 pt-1">
+              {canConfirm && <div className="flex-shrink-0 pt-1">
                 <ConfirmButton submission={s} onConfirmed={onConfirmed} />
-              </div>
+              </div>}
             </li>
           );
         })}
@@ -120,7 +121,7 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
               <th className="text-left px-4 py-3 font-semibold text-muted">Level</th>
               <th className="text-left px-4 py-3 font-semibold text-muted">Submitted At</th>
               <th className="text-left px-4 py-3 font-semibold text-muted">Status</th>
-              <th className="text-left px-4 py-3 font-semibold text-muted">Action</th>
+              {canConfirm && <th className="text-left px-4 py-3 font-semibold text-muted">Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -145,9 +146,9 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
                       <span className="badge badge-accent">Pending</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  {canConfirm && <td className="px-4 py-3">
                     <ConfirmButton submission={s} onConfirmed={onConfirmed} />
-                  </td>
+                  </td>}
                 </tr>
               );
             })}

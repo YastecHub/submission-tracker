@@ -24,6 +24,7 @@ import type {
   AnnouncementWriteInput,
   PaymentOption,
 } from '../features/bulletin/model/types';
+import { canEditAnnouncement, canPublishAnnouncement } from '../features/bulletin/model/permissions';
 
 interface ComposerForm {
   title: string;
@@ -113,11 +114,10 @@ export default function BulletinComposerPage() {
   }, [dirty]);
 
   const canPublish = useMemo(() => {
-    if (!user) return false;
-    if (user.role === 'dev') return true;
-    return form.category === 'finance' ? user.role === 'fin_sec' : user.role === 'cr';
+    return canPublishAnnouncement(user?.role, form.category);
   }, [user, form.category]);
-  const readOnly = announcement?.status === 'archived';
+  const canEdit = !announcement || canEditAnnouncement(user, announcement);
+  const readOnly = !canEdit;
 
   function change<K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -226,7 +226,7 @@ export default function BulletinComposerPage() {
           <div className="card-base p-4 mb-5 text-sm text-muted">You can prepare and save this draft. A {form.category === 'finance' ? 'Financial Secretary' : 'Class Representative'} must review and publish it.</div>
         )}
         {error && <div role="alert" className="alert-danger mb-5">{error}</div>}
-        {readOnly && <div className="card-base p-4 mb-5 text-sm text-muted">This announcement is archived and retained as a read-only record.</div>}
+        {readOnly && <div className="card-base p-4 mb-5 text-sm text-muted">{announcement?.status === 'archived' ? 'This announcement is archived and retained as a read-only record.' : 'You have view-only access to this announcement.'}</div>}
 
         <div className="grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] gap-6 items-start">
           <div className="space-y-5">

@@ -35,7 +35,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function DashboardLedger() {
+export default function DashboardLedger({ canManage = true }: { canManage?: boolean }) {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<TransactionType | ''>('');
@@ -99,12 +99,12 @@ export default function DashboardLedger() {
               <p className="text-xs text-dim mt-0.5">{formatNaira(ledger.balance)}</p>
             )}
           </div>
-          <button
+          {canManage && <button
             onClick={() => { setEditing(null); setFormOpen(true); }}
             className="btn-primary !py-2 !text-sm w-full sm:w-auto"
           >
             + New transaction
-          </button>
+          </button>}
         </div>
         {ledger && (
           <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
@@ -166,7 +166,7 @@ export default function DashboardLedger() {
       ) : ledger && ledger.transactions.length === 0 ? (
         <div className="card-base p-16 text-center">
           <p className="font-semibold">No transactions yet</p>
-          <p className="text-sm text-muted mt-1">Click &ldquo;+ New transaction&rdquo; to record the first one.</p>
+          <p className="text-sm text-muted mt-1">{canManage ? 'Click “+ New transaction” to record the first one.' : 'Transactions will appear here when they are recorded.'}</p>
         </div>
       ) : ledger ? (
         <div className="space-y-3">
@@ -223,7 +223,7 @@ export default function DashboardLedger() {
                           View proof
                         </button>
                       )}
-                      {!isAuto && !t.isDeleted && (
+                      {canManage && !isAuto && !t.isDeleted && (
                         <>
                           <button
                             onClick={() => { setEditing(t); setFormOpen(true); }}
@@ -270,7 +270,7 @@ export default function DashboardLedger() {
         </div>
       )}
 
-      {formOpen && (
+      {canManage && formOpen && (
         <TransactionFormModal
           transaction={editing}
           onClose={() => { setFormOpen(false); setEditing(null); }}
@@ -278,7 +278,7 @@ export default function DashboardLedger() {
         />
       )}
 
-      {deleteTarget && (
+      {canManage && deleteTarget && (
         <ConfirmModal
           title="Delete transaction"
           message={`Delete "${deleteTarget.description}"? It will be hidden from the transparency page but kept for audit.`}

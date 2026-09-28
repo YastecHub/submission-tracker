@@ -7,9 +7,10 @@ interface Props {
   onToggleClose: (id: string) => void;
   onExtend: (id: string) => void;
   onDelete: (id: string) => void;
+  canManage?: boolean;
 }
 
-export default function EventCard({ event, onToggleClose, onExtend, onDelete }: Props) {
+export default function EventCard({ event, onToggleClose, onExtend, onDelete, canManage = true }: Props) {
   const { toast } = useToast();
   const deadline = new Date(event.deadline);
   const isExpired = new Date() > deadline;
@@ -73,29 +74,33 @@ export default function EventCard({ event, onToggleClose, onExtend, onDelete }: 
         <button type="button" onClick={copyLink} className="btn-secondary flex-1 !py-2 !text-sm">
           Copy link
         </button>
-        <button
-          type="button"
-          onClick={() => onToggleClose(event.id)}
-          className="btn-secondary flex-1 !py-2 !text-sm"
-        >
-          {event.isClosed ? 'Re-open' : 'Close'}
-        </button>
-        <button
-          type="button"
-          onClick={() => onExtend(event.id)}
-          className="btn-secondary flex-1 !py-2 !text-sm"
-          title={closed ? 'Reopen with a new deadline' : 'Extend deadline'}
-        >
-          {closed ? 'Reopen…' : 'Extend…'}
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(event.id)}
-          className="btn-ghost !text-sm text-danger"
-          title="Delete event"
-        >
-          Delete
-        </button>
+        {canManage && (
+          <>
+            <button
+              type="button"
+              onClick={() => onToggleClose(event.id)}
+              className="btn-secondary flex-1 !py-2 !text-sm"
+            >
+              {event.isClosed ? 'Re-open' : 'Close'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onExtend(event.id)}
+              className="btn-secondary flex-1 !py-2 !text-sm"
+              title={closed ? 'Reopen with a new deadline' : 'Extend deadline'}
+            >
+              {closed ? 'Reopen…' : 'Extend…'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(event.id)}
+              className="btn-ghost !text-sm text-danger"
+              title="Delete event"
+            >
+              Delete
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

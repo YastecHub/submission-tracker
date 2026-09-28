@@ -1,9 +1,12 @@
 import { useCallback, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import DashboardSectionNav from '../components/DashboardSectionNav';
+import { useAuth } from '../context/AuthContext';
 import { listAdminAnnouncements } from '../features/bulletin/api/bulletin';
 import { categoryLabels, formatBulletinDate } from '../features/bulletin/model/presentation';
 import type { AnnouncementStatus } from '../features/bulletin/model/types';
+import { canEditAnnouncement } from '../features/bulletin/model/permissions';
 import { useRemoteData } from '../hooks/useRemoteData';
 
 const statuses: Array<{ value: AnnouncementStatus | ''; label: string }> = [
@@ -14,6 +17,7 @@ const statuses: Array<{ value: AnnouncementStatus | ''; label: string }> = [
 ];
 
 export default function BulletinManagementPage() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
   const statusParam = params.get('status');
@@ -45,6 +49,8 @@ export default function BulletinManagementPage() {
           </div>
           <Link to="/dashboard/bulletin/new" className="btn-primary">Create announcement</Link>
         </div>
+
+        <DashboardSectionNav active="bulletin" />
 
         <div className="card-base p-3 mb-5">
           <div className="flex gap-1 overflow-x-auto mb-3" aria-label="Announcement status">
@@ -98,7 +104,13 @@ export default function BulletinManagementPage() {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     {announcement.status === 'published' && <Link to={`/student/news/${announcement.slug}`} className="btn-ghost" target="_blank" rel="noreferrer">View</Link>}
-                    <Link to={`/dashboard/bulletin/${announcement.id}`} className="btn-secondary !py-2">{announcement.status === 'archived' ? 'Review' : 'Edit'}</Link>
+                    <Link to={`/dashboard/bulletin/${announcement.id}`} className="btn-secondary !py-2">
+                      {canEditAnnouncement(user, {
+                        createdBy: announcement.creator.id,
+                        category: announcement.category,
+                        status: announcement.status,
+                      }) ? 'Edit' : 'View'}
+                    </Link>
                   </div>
                 </div>
               </article>

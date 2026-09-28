@@ -9,6 +9,8 @@ import { useReceiptList } from '../features/payments/hooks/useReceiptList';
 import { claimTicket, reviewReceipt } from '../features/payments/api/actions';
 import { ReceiptReviewModal, type ReceiptAction } from '../features/payments/components/ReceiptReviewModal';
 import { TicketScannerModal, type ClaimResult } from '../features/payments/components/TicketScannerModal';
+import { useAuth } from '../context/AuthContext';
+import { canManagePaymentEvent } from '../features/auth/model/capabilities';
 import { type DisplayPaymentReceipt,
   PICNIC_EXPORT_AMOUNT, PICNIC_LEGACY_EVENT_ID, PICNIC_LEGACY_EVENT_TITLE,
   isPicnicPaymentEvent, dedupePicnicReceipts } from '../features/payments/model/picnic';
@@ -41,6 +43,7 @@ function downloadCsv(filename: string, rows: Array<Array<string | number | null 
 export default function PaymentEventDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [event, setEvent] = useState<PaymentEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +64,7 @@ export default function PaymentEventDetail() {
   const actionInFlight = useRef(false);
   const claimInFlight = useRef(false);
   const combinedPicnicMode = isPicnicPaymentEvent(id);
+  const canManage = canManagePaymentEvent(user?.role, user?.id, event?.createdBy);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -315,7 +319,7 @@ export default function PaymentEventDetail() {
       )}
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <Link to="/dashboard" className="btn-ghost !px-0 mb-4">
+        <Link to="/dashboard?section=payments" className="btn-ghost !px-0 mb-4">
           ← Back to dashboard
         </Link>
 
@@ -375,7 +379,7 @@ export default function PaymentEventDetail() {
             </button>
           </div>
 
-          <label className="flex items-center gap-3 mt-4 cursor-pointer select-none bg-surface-2 border border-nx rounded-xl px-4 py-3">
+          {canManage && <label className="flex items-center gap-3 mt-4 cursor-pointer select-none bg-surface-2 border border-nx rounded-xl px-4 py-3">
             <input
               type="checkbox"
               checked={event.hasTickets}
@@ -399,10 +403,10 @@ export default function PaymentEventDetail() {
               <span className="text-sm font-medium">Enable collection tickets</span>
               <p className="text-xs text-dim mt-0.5">Students get a QR ticket when confirmed. Scan at the event to mark collected.</p>
             </div>
-          </label>
+          </label>}
         </div>
 
-        {event.hasTickets && (
+        {canManage && event.hasTickets && (
           <div className="card-base p-4 mb-4">
             <div className="flex items-center gap-3 flex-wrap">
               <h3 className="text-sm font-semibold flex-1">Collection tickets</h3>
@@ -532,7 +536,7 @@ export default function PaymentEventDetail() {
                   </div>
                 </div>
 
-                {receipt.status === 'pending' && (
+                {canManage && receipt.status === 'pending' && (
                   <div className="flex flex-row gap-2 mt-3">
                     <button
                       type="button"
@@ -594,7 +598,7 @@ export default function PaymentEventDetail() {
         )}
       </main>
 
-      {showScanner && (
+      {canManage && showScanner && (
         <TicketScannerModal
           onScan={(code) => { void handleClaim(code); }}
           onClose={() => setShowScanner(false)}
@@ -603,7 +607,7 @@ export default function PaymentEventDetail() {
         />
       )}
 
-      {actionModal && (
+      {canManage && actionModal && (
         <ReceiptReviewModal action={actionModal} note={actionNote} loading={actionLoading}
           onNoteChange={setActionNote} onSubmit={() => void handleAction()}
           onClose={() => { setActionModal(null); setActionNote(''); }} />

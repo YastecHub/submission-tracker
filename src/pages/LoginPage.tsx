@@ -45,7 +45,13 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const loggedInUser = await login(email, password);
-      const roleLabel = loggedInUser.role === 'acr' ? 'Assistant CR' : 'Class Rep';
+      const roleLabel = loggedInUser.role === 'acr'
+        ? 'Assistant CR'
+        : loggedInUser.role === 'fin_sec'
+        ? 'Financial Secretary'
+        : loggedInUser.role === 'dev'
+        ? 'Developer'
+        : 'Class Rep';
       toast(`Welcome back, ${loggedInUser.name} (${roleLabel})!`, 'success');
       navigate('/dashboard');
     } catch (err: unknown) {
@@ -64,7 +70,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="page-base px-4 py-8 sm:py-16">
+    <main className="page-base px-4 py-8 sm:py-16">
       {/* Mobile brand header — desktop hides this, brand lives in left column */}
       <div className="md:hidden flex items-center gap-3 mb-6 max-w-md mx-auto">
         <div className="w-10 h-10 rounded-xl bg-surface-2 border border-nx flex items-center justify-center overflow-hidden">
@@ -113,7 +119,7 @@ export default function LoginPage() {
         <div className="order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 md:justify-self-end">
           <div className="card-base p-7 sm:p-8">
             <h2 className="text-xl font-semibold">Sign in</h2>
-            <p className="text-sm text-muted mt-1">Class reps and assistant CRs only.</p>
+            <p className="text-sm text-muted mt-1">Staff access only.</p>
 
             {error && (
               <div className="alert-danger mt-5 flex items-start gap-2">
@@ -126,8 +132,9 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Email</label>
+                <label htmlFor="staff-email" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Email</label>
                 <input
+                  id="staff-email"
                   type="email"
                   required
                   autoComplete="email"
@@ -139,9 +146,10 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Password</label>
+                <label htmlFor="staff-password" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Password</label>
                 <div className="relative">
                   <input
+                    id="staff-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
@@ -155,6 +163,7 @@ export default function LoginPage() {
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-dim hover:text-muted transition-colors"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -207,6 +216,6 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
