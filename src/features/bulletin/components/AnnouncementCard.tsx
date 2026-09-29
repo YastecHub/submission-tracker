@@ -6,6 +6,17 @@ import PriorityBadge from './PriorityBadge';
 export default function AnnouncementCard({ announcement }: { announcement: BulletinFeedItem }) {
   return (
     <article className={`card-interactive p-5 relative ${announcement.isUnread ? 'border-[color:var(--nx-accent)]' : ''}`}>
+      {announcement.media?.[0] && (
+        <Link to={`/student/news/${announcement.slug}`} className="block rounded-lg overflow-hidden border border-nx mb-4">
+          <img
+            src={announcement.media[0].thumbnailUrl}
+            alt={announcement.media[0].altText}
+            loading="lazy"
+            decoding="async"
+            className="w-full aspect-[3/2] object-cover"
+          />
+        </Link>
+      )}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <span className="badge">{categoryLabels[announcement.category]}</span>
         <PriorityBadge priority={announcement.priority} />

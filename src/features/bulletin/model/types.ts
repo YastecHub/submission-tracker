@@ -16,6 +16,28 @@ export interface AnnouncementDocument {
   sections: AnnouncementSection[];
 }
 
+export interface AnnouncementMedia {
+  id: string;
+  url: string;
+  thumbnailUrl: string;
+  altText: string;
+  caption: string | null;
+  sectionId: string | null;
+  sortOrder: number;
+  width: number;
+  height: number;
+  bytes: number;
+  format: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AnnouncementMediaMutationResponse {
+  version: number;
+  updatedAt: string;
+  media: AnnouncementMedia[];
+}
+
 export interface BulletinStaffSummary {
   id: string;
   name: string;
@@ -40,6 +62,7 @@ export interface BulletinFeedItem {
   publisher: { name: string; role: UserRole } | null;
   isUnread: boolean;
   isAcknowledged: boolean;
+  media: Array<Pick<AnnouncementMedia, 'id' | 'thumbnailUrl' | 'altText'>>;
 }
 
 export interface RelatedPayment {
@@ -54,6 +77,7 @@ export interface RelatedPayment {
 
 export interface BulletinArticle extends BulletinFeedItem {
   content: AnnouncementDocument;
+  media: AnnouncementMedia[];
   paymentEvent: RelatedPayment | null;
 }
 
@@ -102,6 +126,7 @@ export interface AdminAnnouncement {
   updater: BulletinStaffSummary;
   publisher: BulletinStaffSummary | null;
   revisions: BulletinRevision[];
+  media: AnnouncementMedia[];
   readCount?: number;
 }
 

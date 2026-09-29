@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import AnnouncementContent from '../features/bulletin/components/AnnouncementContent';
 import AiOrganizationReview from '../features/bulletin/components/AiOrganizationReview';
+import AnnouncementMediaManager from '../features/bulletin/components/AnnouncementMediaManager';
 import {
   archiveAdminAnnouncement,
   createAdminAnnouncement,
@@ -27,6 +28,7 @@ import type {
   BulletinAiOrganizationResponse,
   BulletinAiReview,
   BulletinAiReviewField,
+  AnnouncementMediaMutationResponse,
   PaymentOption,
 } from '../features/bulletin/model/types';
 import { canEditAnnouncement, canPublishAnnouncement } from '../features/bulletin/model/permissions';
@@ -87,6 +89,8 @@ export default function BulletinComposerPage() {
   const [selectedAiSections, setSelectedAiSections] = useState<Set<string>>(new Set());
   const [aiReview, setAiReview] = useState<BulletinAiReview | null>(null);
   const [aiApplied, setAiApplied] = useState(false);
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const [mediaDirty, setMediaDirty] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,6 +102,7 @@ export default function BulletinComposerPage() {
     if (isNew || !id) return;
     const controller = new AbortController();
     setLoading(true);
+    setError('');
     getAdminAnnouncement(id, controller.signal)
       .then((data) => {
         setAnnouncement(data);
@@ -119,20 +124,24 @@ export default function BulletinComposerPage() {
         setAiReview(null);
         setAiApplied(false);
       })
-      .catch((caught) => setError(errorMessage(caught)))
-      .finally(() => setLoading(false));
+      .catch((caught) => {
+        if (!axios.isCancel(caught)) setError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
   }, [id, isNew]);
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!dirty) return;
+      if (!dirty && !mediaDirty) return;
       event.preventDefault();
       event.returnValue = '';
     };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+  }, [dirty, mediaDirty]);
 
   const canPublish = useMemo(() => {
     return canPublishAnnouncement(user?.role, form.category);
@@ -228,6 +237,16 @@ export default function BulletinComposerPage() {
     toast('Selected suggestions were applied to the draft. Review and save when ready.', 'info');
   }
 
+  function applyMediaResult(result: AnnouncementMediaMutationResponse) {
+    setAnnouncement((current) => current ? {
+      ...current,
+      version: result.version,
+      updatedAt: result.updatedAt,
+      media: result.media,
+    } : current);
+    toast('Announcement images updated.', 'success');
+  }
+
   function payload(version?: number): AnnouncementWriteInput {
     return {
       title: form.title,
@@ -273,7 +292,7 @@ export default function BulletinComposerPage() {
   }
 
   async function runAction() {
-    if (!pendingAction) return;
+    if (!pendingAction || mediaDirty) return;
     setSaving(true);
     setError('');
     try {
@@ -314,16 +333,16 @@ export default function BulletinComposerPage() {
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <h1 className="text-3xl font-semibold tracking-tight">{announcement ? 'Edit announcement' : 'Create announcement'}</h1>
               {announcement && <span className={`badge ${announcement.status === 'published' ? 'badge-success' : announcement.status === 'draft' ? 'badge-accent' : ''}`}>{announcement.status}</span>}
-              {dirty && <span className="badge">Unsaved changes</span>}
+              {(dirty || mediaDirty) && <span className="badge">Unsaved changes</span>}
               {aiReview && <span className="badge badge-accent">Assistant suggestions applied</span>}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {!readOnly && <button type="button" onClick={() => void save()} disabled={saving || organizing} className="btn-secondary">{saving ? 'Saving…' : 'Save'}</button>}
+            {!readOnly && <button type="button" onClick={() => void save()} disabled={saving || organizing || mediaBusy} className="btn-secondary">{saving ? 'Saving…' : 'Save'}</button>}
             {(!announcement || announcement.status === 'draft') && (
-              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || !canPublish} className="btn-primary" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : undefined}>Publish</button>
+              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || mediaBusy || mediaDirty || !canPublish} className="btn-primary" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : mediaDirty ? 'Upload or save the pending image changes before publishing.' : undefined}>Publish</button>
             )}
-            {announcement?.status === 'published' && canPublish && <button type="button" onClick={() => setPendingAction('archive')} disabled={saving} className="btn-ghost text-danger">Archive</button>}
+            {announcement?.status === 'published' && canPublish && <button type="button" onClick={() => setPendingAction('archive')} disabled={saving || mediaBusy || mediaDirty} className="btn-ghost text-danger">Archive</button>}
           </div>
         </div>
 
@@ -403,6 +422,25 @@ export default function BulletinComposerPage() {
               </div>
             </section>
 
+            {announcement ? (
+              <AnnouncementMediaManager
+                announcement={announcement}
+                sections={form.sections}
+                readOnly={readOnly}
+                formDirty={dirty}
+                disabled={saving || organizing}
+                changeNote={form.changeNote}
+                onChanged={applyMediaResult}
+                onBusyChange={setMediaBusy}
+                onDirtyChange={setMediaDirty}
+              />
+            ) : (
+              <section className="card-base p-5 sm:p-6" aria-labelledby="media-heading">
+                <h2 id="media-heading" className="text-lg font-semibold">Images</h2>
+                <p className="text-sm text-muted mt-2">Save this draft first, then add images, captions, alt text and section placement.</p>
+              </section>
+            )}
+
             <section className="card-base p-5 sm:p-6" aria-labelledby="credit-heading">
               <h2 id="credit-heading" className="text-lg font-semibold mb-4">Source and contributor credit</h2>
               <div className="space-y-4">
@@ -424,7 +462,7 @@ export default function BulletinComposerPage() {
             <h2 id="preview-heading" className="text-2xl font-semibold tracking-tight mt-2">{form.title || 'Announcement title'}</h2>
             <p className="text-sm text-muted mt-3 leading-6">{form.summary || 'The announcement summary will appear here.'}</p>
             <div className="divider my-5" />
-            {form.sections.every((section) => !section.body.trim()) ? <p className="text-sm text-dim">Add content to preview the article.</p> : <AnnouncementContent document={{ version: 1, sections: form.sections.filter((section) => section.body.trim()) }} />}
+            {form.sections.every((section) => !section.body.trim()) ? <p className="text-sm text-dim">Add content to preview the article.</p> : <AnnouncementContent document={{ version: 1, sections: form.sections.filter((section) => section.body.trim()) }} media={announcement?.media ?? []} />}
           </aside>
         </div>
       </main>

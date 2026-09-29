@@ -76,7 +76,7 @@ export default function BulletinArticlePage() {
 
         {wasUpdated && <div className="badge badge-accent mb-6">This announcement has been updated since publication</div>}
 
-        <AnnouncementContent document={data.content} />
+        <AnnouncementContent document={data.content} media={data.media} />
 
         {data.paymentEvent && (
           <aside className="card-base p-5 mt-10 border-[color:var(--nx-accent)]" aria-labelledby="related-payment-heading">

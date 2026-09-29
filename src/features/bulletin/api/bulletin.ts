@@ -3,6 +3,7 @@ import { studentAuthHeader } from '../../student-auth/api/studentAuth';
 import type {
   AdminAnnouncement,
   AdminAnnouncementListResponse,
+  AnnouncementMediaMutationResponse,
   AnnouncementCategory,
   AnnouncementPriority,
   AnnouncementStatus,
@@ -84,4 +85,30 @@ export async function listBulletinPaymentOptions(signal?: AbortSignal) {
 
 export async function organizeBulletinSource(input: { rawSource: string; announcementId?: string }) {
   return (await api.post<BulletinAiOrganizationResponse>('/api/bulletin/admin/organize', input)).data;
+}
+
+export async function uploadAnnouncementMedia(id: string, form: FormData) {
+  return (await api.post<AnnouncementMediaMutationResponse>(`/api/bulletin/admin/${id}/media`, form)).data;
+}
+
+export async function updateAnnouncementMedia(
+  id: string,
+  input: {
+    expectedVersion: number;
+    changeNote?: string;
+    items: Array<{ id: string; altText: string; caption: string; sectionId: string | null }>;
+  },
+) {
+  return (await api.patch<AnnouncementMediaMutationResponse>(`/api/bulletin/admin/${id}/media`, input)).data;
+}
+
+export async function deleteAnnouncementMedia(
+  id: string,
+  mediaId: string,
+  expectedVersion: number,
+  changeNote?: string,
+) {
+  return (await api.delete<AnnouncementMediaMutationResponse>(`/api/bulletin/admin/${id}/media/${mediaId}`, {
+    data: { expectedVersion, changeNote },
+  })).data;
 }
