@@ -22,6 +22,11 @@ export default function AnnouncementCard({ announcement }: { announcement: Bulle
         <PriorityBadge priority={announcement.priority} />
         {announcement.isPinned && <span className="badge" aria-label="Pinned announcement">Pinned</span>}
         {announcement.isUnread && <span className="badge badge-accent">Unread</span>}
+        {announcement.requiresAcknowledgement && (
+          <span className={`badge ${announcement.isAcknowledged ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+            {announcement.isAcknowledged ? '✓ Acknowledged' : 'Ack required'}
+          </span>
+        )}
       </div>
       <h2 className="text-lg font-semibold tracking-tight">
         <Link to={`/student/news/${announcement.slug}`} className="hover:text-accent transition-colors">

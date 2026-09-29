@@ -3,7 +3,9 @@ import { studentAuthHeader } from '../../student-auth/api/studentAuth';
 import type {
   AdminAnnouncement,
   AdminAnnouncementListResponse,
+  AnnouncementAnalyticsResponse,
   AnnouncementMediaMutationResponse,
+  AnnouncementOutstandingStudentsResponse,
   AnnouncementCategory,
   AnnouncementPriority,
   AnnouncementStatus,
@@ -135,5 +137,28 @@ export async function deleteStudentPushSubscription(endpoint: string, studentTok
   return (await api.delete<{ subscribed: false }>('/api/bulletin/push/subscriptions', {
     headers: studentAuthHeader(studentToken),
     data: { endpoint },
+  })).data;
+}
+
+export async function acknowledgeBulletinArticle(id: string, studentToken: string) {
+  return (await api.post<{ id: string; version: number; acknowledged: true }>(
+    `/api/bulletin/feed/${id}/acknowledge`,
+    {},
+    { headers: studentAuthHeader(studentToken) },
+  )).data;
+}
+
+export async function getAnnouncementAnalytics(id: string, signal?: AbortSignal) {
+  return (await api.get<AnnouncementAnalyticsResponse>(`/api/bulletin/admin/${id}/analytics`, { signal })).data;
+}
+
+export async function getAnnouncementOutstandingStudents(
+  id: string,
+  query: { page?: number; limit?: number; search?: string },
+  signal?: AbortSignal,
+) {
+  return (await api.get<AnnouncementOutstandingStudentsResponse>(`/api/bulletin/admin/${id}/outstanding`, {
+    params: query,
+    signal,
   })).data;
 }

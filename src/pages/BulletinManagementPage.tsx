@@ -8,6 +8,7 @@ import { categoryLabels, formatBulletinDate } from '../features/bulletin/model/p
 import type { AnnouncementStatus } from '../features/bulletin/model/types';
 import { canEditAnnouncement } from '../features/bulletin/model/permissions';
 import { useRemoteData } from '../hooks/useRemoteData';
+import AnnouncementAnalyticsModal from '../features/bulletin/components/AnnouncementAnalyticsModal';
 
 const statuses: Array<{ value: AnnouncementStatus | ''; label: string }> = [
   { value: '', label: 'All' },
@@ -19,6 +20,11 @@ const statuses: Array<{ value: AnnouncementStatus | ''; label: string }> = [
 export default function BulletinManagementPage() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
+  const [selectedAnalytics, setSelectedAnalytics] = useState<{
+    id: string;
+    title: string;
+    requiresAcknowledgement: boolean;
+  } | null>(null);
   const page = Math.max(1, Number(params.get('page')) || 1);
   const statusParam = params.get('status');
   const status = (statusParam === 'draft' || statusParam === 'published' || statusParam === 'archived') ? statusParam : undefined;
@@ -97,14 +103,32 @@ export default function BulletinManagementPage() {
                       <span className="badge">{categoryLabels[announcement.category]}</span>
                       {announcement.priority !== 'normal' && <span className={announcement.priority === 'urgent' ? 'badge badge-danger' : 'badge badge-accent'}>{announcement.priority}</span>}
                       {announcement.isPinned && <span className="badge">Pinned</span>}
+                      {announcement.requiresAcknowledgement && <span className="badge badge-accent">Acknowledgement required</span>}
                     </div>
                     <h2 className="text-lg font-semibold tracking-tight">{announcement.title}</h2>
                     <p className="text-sm text-muted mt-1">{announcement.summary}</p>
                     <p className="text-xs text-dim mt-3">Updated by {announcement.updater.name} · {formatBulletinDate(announcement.updatedAt)}{announcement.status === 'published' ? ` · ${announcement.readCount} readers` : ''}</p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    {announcement.status === 'published' && <Link to={`/student/news/${announcement.slug}`} className="btn-ghost" target="_blank" rel="noreferrer">View</Link>}
-                    <Link to={`/dashboard/bulletin/${announcement.id}`} className="btn-secondary !py-2">
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {announcement.status === 'published' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedAnalytics({
+                              id: announcement.id,
+                              title: announcement.title,
+                              requiresAcknowledgement: announcement.requiresAcknowledgement,
+                            })
+                          }
+                          className="btn-secondary !py-2 text-xs"
+                        >
+                          Analytics
+                        </button>
+                        <Link to={`/student/news/${announcement.slug}`} className="btn-ghost !py-2 text-xs" target="_blank" rel="noreferrer">View</Link>
+                      </>
+                    )}
+                    <Link to={`/dashboard/bulletin/${announcement.id}`} className="btn-secondary !py-2 text-xs">
                       {canEditAnnouncement(user, {
                         createdBy: announcement.creator.id,
                         category: announcement.category,
@@ -124,6 +148,15 @@ export default function BulletinManagementPage() {
             <span className="text-sm text-muted">Page {page} of {list.data.totalPages}</span>
             <button type="button" className="btn-secondary !py-2" disabled={page >= list.data.totalPages} onClick={() => updateParams({ page: String(page + 1) })}>Next</button>
           </nav>
+        )}
+
+        {selectedAnalytics && (
+          <AnnouncementAnalyticsModal
+            announcementId={selectedAnalytics.id}
+            announcementTitle={selectedAnalytics.title}
+            requiresAcknowledgement={selectedAnalytics.requiresAcknowledgement}
+            onClose={() => setSelectedAnalytics(null)}
+          />
         )}
       </main>
     </div>

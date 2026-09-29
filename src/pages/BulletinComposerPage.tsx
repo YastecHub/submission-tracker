@@ -44,6 +44,7 @@ interface ComposerForm {
   contributorName: string;
   contributorCredit: string;
   isPinned: boolean;
+  requiresAcknowledgement: boolean;
   paymentEventId: string;
   sections: AnnouncementSection[];
   changeNote: string;
@@ -53,6 +54,7 @@ const newSection = (): AnnouncementSection => ({ id: crypto.randomUUID(), headin
 const emptyForm = (): ComposerForm => ({
   title: '', summary: '', rawSource: '', category: 'general', priority: 'normal',
   sourceType: 'official_class', contributorName: '', contributorCredit: '', isPinned: false,
+  requiresAcknowledgement: false,
   paymentEventId: '', sections: [newSection()], changeNote: '',
 });
 const categories: AnnouncementCategory[] = ['general', 'academic', 'practical', 'finance', 'event', 'opportunity', 'emergency'];
@@ -116,6 +118,7 @@ export default function BulletinComposerPage() {
           contributorName: data.contributorName ?? '',
           contributorCredit: data.contributorCredit ?? '',
           isPinned: data.isPinned,
+          requiresAcknowledgement: data.requiresAcknowledgement ?? false,
           paymentEventId: data.paymentEventId ?? '',
           sections: data.content.sections,
           changeNote: '',
@@ -258,6 +261,7 @@ export default function BulletinComposerPage() {
       contributorName: form.contributorName,
       contributorCredit: form.contributorCredit,
       isPinned: form.isPinned,
+      requiresAcknowledgement: form.requiresAcknowledgement,
       paymentEventId: form.category === 'finance' ? form.paymentEventId : '',
       content: { version: 1, sections: form.sections },
       expectedVersion: version,
@@ -403,6 +407,7 @@ export default function BulletinComposerPage() {
                   <div><label htmlFor="announcement-priority" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Priority</label><select id="announcement-priority" className="input-base" value={form.priority} disabled={readOnly} onChange={(event) => change('priority', event.target.value as AnnouncementPriority)}>{priorities.map((priority) => <option key={priority} value={priority}>{priorityLabels[priority]}</option>)}</select></div>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer"><input type="checkbox" className="mt-1 accent-[color:var(--nx-accent)]" checked={form.isPinned} disabled={readOnly} onChange={(event) => change('isPinned', event.target.checked)} /><span><span className="text-sm font-medium">Pin this announcement</span><span className="block text-xs text-dim mt-0.5">Pinned posts stay above the chronological feed.</span></span></label>
+                <label className="flex items-start gap-3 cursor-pointer"><input type="checkbox" className="mt-1 accent-[color:var(--nx-accent)]" checked={form.requiresAcknowledgement} disabled={readOnly} onChange={(event) => change('requiresAcknowledgement', event.target.checked)} /><span><span className="text-sm font-medium">Require student acknowledgement</span><span className="block text-xs text-dim mt-0.5">Students must confirm they have read this announcement. Outstanding students are tracked in real time.</span></span></label>
               </div>
             </section>
 

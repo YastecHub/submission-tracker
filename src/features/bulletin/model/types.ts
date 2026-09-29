@@ -139,6 +139,7 @@ export interface AdminAnnouncementListItem {
   priority: AnnouncementPriority;
   status: AnnouncementStatus;
   isPinned: boolean;
+  requiresAcknowledgement: boolean;
   version: number;
   publishedAt: string | null;
   updatedAt: string;
@@ -174,6 +175,7 @@ export interface AnnouncementWriteInput {
   contributorName: string;
   contributorCredit: string;
   isPinned: boolean;
+  requiresAcknowledgement?: boolean;
   paymentEventId: string;
   expectedVersion?: number;
   changeNote?: string;
@@ -218,4 +220,44 @@ export interface BulletinAiOrganizationResponse {
     promptVersion: string;
     createdAt: string;
   };
+}
+
+export interface AnnouncementAnalyticsResponse {
+  totalReads: number;
+  totalAcknowledged: number;
+  uniqueReaders: number;
+  totalRegisteredStudents: number;
+  readRate: number;
+  acknowledgementRate: number;
+  classAcknowledgementRate?: number;
+  pushStats?: {
+    delivered: number;
+    pending: number;
+    failed: number;
+  };
+  version?: number;
+  requiresAcknowledgement?: boolean;
+  status?: string;
+}
+
+export interface OutstandingStudent {
+  id: string;
+  matricNumber: string;
+  fullName: string;
+  email: string;
+  hasOpened: boolean;
+  lastReadVersion: number | null;
+  acknowledgedVersion: number | null;
+  firstReadAt: string | null;
+  lastReadAt: string | null;
+  acknowledgedAt: string | null;
+}
+
+export interface AnnouncementOutstandingStudentsResponse {
+  students: OutstandingStudent[];
+  total: number;
+  version?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
