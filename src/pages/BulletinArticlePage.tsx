@@ -18,6 +18,7 @@ export default function BulletinArticlePage() {
   const { token } = useStudentAuth();
   const { toast } = useToast();
   const [acknowledging, setAcknowledging] = useState(false);
+  const [offline, setOffline] = useState(false);
   const load = useCallback((signal: AbortSignal) => getBulletinArticle(slug, token!, signal), [slug, token]);
   const article = useRemoteData(load, 0, Boolean(token && slug));
 
@@ -30,6 +31,25 @@ export default function BulletinArticlePage() {
     return () => { active = false; };
   }, [article.data?.id, article.data?.isUnread, article.data?.version, token]);
 
+  // Online/offline detection
+  useEffect(() => {
+    const updateOnline = () => setOffline(!navigator.onLine);
+    updateOnline();
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+    };
+  }, []);
+
+  // Cache article for offline reading when loaded
+  useEffect(() => {
+    if (article.data && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'cache-article', url: window.location.href });
+    }
+  }, [article.data]);
+
   async function handleAcknowledge() {
     if (!token || acknowledging) return;
     setAcknowledging(true);
@@ -38,7 +58,20 @@ export default function BulletinArticlePage() {
       toast('Acknowledgement recorded.', 'success');
       article.refresh();
     } catch {
-      toast('Acknowledgement could not be recorded.', 'error');
+      if (offline) {
+        // Queue for background sync
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'queue-acknowledge',
+            url: `/api/bulletin/feed/${article.data!.id}/acknowledge`,
+          });
+          toast('You are offline. Acknowledgement will be sent when back online.', 'info');
+        } else {
+          toast('Acknowledgement could not be recorded.', 'error');
+        }
+      } else {
+        toast('Acknowledgement could not be recorded.', 'error');
+      }
     } finally {
       setAcknowledging(false);
     }
@@ -73,6 +106,7 @@ export default function BulletinArticlePage() {
             <PriorityBadge priority={data.priority} />
             {data.isPinned && <span className="badge">Pinned</span>}
             {data.requiresAcknowledgement && <span className="badge badge-accent">Acknowledgement required</span>}
+            {offline && <span className="badge" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline — cached</span>}
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">{data.title}</h1>
           <p className="text-lg text-muted leading-8 mt-4">{data.summary}</p>

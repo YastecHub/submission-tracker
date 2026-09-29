@@ -18,10 +18,20 @@ export default function BulletinFeedPage() {
   const unreadOnly = params.get('unread') === 'true';
   const search = params.get('search')?.trim() || undefined;
   const [searchText, setSearchText] = useState(search ?? '');
+  const [offline, setOffline] = useState(false);
   const feed = useBulletinFeed({ page, limit: 12, category, priority: importantOnly ? 'important' : undefined, search }, token);
   const announcements = (feed.data?.announcements ?? []).filter((item) => !unreadOnly || item.isUnread);
 
-  useEffect(() => setSearchText(search ?? ''), [search]);
+  useEffect(() => {
+    const updateOnline = () => setOffline(!navigator.onLine);
+    updateOnline();
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+    };
+  }, []);
 
   function updateParam(name: string, value?: string) {
     const next = new URLSearchParams(params);
@@ -37,10 +47,13 @@ export default function BulletinFeedPage() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-7">
-        <p className="text-xs uppercase tracking-wider text-accent font-semibold">Permanent class updates</p>
-        <h1 className="text-3xl font-semibold tracking-tight mt-1">Nexium Bulletin</h1>
-        <p className="text-sm text-muted mt-2">Search announcements, guides, finance updates and opportunities.</p>
+      <div className="mb-7 flex flex-wrap items-baseline gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-accent font-semibold">Permanent class updates</p>
+          <h1 className="text-3xl font-semibold tracking-tight mt-1">Nexium Bulletin</h1>
+          <p className="text-sm text-muted mt-2">Search announcements, guides, finance updates and opportunities.</p>
+        </div>
+        {offline && <span className="badge self-end" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline — cached</span>}
       </div>
 
       <form onSubmit={submitSearch} role="search" className="flex gap-2 mb-4">
