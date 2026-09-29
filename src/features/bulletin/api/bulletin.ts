@@ -112,3 +112,28 @@ export async function deleteAnnouncementMedia(
     data: { expectedVersion, changeNote },
   })).data;
 }
+
+export async function getStudentPushConfig(studentToken: string) {
+  return (await api.get<{ configured: boolean; publicKey: string | null }>('/api/bulletin/push/config', {
+    headers: studentAuthHeader(studentToken),
+  })).data;
+}
+
+export async function getStudentPushSubscriptionStatus(endpoint: string, studentToken: string) {
+  return (await api.post<{ subscribed: boolean }>('/api/bulletin/push/subscriptions/status', { endpoint }, {
+    headers: studentAuthHeader(studentToken),
+  })).data;
+}
+
+export async function saveStudentPushSubscription(subscription: PushSubscriptionJSON, studentToken: string) {
+  return (await api.post<{ subscribed: true }>('/api/bulletin/push/subscriptions', { subscription }, {
+    headers: studentAuthHeader(studentToken),
+  })).data;
+}
+
+export async function deleteStudentPushSubscription(endpoint: string, studentToken: string) {
+  return (await api.delete<{ subscribed: false }>('/api/bulletin/push/subscriptions', {
+    headers: studentAuthHeader(studentToken),
+    data: { endpoint },
+  })).data;
+}

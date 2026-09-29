@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useStudentAuth } from '../../../context/StudentAuthContext';
 import { getBulletinUnreadCount } from '../api/bulletin';
+import StudentNotificationBell from './StudentNotificationBell';
 
 const navItems = [
   { to: '/student', label: 'Home', end: true },
@@ -33,7 +34,16 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
   useEffect(() => {
     const refresh = () => { loadUnread(); };
     window.addEventListener('bulletin:read', refresh);
-    return () => window.removeEventListener('bulletin:read', refresh);
+    window.addEventListener('focus', refresh);
+    const onWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'bulletin:notification') refresh();
+    };
+    navigator.serviceWorker?.addEventListener('message', onWorkerMessage);
+    return () => {
+      window.removeEventListener('bulletin:read', refresh);
+      window.removeEventListener('focus', refresh);
+      navigator.serviceWorker?.removeEventListener('message', onWorkerMessage);
+    };
   }, [loadUnread]);
 
   function signOut() {
@@ -61,6 +71,8 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
             ))}
           </nav>
 
+          <div className="flex items-center gap-1">
+          {token && <StudentNotificationBell unreadCount={unreadCount} token={token} />}
           <details className="relative shrink-0 group">
             <summary className="list-none min-h-11 flex items-center gap-2 rounded-lg px-2 sm:px-3 cursor-pointer text-right hover:bg-surface-2 transition-colors [&::-webkit-details-marker]:hidden">
               <span className="min-w-0">
@@ -79,6 +91,7 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
               <button type="button" onClick={signOut} className="btn-ghost text-danger w-full justify-start">Sign out</button>
             </div>
           </details>
+          </div>
         </div>
       </header>
 
