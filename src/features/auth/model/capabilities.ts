@@ -9,22 +9,26 @@ export interface DashboardCapabilities {
   manageLedger: boolean;
 }
 
+/**
+ * All exco roles share equal dashboard access.
+ * Only creating new exco accounts is dev-only (handled in auth).
+ */
 export function dashboardCapabilities(role: UserRole | undefined): DashboardCapabilities {
   const isStaff = role !== undefined;
   return {
     submissions: isStaff,
     payments: isStaff,
     ledger: isStaff,
-    createSubmissions: role === 'cr' || role === 'acr' || role === 'dev',
-    createPayments: role === 'cr' || role === 'fin_sec' || role === 'dev',
-    manageLedger: role === 'fin_sec' || role === 'dev',
+    createSubmissions: isStaff,
+    createPayments: isStaff,
+    manageLedger: isStaff,
   };
 }
 
-export function canManageSubmissionEvent(role: UserRole | undefined, userId: string | undefined, createdBy: string | undefined): boolean {
-  return role === 'dev' || ((role === 'cr' || role === 'acr') && Boolean(userId && createdBy && userId === createdBy));
+export function canManageSubmissionEvent(role: UserRole | undefined, _userId?: string, _createdBy?: string): boolean {
+  return role !== undefined;
 }
 
-export function canManagePaymentEvent(role: UserRole | undefined, userId: string | undefined, createdBy: string | undefined): boolean {
-  return role === 'dev' || role === 'fin_sec' || (role === 'cr' && Boolean(userId && createdBy && userId === createdBy));
+export function canManagePaymentEvent(role: UserRole | undefined, _userId?: string, _createdBy?: string): boolean {
+  return role !== undefined;
 }
