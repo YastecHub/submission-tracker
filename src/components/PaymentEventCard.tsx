@@ -45,7 +45,7 @@ export default function PaymentEventCard({ event, onToggleClose, onExtend, onDel
   }
 
   return (
-    <div className={`card-interactive p-5 flex flex-col gap-3 ${isClosed ? 'opacity-70' : ''}`}>
+    <div className={`card-interactive p-4 sm:p-5 flex flex-col gap-3 ${isClosed ? 'opacity-70' : ''}`}>
       <div>
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="badge badge-accent">Payment</span>
@@ -72,15 +72,15 @@ export default function PaymentEventCard({ event, onToggleClose, onExtend, onDel
       </div>
 
       <div className="flex gap-2">
-        <div className="flex-1 bg-surface-2 border border-nx rounded-lg p-2.5 text-center">
+        <div className="flex-1 bg-surface-2 border border-nx rounded-lg p-2 sm:p-2.5 text-center">
           <p className="text-lg font-semibold">{event.totalReceipts ?? 0}</p>
           <p className="text-xs text-dim">Total</p>
         </div>
-        <div className="flex-1 bg-surface-2 border border-nx rounded-lg p-2.5 text-center">
+        <div className="flex-1 bg-surface-2 border border-nx rounded-lg p-2 sm:p-2.5 text-center">
           <p className="text-lg font-semibold text-accent">{event.pendingCount ?? 0}</p>
           <p className="text-xs text-dim">Pending</p>
         </div>
-        <div className="flex-1 bg-surface-2 border border-nx rounded-lg p-2.5 text-center">
+        <div className="flex-1 bg-surface-2 border border-nx rounded-lg p-2 sm:p-2.5 text-center">
           <p className="text-lg font-semibold text-success">{event.confirmedCount ?? 0}</p>
           <p className="text-xs text-dim">Confirmed</p>
         </div>

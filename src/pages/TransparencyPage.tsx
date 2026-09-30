@@ -96,12 +96,12 @@ export default function TransparencyPage() {
             </div>
           </div>
 
-          <div className="card-base p-6">
+          <div className="card-base p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-1">
               <span className={balancePositive ? 'text-success' : 'text-danger'}>●</span>
               <p className="text-xs text-muted uppercase tracking-wider font-semibold">Current balance</p>
             </div>
-            <p className="text-4xl sm:text-5xl font-semibold tracking-tight mt-1">
+            <p className="text-3xl sm:text-5xl font-semibold tracking-tight mt-1 break-words">
               {ledger ? formatNaira(ledger.balance) : <span className="text-dim">Loading…</span>}
             </p>
             {ledger && lastLoadedAt && (
@@ -136,7 +136,7 @@ export default function TransparencyPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4">
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           <StatCard
             label="Money in"
             value={ledger ? formatNaira(ledger.totalCredits, { compact: true }) : '—'}
@@ -154,25 +154,27 @@ export default function TransparencyPage() {
           />
         </div>
 
-        <div className="card-base p-3 mb-4 flex gap-2 items-center">
-          <h2 className="text-base font-semibold flex-1 pl-2">Transactions</h2>
-          <select
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value as TransactionType | ''); setPage(1); }}
-            className="input-base !w-auto !py-2 !text-sm"
-          >
-            <option value="">All types</option>
-            <option value="credit">Money in</option>
-            <option value="debit">Money out</option>
-          </select>
-          <button
-            type="button"
-            onClick={() => void loadLedger()}
-            disabled={loading}
-            className="btn-primary !py-2 !text-sm"
-          >
-            {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+        <div className="card-base p-3 mb-4 flex flex-col sm:flex-row gap-2 sm:items-center">
+          <h2 className="text-base font-semibold flex-1 pl-1">Transactions</h2>
+          <div className="flex items-center gap-2">
+            <select
+              value={typeFilter}
+              onChange={(e) => { setTypeFilter(e.target.value as TransactionType | ''); setPage(1); }}
+              className="input-base !w-auto !py-2 !text-sm flex-1 sm:flex-initial"
+            >
+              <option value="">All types</option>
+              <option value="credit">Money in</option>
+              <option value="debit">Money out</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => void loadLedger()}
+              disabled={loading}
+              className="btn-primary !py-2 !text-sm shrink-0"
+            >
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
         </div>
 
         {loading && !ledger ? (
@@ -194,26 +196,28 @@ export default function TransparencyPage() {
         ) : null}
 
         {ledger && ledger.totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="btn-secondary !py-2 !text-sm"
-            >
-              ← Previous
-            </button>
-            <span className="px-4 py-2 text-sm text-muted">
-              Page {page} of {ledger.totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= ledger.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="btn-secondary !py-2 !text-sm"
-            >
-              Next →
-            </button>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 mt-6 text-center">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="btn-secondary !py-2 !text-sm flex-1 sm:flex-initial"
+              >
+                ← Previous
+              </button>
+              <span className="px-3 py-2 text-sm text-muted whitespace-nowrap">
+                Page {page} of {ledger.totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= ledger.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="btn-secondary !py-2 !text-sm flex-1 sm:flex-initial"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </main>
@@ -256,9 +260,9 @@ function StatCard({
     tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : '';
 
   return (
-    <div className="card-base p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-dim">{label}</p>
-      <p className={`text-base sm:text-lg font-semibold mt-1 truncate ${valueClass}`}>{value}</p>
+    <div className="card-base p-2 sm:p-3">
+      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-dim">{label}</p>
+      <p className={`text-sm sm:text-lg font-semibold mt-1 truncate ${valueClass}`}>{value}</p>
     </div>
   );
 }
@@ -273,7 +277,7 @@ function PaymentEventGroupCard({
   return (
     <section className="card-base overflow-hidden">
       <div className="p-4 sm:p-5 border-b border-nx">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-dim">Payment event</p>
             <h3 className="text-base sm:text-lg font-semibold tracking-tight mt-1 break-words">
@@ -281,9 +285,9 @@ function PaymentEventGroupCard({
             </h3>
             <p className="text-xs text-muted mt-1 font-mono break-all">ref: {group.paymentEventReference}</p>
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="sm:text-right shrink-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-dim">Total collected</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-success mt-1">{formatNaira(group.totalCollected)}</p>
+            <p className="text-xl sm:text-3xl font-semibold text-success mt-1">{formatNaira(group.totalCollected)}</p>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs flex-wrap">

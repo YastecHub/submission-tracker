@@ -82,7 +82,7 @@ export default function TransactionFormModal({ transaction, onClose, onSaved }: 
     >
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
 
-      <div className="relative card-base w-full max-w-md p-6 my-8 z-10 animate-fade-up">
+      <div className="relative card-base w-full max-w-md max-h-[90dvh] overflow-y-auto p-4 sm:p-6 my-auto z-10 animate-fade-up">
         <h3 className="font-bold text-lg mb-4">
           {isEdit ? 'Edit Transaction' : 'New Transaction'}
         </h3>

@@ -94,7 +94,7 @@ export default function ProfilePage() {
 
         <h1 className="text-2xl font-semibold tracking-tight mb-6">My profile</h1>
 
-        <div className="card-base p-6 mb-5 flex items-center gap-4">
+        <div className="card-base p-4 sm:p-6 mb-5 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-surface-2 border border-nx flex items-center justify-center text-xl font-semibold shrink-0">
             {user?.name.charAt(0).toUpperCase()}
           </div>
@@ -105,7 +105,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="card-base p-6 mb-5">
+        <div className="card-base p-4 sm:p-6 mb-5">
           <h2 className="text-base font-semibold mb-4">Update information</h2>
           {profileError && <div className="alert-danger mb-4">{profileError}</div>}
           <form onSubmit={handleProfileSave} className="space-y-4">
@@ -129,13 +129,13 @@ export default function ProfilePage() {
                 className="input-base"
               />
             </div>
-            <button type="submit" disabled={profileLoading} className="btn-primary">
+            <button type="submit" disabled={profileLoading} className="btn-primary w-full sm:w-auto">
               {profileLoading ? 'Saving…' : 'Save changes'}
             </button>
           </form>
         </div>
 
-        <div className="card-base p-6">
+        <div className="card-base p-4 sm:p-6">
           <h2 className="text-base font-semibold mb-4">Change password</h2>
           {passwordError && <div className="alert-danger mb-4">{passwordError}</div>}
           <form onSubmit={handlePasswordChange} className="space-y-4">
@@ -173,7 +173,7 @@ export default function ProfilePage() {
                 className="input-base"
               />
             </div>
-            <button type="submit" disabled={passwordLoading} className="btn-primary">
+            <button type="submit" disabled={passwordLoading} className="btn-primary w-full sm:w-auto">
               {passwordLoading ? 'Changing…' : 'Change password'}
             </button>
           </form>

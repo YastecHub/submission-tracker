@@ -106,14 +106,14 @@ export default function PaymentSubmitForm() {
   return (
     <div className="page-base flex flex-col items-center px-4 py-10">
       <div className="w-full max-w-md space-y-4 animate-fade-up">
-        <div className="card-base p-5">
+        <div className="card-base p-4 sm:p-5">
           <span className="badge badge-accent">Payment</span>
           <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
           {event.description && <p className="text-sm text-muted mt-1">{event.description}</p>}
           <p className="text-xs text-dim mt-3">Deadline: {deadline}</p>
         </div>
 
-        <div className="card-base p-5">
+        <div className="card-base p-4 sm:p-5">
           <h2 className="text-xs font-medium text-muted uppercase tracking-wider mb-3">
             Payment details
           </h2>
@@ -142,7 +142,7 @@ export default function PaymentSubmitForm() {
           </p>
         </div>
 
-        <div className="card-base p-6">
+        <div className="card-base p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-4">Submit payment receipt</h2>
 
           {error && <div className="alert-danger mb-4">{error}</div>}

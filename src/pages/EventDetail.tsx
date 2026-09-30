@@ -164,15 +164,15 @@ export default function EventDetail() {
               </span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 sm:flex gap-2">
             {canManage && <>
-              <button onClick={() => setShowScanner(true)} className="btn-secondary flex-1 !py-3">
+              <button onClick={() => setShowScanner(true)} className="btn-secondary !py-2.5 sm:!py-3 text-center justify-center">
                 Scan QR
               </button>
               <button
                 onClick={handleConfirmAll}
                 disabled={!canConfirmAll || confirmingAll}
-                className="btn-secondary flex-1 !py-3"
+                className="btn-secondary !py-2.5 sm:!py-3 text-center justify-center"
                 title={
                   eventTotalSubmissions < CONFIRM_ALL_MIN_SUBMISSIONS
                     ? `Available after ${CONFIRM_ALL_MIN_SUBMISSIONS} submissions`
@@ -187,7 +187,7 @@ export default function EventDetail() {
             <button
               onClick={handleExport}
               disabled={exporting || totalSubmissions === 0}
-              className="btn-primary flex-1 !py-3"
+              className={`btn-primary !py-2.5 sm:!py-3 text-center justify-center ${canManage ? 'col-span-2 sm:col-span-1 sm:flex-1' : 'col-span-2 sm:col-span-1 flex-1'}`}
             >
               {exporting ? 'Exporting…' : 'Export Excel'}
             </button>
@@ -211,22 +211,22 @@ export default function EventDetail() {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 text-sm text-muted">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 text-sm text-muted text-center sm:text-left">
             <span>
               Page {currentPage} of {totalPages} · {totalSubmissions} total
             </span>
-            <div className="flex gap-2">
+            <div className="flex justify-center sm:justify-end gap-2">
               <button
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="btn-secondary !py-2 !text-sm"
+                className="btn-secondary !py-2 !text-sm flex-1 sm:flex-initial"
               >
                 ← Prev
               </button>
               <button
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="btn-secondary !py-2 !text-sm"
+                className="btn-secondary !py-2 !text-sm flex-1 sm:flex-initial"
               >
                 Next →
               </button>

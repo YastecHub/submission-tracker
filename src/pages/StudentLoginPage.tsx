@@ -44,7 +44,7 @@ export default function StudentLoginPage() {
     <main className="page-base flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Link to="/login" className="btn-ghost !px-0 mb-4">← Back to NEXIUM home</Link>
-      <div className="card-base p-6">
+      <div className="card-base p-5 sm:p-6">
         <h1 className="text-xl font-semibold">Student account</h1>
         <p className="text-sm text-muted mt-1">Sign in to read Nexium Bulletin, manage payments and retrieve your tickets.</p>
         <div className="grid grid-cols-2 gap-1 bg-surface-2 p-1 rounded-lg mt-5">

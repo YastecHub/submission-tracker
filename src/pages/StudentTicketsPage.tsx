@@ -29,7 +29,7 @@ export default function StudentTicketsPage() {
     <main className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-7">
         <p className="text-xs uppercase tracking-wider text-accent font-semibold">Confirmed collections</p>
-        <h1 className="text-3xl font-semibold tracking-tight mt-1">My tickets</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mt-1">My tickets</h1>
         <p className="text-sm text-muted mt-2">Tickets appear here after a payment with ticketing is confirmed.</p>
       </div>
       {tickets.error ? (
@@ -37,7 +37,7 @@ export default function StudentTicketsPage() {
       ) : tickets.loading && !tickets.data ? (
         <div className="card-base h-80 animate-pulse max-w-sm" />
       ) : !tickets.data?.length ? (
-        <div className="card-base p-8 text-center"><h2 className="text-lg font-semibold">No tickets yet</h2><p className="text-sm text-muted mt-2">Your confirmed collection tickets will be kept here.</p></div>
+        <div className="card-base p-6 sm:p-8 text-center"><h2 className="text-lg font-semibold">No tickets yet</h2><p className="text-sm text-muted mt-2">Your confirmed collection tickets will be kept here.</p></div>
       ) : (
         <div className="grid md:grid-cols-2 gap-5 items-start">
           {tickets.data.map((ticket) => (

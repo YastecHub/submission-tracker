@@ -347,12 +347,12 @@ export default function BulletinComposerPage() {
               {aiReview && <span className="badge badge-accent">Assistant suggestions applied</span>}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {!readOnly && <button type="button" onClick={() => void save()} disabled={saving || organizing || mediaBusy} className="btn-secondary">{saving ? 'Saving…' : 'Save'}</button>}
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            {!readOnly && <button type="button" onClick={() => void save()} disabled={saving || organizing || mediaBusy} className="btn-secondary flex-1 sm:flex-initial text-center justify-center">{saving ? 'Saving…' : 'Save'}</button>}
             {(!announcement || announcement.status === 'draft') && (
-              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || mediaBusy || mediaDirty || !canPublish} className="btn-primary" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : mediaDirty ? 'Upload or save the pending image changes before publishing.' : undefined}>Publish</button>
+              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || mediaBusy || mediaDirty || !canPublish} className="btn-primary flex-1 sm:flex-initial text-center justify-center" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : mediaDirty ? 'Upload or save the pending image changes before publishing.' : undefined}>Publish</button>
             )}
-            {announcement?.status === 'published' && canPublish && <button type="button" onClick={() => setPendingAction('archive')} disabled={saving || mediaBusy || mediaDirty} className="btn-ghost text-danger">Archive</button>}
+            {announcement?.status === 'published' && canPublish && <button type="button" onClick={() => setPendingAction('archive')} disabled={saving || mediaBusy || mediaDirty} className="btn-ghost text-danger flex-1 sm:flex-initial text-center justify-center">Archive</button>}
           </div>
         </div>
 
@@ -362,7 +362,7 @@ export default function BulletinComposerPage() {
         {error && <div role="alert" className="alert-danger mb-5">{error}</div>}
         {readOnly && <div className="card-base p-4 mb-5 text-sm text-muted">{announcement?.status === 'archived' ? 'This announcement is archived and retained as a read-only record.' : 'You have view-only access to this announcement.'}</div>}
 
-        <section className="card-base p-5 sm:p-6 mb-6" aria-labelledby="source-heading">
+        <section className="card-base p-4 sm:p-6 mb-6" aria-labelledby="source-heading">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 id="source-heading" className="text-lg font-semibold">Source material</h2>
@@ -371,7 +371,7 @@ export default function BulletinComposerPage() {
             {!readOnly && (
               <button
                 type="button"
-                className="btn-primary shrink-0"
+                className="btn-primary shrink-0 w-full sm:w-auto"
                 onClick={() => void organizeSource()}
                 disabled={saving || organizing || form.rawSource.trim().length < 20 || form.rawSource.trim().length > 30_000}
               >
@@ -403,7 +403,7 @@ export default function BulletinComposerPage() {
 
         <div className="grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] gap-6 items-start">
           <div className="space-y-5">
-            <section className="card-base p-5 sm:p-6" aria-labelledby="basics-heading">
+            <section className="card-base p-4 sm:p-6" aria-labelledby="basics-heading">
               <h2 id="basics-heading" className="text-lg font-semibold mb-4">Student-facing details</h2>
               <div className="space-y-4">
                 <div><label htmlFor="announcement-title" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Title</label><input id="announcement-title" className="input-base" maxLength={180} required value={form.title} disabled={readOnly} onChange={(event) => change('title', event.target.value)} /></div>
@@ -417,11 +417,11 @@ export default function BulletinComposerPage() {
               </div>
             </section>
 
-            <section className="card-base p-5 sm:p-6" aria-labelledby="content-heading">
+            <section className="card-base p-4 sm:p-6" aria-labelledby="content-heading">
               <div className="flex items-start justify-between gap-3 mb-4"><div><h2 id="content-heading" className="text-lg font-semibold">Content sections</h2><p className="text-sm text-muted mt-1">Use blank lines for paragraphs and “-” at the start of each line for a bullet list.</p></div>{!readOnly && <button type="button" className="btn-secondary !py-2 shrink-0" onClick={() => change('sections', [...form.sections, newSection()])} disabled={form.sections.length >= 20}>Add section</button>}</div>
               <div className="space-y-4">
                 {form.sections.map((section, index) => (
-                  <fieldset key={section.id} className="border border-nx rounded-xl p-4">
+                  <fieldset key={section.id} className="border border-nx rounded-xl p-3.5 sm:p-4">
                     <legend className="px-2 text-xs uppercase tracking-wider text-dim">Section {index + 1}</legend>
                     <label htmlFor={`section-heading-${section.id}`} className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Heading <span className="normal-case font-normal text-dim">(optional)</span></label>
                     <input id={`section-heading-${section.id}`} className="input-base mb-3" maxLength={120} value={section.heading ?? ''} disabled={readOnly} onChange={(event) => changeSection(index, { heading: event.target.value || null })} />
@@ -446,13 +446,13 @@ export default function BulletinComposerPage() {
                 onDirtyChange={setMediaDirty}
               />
             ) : (
-              <section className="card-base p-5 sm:p-6" aria-labelledby="media-heading">
+              <section className="card-base p-4 sm:p-6" aria-labelledby="media-heading">
                 <h2 id="media-heading" className="text-lg font-semibold">Images</h2>
                 <p className="text-sm text-muted mt-2">Save this draft first, then add images, captions, alt text and section placement.</p>
               </section>
             )}
 
-            <section className="card-base p-5 sm:p-6" aria-labelledby="credit-heading">
+            <section className="card-base p-4 sm:p-6" aria-labelledby="credit-heading">
               <h2 id="credit-heading" className="text-lg font-semibold mb-4">Source and contributor credit</h2>
               <div className="space-y-4">
                 <div><label htmlFor="source-type" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Source type</label><select id="source-type" className="input-base" value={form.sourceType} disabled={readOnly} onChange={(event) => change('sourceType', event.target.value as AnnouncementSourceType)}>{sourceTypes.map((sourceType) => <option key={sourceType} value={sourceType}>{sourceTypeLabels[sourceType]}</option>)}</select></div>
@@ -468,7 +468,7 @@ export default function BulletinComposerPage() {
             </section>
           </div>
 
-          <aside className="card-base p-5 lg:sticky lg:top-20" aria-labelledby="preview-heading">
+          <aside className="card-base p-4 sm:p-5 lg:sticky lg:top-20" aria-labelledby="preview-heading">
             <p className="text-xs uppercase tracking-wider text-accent font-semibold">Student preview</p>
             <h2 id="preview-heading" className="text-2xl font-semibold tracking-tight mt-2">{form.title || 'Announcement title'}</h2>
             <p className="text-sm text-muted mt-3 leading-6">{form.summary || 'The announcement summary will appear here.'}</p>

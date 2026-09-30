@@ -236,7 +236,7 @@ export default function AnnouncementMediaManager({
   }
 
   return (
-    <section className="card-base p-5 sm:p-6" aria-labelledby="media-heading">
+    <section className="card-base p-4 sm:p-6" aria-labelledby="media-heading">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h2 id="media-heading" className="text-lg font-semibold">Images</h2>
@@ -252,7 +252,7 @@ export default function AnnouncementMediaManager({
 
       {!readOnly && (
         <div className="mt-5">
-          <label className={`btn-secondary inline-flex ${mutationsDisabled || detailsDirty || announcement.media.length + pending.length >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label className={`btn-secondary inline-flex w-full sm:w-auto justify-center ${mutationsDisabled || detailsDirty || announcement.media.length + pending.length >= MAX_IMAGES ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             Choose images
             <input
               type="file"
@@ -282,7 +282,7 @@ export default function AnnouncementMediaManager({
               </div>
             </div>
           ))}
-          <button type="button" className="btn-primary" disabled={mutationsDisabled} onClick={() => void upload()}>{busy ? 'Uploading…' : `Upload ${pending.length} image${pending.length === 1 ? '' : 's'}`}</button>
+          <button type="button" className="btn-primary w-full sm:w-auto" disabled={mutationsDisabled} onClick={() => void upload()}>{busy ? 'Uploading…' : `Upload ${pending.length} image${pending.length === 1 ? '' : 's'}`}</button>
         </div>
       )}
 
@@ -290,7 +290,7 @@ export default function AnnouncementMediaManager({
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">Uploaded images</h3>
-            {!readOnly && <button type="button" className="btn-secondary !py-2" disabled={detailsDisabled || !detailsDirty} onClick={() => void saveDetails()}>{busy ? 'Saving…' : 'Save image details'}</button>}
+            {!readOnly && <button type="button" className="btn-secondary !py-2 w-full sm:w-auto" disabled={detailsDisabled || !detailsDirty} onClick={() => void saveDetails()}>{busy ? 'Saving…' : 'Save image details'}</button>}
           </div>
           {items.map((item, index) => (
             <fieldset key={item.id} className="grid sm:grid-cols-[160px_1fr] gap-4 border border-nx rounded-xl p-3">

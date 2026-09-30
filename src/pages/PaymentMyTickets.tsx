@@ -102,7 +102,7 @@ export default function PaymentMyTickets() {
   return (
     <div className="page-base flex flex-col items-center px-4 py-10">
       <div className="w-full max-w-sm space-y-4 animate-fade-up">
-        <div className="card-base p-5">
+        <div className="card-base p-4 sm:p-5">
           <span className="badge badge-accent">Find my ticket</span>
           <h1 className="text-lg font-semibold tracking-tight mt-3">{event.title}</h1>
           <p className="text-xs text-dim mt-2">
@@ -110,7 +110,7 @@ export default function PaymentMyTickets() {
           </p>
         </div>
 
-        <div className="card-base p-5">
+        <div className="card-base p-4 sm:p-5">
           <button type="button" disabled={searching} onClick={() => void loadTickets()} className="btn-primary w-full">
             {searching ? 'Loading…' : 'Refresh my tickets'}
           </button>
@@ -124,7 +124,7 @@ export default function PaymentMyTickets() {
         )}
 
         {tickets !== null && tickets.length === 0 && !searchError && (
-          <div className="card-base p-5 text-center">
+          <div className="card-base p-4 sm:p-5 text-center">
             <p className="text-sm font-medium">No confirmed payment found</p>
             <p className="text-xs text-dim mt-2">
               We couldn't find a confirmed payment for that matric number on this event.

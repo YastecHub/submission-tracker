@@ -37,7 +37,7 @@ export default function ConfirmButton({ submission, onConfirmed }: Props) {
     <button
       onClick={handleConfirm}
       disabled={loading}
-      className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg transition disabled:opacity-60"
+      className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-2 min-h-[36px] inline-flex items-center justify-center rounded-lg transition disabled:opacity-60 touch-manipulation font-medium"
     >
       {loading ? '...' : 'Confirm'}
     </button>

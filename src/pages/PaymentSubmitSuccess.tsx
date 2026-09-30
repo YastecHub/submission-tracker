@@ -181,7 +181,7 @@ export default function PaymentSubmitSuccess() {
           )}
 
           {fullName && !hasTickets && (
-            <div className="card-base p-6 text-center">
+            <div className="card-base p-4 sm:p-6 text-center">
               <h1 className="text-lg font-semibold tracking-tight">{eventTitle}</h1>
               <p className="text-sm text-muted mt-2">
                 {fullName} <span className="text-dim">({matricNumber})</span>
@@ -255,7 +255,7 @@ export default function PaymentSubmitSuccess() {
           </div>
         )}
 
-        <div className="card-base p-6 text-center">
+        <div className="card-base p-4 sm:p-6 text-center">
           <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4 bg-surface-2 border border-nx">
             {status === 'rejected' ? (
               <svg className="w-7 h-7 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">

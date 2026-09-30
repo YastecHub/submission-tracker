@@ -106,19 +106,19 @@ export default function TicketCard({
           <p className="text-xs uppercase tracking-wider font-semibold text-accent">{eventTitle}</p>
           <p className="text-sm text-muted mt-0.5">Your ticket</p>
         </div>
-        <div className="p-5">
-          <div className="flex gap-4 items-start">
+        <div className="p-4 sm:p-5">
+          <div className="flex gap-3 sm:gap-4 items-start">
             <div className="flex-shrink-0">
               <img
                 src={qrCode}
                 alt="Ticket QR code"
-                className="w-28 h-28 rounded-lg border border-nx bg-white p-1"
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg border border-nx bg-white p-1"
               />
             </div>
-            <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex-1 min-w-0 space-y-1">
               <div>
                 <p className="text-xs text-dim">Name</p>
-                <p className="text-sm font-semibold break-words">{fullName}</p>
+                <p className="text-sm font-semibold break-words leading-snug">{fullName}</p>
               </div>
               <div>
                 <p className="text-xs text-dim">Matric</p>
@@ -129,7 +129,7 @@ export default function TicketCard({
 
           <div className="mt-4 text-center">
             <p className="text-xs text-dim uppercase tracking-wider mb-1">Claim code</p>
-            <p className="text-2xl font-mono font-bold tracking-widest text-accent">{claimCode}</p>
+            <p className="text-xl sm:text-2xl font-mono font-bold tracking-widest text-accent">{claimCode}</p>
           </div>
 
           <div className="mt-4 bg-surface-2 border border-nx rounded-lg px-4 py-2.5 text-center">

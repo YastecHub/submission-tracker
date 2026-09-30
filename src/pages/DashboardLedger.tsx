@@ -108,17 +108,17 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
         </div>
         {ledger && (
           <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
-            <div className="card-base bg-surface-2 p-3 text-center">
-              <p className="text-xs text-dim uppercase tracking-wider">Money in</p>
-              <p className="text-base sm:text-lg font-semibold text-success mt-1 break-words">{formatNairaShort(ledger.totalCredits)}</p>
+            <div className="card-base bg-surface-2 p-2 sm:p-3 text-center">
+              <p className="text-[10px] sm:text-xs text-dim uppercase tracking-wider">Money in</p>
+              <p className="text-sm sm:text-lg font-semibold text-success mt-1 break-words">{formatNairaShort(ledger.totalCredits)}</p>
             </div>
-            <div className="card-base bg-surface-2 p-3 text-center">
-              <p className="text-xs text-dim uppercase tracking-wider">Money out</p>
-              <p className="text-base sm:text-lg font-semibold text-danger mt-1 break-words">{formatNairaShort(ledger.totalDebits)}</p>
+            <div className="card-base bg-surface-2 p-2 sm:p-3 text-center">
+              <p className="text-[10px] sm:text-xs text-dim uppercase tracking-wider">Money out</p>
+              <p className="text-sm sm:text-lg font-semibold text-danger mt-1 break-words">{formatNairaShort(ledger.totalDebits)}</p>
             </div>
-            <div className="card-base bg-surface-2 p-3 text-center">
-              <p className="text-xs text-dim uppercase tracking-wider">Entries</p>
-              <p className="text-base sm:text-lg font-semibold mt-1">{ledger.transactionCount}</p>
+            <div className="card-base bg-surface-2 p-2 sm:p-3 text-center">
+              <p className="text-[10px] sm:text-xs text-dim uppercase tracking-wider">Entries</p>
+              <p className="text-sm sm:text-lg font-semibold mt-1">{ledger.transactionCount}</p>
             </div>
           </div>
         )}
@@ -130,19 +130,19 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Search description or category…"
-          className="input-base flex-1 sm:min-w-[180px]"
+          className="input-base flex-1 min-w-0"
         />
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-start">
           <select
             value={typeFilter}
             onChange={(e) => { setTypeFilter(e.target.value as TransactionType | ''); setPage(1); }}
-            className="input-base !w-auto"
+            className="input-base !w-auto !py-2 text-sm"
           >
             <option value="">All types</option>
             <option value="credit">Money in</option>
             <option value="debit">Money out</option>
           </select>
-          <label className="flex items-center gap-1.5 text-sm text-muted">
+          <label className="flex items-center gap-1.5 text-sm text-muted cursor-pointer select-none">
             <input
               type="checkbox"
               checked={includeDeleted}
@@ -174,20 +174,20 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
             const isCredit = t.type === 'credit';
             const isAuto = !!t.receiptId;
             return (
-              <div key={t.id} className={`card-base p-4 ${t.isDeleted ? 'opacity-50' : ''}`}>
+              <div key={t.id} className={`card-base p-3.5 sm:p-4 ${t.isDeleted ? 'opacity-50' : ''}`}>
                 <div className="flex gap-3 items-start">
                   <div
-                    className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl bg-surface-2 border border-nx ${
+                    className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl bg-surface-2 border border-nx ${
                       isCredit ? 'text-success' : 'text-danger'
                     }`}
                   >
                     {isCredit ? '↓' : '↑'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="font-semibold">{t.description}</p>
+                          <p className="font-semibold text-sm sm:text-base break-words">{t.description}</p>
                           {isAuto && <span className="badge badge-accent">Auto</span>}
                           {t.isDeleted && <span className="badge badge-danger">Deleted</span>}
                         </div>
@@ -209,7 +209,7 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
                           )}
                         </div>
                       </div>
-                      <p className={`font-semibold whitespace-nowrap ${isCredit ? 'text-success' : 'text-danger'}`}>
+                      <p className={`font-semibold text-sm sm:text-base whitespace-nowrap shrink-0 ${isCredit ? 'text-success' : 'text-danger'}`}>
                         {isCredit ? '+' : '−'} {formatNaira(t.amount)}
                       </p>
                     </div>

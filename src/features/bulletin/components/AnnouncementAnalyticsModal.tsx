@@ -162,11 +162,11 @@ export default function AnnouncementAnalyticsModal({
 
         {/* Tab Controls (if acknowledgement is required) */}
         {requiresAcknowledgement && (
-          <div className="flex border-b border-nx px-5 bg-surface-2/40">
+          <div className="flex border-b border-nx px-3 sm:px-5 bg-surface-2/40 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
-              className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+              className={`shrink-0 py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'overview'
                   ? 'border-[color:var(--nx-accent)] text-accent'
                   : 'border-transparent text-muted hover:text-default'
@@ -177,7 +177,7 @@ export default function AnnouncementAnalyticsModal({
             <button
               type="button"
               onClick={() => setActiveTab('outstanding')}
-              className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+              className={`shrink-0 py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 ${
                 activeTab === 'outstanding'
                   ? 'border-[color:var(--nx-accent)] text-accent'
                   : 'border-transparent text-muted hover:text-default'
@@ -300,7 +300,7 @@ export default function AnnouncementAnalyticsModal({
                   )}
 
                   {requiresAcknowledgement && (
-                    <div className="card-base p-4 border border-[color:var(--nx-accent)] flex items-center justify-between gap-4">
+                    <div className="card-base p-4 border border-[color:var(--nx-accent)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">
                           Acknowledgement is mandatory for this update.
@@ -314,7 +314,7 @@ export default function AnnouncementAnalyticsModal({
                       <button
                         type="button"
                         onClick={() => setActiveTab('outstanding')}
-                        className="btn-secondary text-xs !py-2 shrink-0"
+                        className="btn-secondary text-xs !py-2 shrink-0 w-full sm:w-auto"
                       >
                         View Outstanding List →
                       </button>
@@ -335,9 +335,9 @@ export default function AnnouncementAnalyticsModal({
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Search by name, matric no, or email..."
-                    className="input-base text-sm flex-1"
+                    className="input-base text-sm flex-1 min-w-0"
                   />
-                  <button type="submit" className="btn-secondary !py-2 text-xs">
+                  <button type="submit" className="btn-secondary !py-2 text-xs shrink-0">
                     Search
                   </button>
                   {search && (
@@ -348,7 +348,7 @@ export default function AnnouncementAnalyticsModal({
                         setSearch('');
                         setPage(1);
                       }}
-                      className="btn-ghost !py-2 text-xs"
+                      className="btn-ghost !py-2 text-xs shrink-0"
                     >
                       Clear
                     </button>
@@ -359,7 +359,7 @@ export default function AnnouncementAnalyticsModal({
                   <button
                     type="button"
                     onClick={() => void copyOutstandingMatricNumbers()}
-                    className="btn-secondary text-xs !py-2 shrink-0"
+                    className="btn-secondary text-xs !py-2 shrink-0 w-full sm:w-auto"
                     title="Copy matric numbers to paste into group announcement"
                   >
                     Copy Matric Numbers

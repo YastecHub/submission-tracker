@@ -72,16 +72,16 @@ export default function AiOrganizationReview({
   const currentSections = current.sections.filter((section) => section.body.trim());
 
   return (
-    <section className="card-base p-5 sm:p-6 mb-6" aria-labelledby="assistant-review-heading">
+    <section className="card-base p-4 sm:p-6 mb-6" aria-labelledby="assistant-review-heading">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
         <div>
           <p className="text-xs uppercase tracking-wider text-accent font-semibold">Assistant review</p>
           <h2 id="assistant-review-heading" className="text-xl font-semibold mt-1">Compare before accepting</h2>
           <p className="text-sm text-muted mt-1">Nothing here is saved or published automatically. Select only suggestions supported by the source.</p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <button type="button" className="btn-ghost" onClick={onDismiss}>{applied ? 'Close review' : 'Dismiss'}</button>
-          <button type="button" className="btn-primary" onClick={onApply} disabled={selectableCount === 0 || applied}>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+          <button type="button" className="btn-ghost w-full sm:w-auto" onClick={onDismiss}>{applied ? 'Close review' : 'Dismiss'}</button>
+          <button type="button" className="btn-primary w-full sm:w-auto" onClick={onApply} disabled={selectableCount === 0 || applied}>
             {applied ? 'Applied to draft' : 'Apply selected'}
           </button>
         </div>

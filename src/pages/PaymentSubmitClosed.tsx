@@ -6,7 +6,7 @@ export default function PaymentSubmitClosed() {
   return (
     <div className="page-base flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm space-y-4 animate-fade-up">
-        <div className="card-base p-8 text-center">
+        <div className="card-base p-6 sm:p-8 text-center">
           <div className="mx-auto w-14 h-14 rounded-full bg-surface-2 border border-nx flex items-center justify-center mb-4">
             <svg className="w-7 h-7 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

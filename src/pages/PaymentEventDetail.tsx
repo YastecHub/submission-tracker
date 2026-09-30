@@ -576,20 +576,20 @@ export default function PaymentEventDetail() {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 text-sm text-muted">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-6 text-sm text-muted text-center sm:text-left">
             <span>Page {page} of {totalPages}</span>
-            <div className="flex gap-2">
+            <div className="flex justify-center sm:justify-end gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="btn-secondary !py-2 !text-sm"
+                className="btn-secondary !py-2 !text-sm flex-1 sm:flex-initial"
               >
                 ← Prev
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="btn-secondary !py-2 !text-sm"
+                className="btn-secondary !py-2 !text-sm flex-1 sm:flex-initial"
               >
                 Next →
               </button>

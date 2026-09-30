@@ -84,7 +84,7 @@ export default function SubmissionForm() {
   return (
     <div className="page-base flex flex-col items-center px-4 py-10">
       <div className="w-full max-w-md animate-fade-up">
-        <div className="card-base p-5 mb-5">
+        <div className="card-base p-4 sm:p-5 mb-4">
           <span className="badge badge-accent">{event.type}</span>
           <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
           <p className="text-sm text-muted mt-1">{event.courseCode}</p>
@@ -94,7 +94,7 @@ export default function SubmissionForm() {
           <p className="text-xs text-dim mt-3">Deadline: {deadline}</p>
         </div>
 
-        <div className="card-base p-6">
+        <div className="card-base p-4 sm:p-6">
           <h2 className="text-lg font-semibold">Digital submission</h2>
           <p className="text-sm text-muted mt-1 mb-5">
             Fill in your details after physically submitting your work.

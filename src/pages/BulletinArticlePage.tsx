@@ -108,8 +108,8 @@ export default function BulletinArticlePage() {
             {data.requiresAcknowledgement && <span className="badge badge-accent">Acknowledgement required</span>}
             {offline && <span className="badge" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline — cached</span>}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">{data.title}</h1>
-          <p className="text-lg text-muted leading-8 mt-4">{data.summary}</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight leading-tight break-words">{data.title}</h1>
+          <p className="text-base sm:text-lg text-muted leading-7 sm:leading-8 mt-4">{data.summary}</p>
           <div className="mt-5 text-sm text-dim space-y-1">
             <p>Published {formatBulletinDateTime(data.publishedAt)}{data.publisher ? ` by ${data.publisher.name}` : ''}</p>
             {wasUpdated && <p className="text-accent">Updated {formatBulletinDateTime(data.updatedAt)}</p>}
@@ -127,10 +127,10 @@ export default function BulletinArticlePage() {
         {wasUpdated && <div className="badge badge-accent mb-6">This announcement has been updated since publication</div>}
 
         {data.requiresAcknowledgement && !data.isAcknowledged && (
-          <aside className="card-base p-5 mb-6 border-[color:var(--nx-accent)]" aria-labelledby="ack-heading">
+          <aside className="card-base p-4 sm:p-5 mb-6 border-[color:var(--nx-accent)]" aria-labelledby="ack-heading">
             <p className="text-xs uppercase tracking-wider text-accent font-semibold">Action required</p>
             <p className="text-sm mt-2">This announcement requires your acknowledgement. Please confirm you have read and understood the content.</p>
-            <button type="button" onClick={() => void handleAcknowledge()} disabled={acknowledging} className="btn-primary mt-4">
+            <button type="button" onClick={() => void handleAcknowledge()} disabled={acknowledging} className="btn-primary mt-4 w-full sm:w-auto justify-center">
               {acknowledging ? 'Recording…' : 'Acknowledge'}
             </button>
           </aside>
@@ -150,20 +150,20 @@ export default function BulletinArticlePage() {
         <AnnouncementContent document={data.content} media={data.media} />
 
         {data.paymentEvent && (
-          <aside className="card-base p-5 mt-10 border-[color:var(--nx-accent)]" aria-labelledby="related-payment-heading">
+          <aside className="card-base p-4 sm:p-5 mt-10 border-[color:var(--nx-accent)]" aria-labelledby="related-payment-heading">
             <p className="text-xs uppercase tracking-wider text-accent font-semibold">Official payment details</p>
             <h2 id="related-payment-heading" className="text-xl font-semibold mt-2">{data.paymentEvent.title}</h2>
             <p className="text-2xl font-semibold mt-3">{formatNaira(data.paymentEvent.amount)}</p>
             <p className="text-sm text-muted mt-2">Deadline: {formatBulletinDateTime(data.paymentEvent.deadline)}</p>
-            <Link to={`/payment/${data.paymentEvent.slug}`} className="btn-primary mt-5">
+            <Link to={`/payment/${data.paymentEvent.slug}`} className="btn-primary mt-5 w-full sm:w-auto inline-flex justify-center text-center">
               {data.paymentEvent.isClosed ? 'View payment details' : 'Open payment page'}
             </Link>
           </aside>
         )}
 
-        <footer className="border-t border-nx mt-10 pt-6 flex flex-wrap gap-3">
-          <button type="button" onClick={() => void shareArticle()} className="btn-secondary">Share announcement</button>
-          <Link to="/student/news" className="btn-ghost">Browse more updates</Link>
+        <footer className="border-t border-nx mt-10 pt-6 flex flex-col sm:flex-row gap-3">
+          <button type="button" onClick={() => void shareArticle()} className="btn-secondary w-full sm:w-auto justify-center">Share announcement</button>
+          <Link to="/student/news" className="btn-ghost w-full sm:w-auto justify-center text-center">Browse more updates</Link>
         </footer>
       </article>
     </main>

@@ -117,7 +117,7 @@ export default function LoginPage() {
 
         {/* Right — login card */}
         <div className="order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 md:justify-self-end">
-          <div className="card-base p-7 sm:p-8">
+          <div className="card-base p-5 sm:p-8">
             <h2 className="text-xl font-semibold">Sign in</h2>
             <p className="text-sm text-muted mt-1">Staff access only.</p>
 

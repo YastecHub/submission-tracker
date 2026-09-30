@@ -18,7 +18,7 @@ export function ReceiptReviewModal({ action, note, loading, onNoteChange, onSubm
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="receipt-review-title">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div ref={panelRef} className="relative card-base w-full max-w-sm p-6 z-10 animate-fade-up">
+      <div ref={panelRef} className="relative card-base w-full max-w-sm max-h-[90dvh] overflow-y-auto p-5 sm:p-6 z-10 animate-fade-up">
         <h3 id="receipt-review-title" className="text-lg font-semibold mb-2">
           {action.type === 'confirm' ? 'Confirm payment' : 'Reject receipt'}
         </h3>

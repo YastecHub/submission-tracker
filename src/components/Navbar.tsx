@@ -95,22 +95,24 @@ export default function Navbar() {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            className="flex items-center gap-2 transition-colors"
+            className="flex items-center gap-2 transition-colors min-h-[44px] py-1 touch-manipulation"
+            aria-label="User menu"
+            aria-expanded={menuOpen}
           >
-            <div className="w-9 h-9 rounded-full bg-surface-2 border border-nx flex items-center justify-center font-semibold text-sm">
+            <div className="w-9 h-9 rounded-full bg-surface-2 border border-nx flex items-center justify-center font-semibold text-sm shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="hidden sm:flex flex-col items-start leading-tight">
               <span className="text-sm font-medium">{user.name}</span>
               <span className="text-xs text-muted">{roleLabel}</span>
             </div>
-            <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-60 card-base z-50 overflow-hidden">
+            <div className="absolute right-0 mt-2 w-60 max-w-[calc(100vw-2rem)] card-base z-50 overflow-hidden shadow-xl">
               <div className="px-4 py-3 border-b border-nx">
                 <p className="text-sm font-semibold">{user.name}</p>
                 <p className="text-xs text-muted truncate">{user.email}</p>

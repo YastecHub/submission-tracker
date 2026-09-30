@@ -243,7 +243,7 @@ export default function DashboardPage() {
         {activeTab === 'submissions' && (
           <>
             {showEventForm && (
-              <div className="card-base p-6 mb-6">
+              <div className="card-base p-4 sm:p-6 mb-6">
                 <h2 className="text-lg font-semibold mb-4">Create submission event</h2>
                 {eventFormError && <div className="alert-danger mb-4">{eventFormError}</div>}
                 <form onSubmit={handleCreateEvent} className="space-y-4">
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                       rows={2} placeholder="Any notes for students..."
                     />
                   </div>
-                  <button type="submit" disabled={creatingEvent} className="btn-primary">
+                  <button type="submit" disabled={creatingEvent} className="btn-primary w-full sm:w-auto">
                     {creatingEvent ? 'Creating…' : 'Create event'}
                   </button>
                 </form>
@@ -359,7 +359,7 @@ export default function DashboardPage() {
         {activeTab === 'payments' && (
           <>
             {showPaymentForm && (
-              <div className="card-base p-6 mb-6">
+              <div className="card-base p-4 sm:p-6 mb-6">
                 <h2 className="text-lg font-semibold mb-4">Create payment collection</h2>
                 {paymentFormError && <div className="alert-danger mb-4">{paymentFormError}</div>}
                 <form onSubmit={handleCreatePayment} className="space-y-4">
@@ -460,7 +460,7 @@ export default function DashboardPage() {
                     </div>
                   </label>
 
-                  <button type="submit" disabled={creatingPayment} className="btn-primary">
+                  <button type="submit" disabled={creatingPayment} className="btn-primary w-full sm:w-auto">
                     {creatingPayment ? 'Creating…' : 'Create payment collection'}
                   </button>
                 </form>

@@ -5,7 +5,7 @@ import PriorityBadge from './PriorityBadge';
 
 export default function AnnouncementCard({ announcement }: { announcement: BulletinFeedItem }) {
   return (
-    <article className={`card-interactive p-5 relative ${announcement.isUnread ? 'border-[color:var(--nx-accent)]' : ''}`}>
+    <article className={`card-interactive p-4 sm:p-5 relative ${announcement.isUnread ? 'border-[color:var(--nx-accent)]' : ''}`}>
       {announcement.media?.[0] && (
         <Link to={`/student/news/${announcement.slug}`} className="block rounded-lg overflow-hidden border border-nx mb-4">
           <img

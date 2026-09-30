@@ -52,12 +52,12 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
   }
 
   return (
-    <div className="page-base pb-24 md:pb-0">
+    <div className="page-base pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
       <header className="sticky top-0 z-40 bg-[color:rgba(9,9,11,0.94)] backdrop-blur border-b border-nx">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2 lg:gap-4">
           <Link to="/student" className="flex items-center gap-2 font-semibold tracking-tight shrink-0">
             <img src="/icon.svg" alt="" className="w-8 h-8 rounded-lg" />
-            <span className="hidden lg:inline">NEXIUM</span>
+            <span className="hidden sm:inline">NEXIUM</span>
           </Link>
 
           <nav aria-label="Student navigation" className="hidden md:flex flex-1 items-center justify-center gap-1">
@@ -76,14 +76,14 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
           <details className="relative shrink-0 group">
             <summary className="list-none min-h-11 flex items-center gap-2 rounded-lg px-2 sm:px-3 cursor-pointer text-right hover:bg-surface-2 transition-colors [&::-webkit-details-marker]:hidden">
               <span className="min-w-0">
-                <span className="block text-sm font-medium truncate max-w-28">{firstName}</span>
-                <span className="block text-xs text-dim">{student?.matricNumber}</span>
+                <span className="block text-sm font-medium truncate max-w-20 sm:max-w-28">{firstName}</span>
+                <span className="block text-xs text-dim truncate max-w-20 sm:max-w-28">{student?.matricNumber}</span>
               </span>
-              <svg className="w-4 h-4 text-dim transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <svg className="w-4 h-4 text-dim transition-transform group-open:rotate-180 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </summary>
-            <div className="absolute right-0 mt-2 w-64 card-base p-3 shadow-xl">
+            <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] card-base p-3 shadow-xl z-50">
               <p className="text-sm font-semibold truncate">{student?.fullName}</p>
               <p className="text-xs text-muted mt-1">{student?.matricNumber}</p>
               <p className="text-xs text-dim mt-1 truncate">{student?.email}</p>
@@ -99,12 +99,13 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
 
       <nav
         aria-label="Student mobile navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx px-2 py-2 grid grid-cols-4"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx px-2 pt-2 grid grid-cols-4"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
       >
         {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `${navClass({ isActive })} !px-1 flex-col gap-0.5`}>
+          <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `${navClass({ isActive })} !px-1 flex-col gap-0.5 text-xs py-1.5`}>
             <span>{item.label}</span>
-            {item.to === '/student/news' && unreadCount > 0 && <span className="text-[10px] text-accent">{unreadCount} new</span>}
+            {item.to === '/student/news' && unreadCount > 0 && <span className="text-[10px] text-accent font-semibold">{unreadCount} new</span>}
           </NavLink>
         ))}
       </nav>

@@ -17,11 +17,11 @@ export default function StudentHomePage() {
         <p className="text-xs uppercase tracking-wider text-accent font-semibold">Student home</p>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-1">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Welcome, {firstName}</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Welcome, {firstName}</h1>
             <p className="text-sm text-muted mt-2">Important class information now has one permanent home.</p>
           </div>
           {feed.data && (
-            <Link to="/student/news" className="btn-secondary !py-2">
+            <Link to="/student/news" className="btn-secondary !py-2 w-full sm:w-auto text-center justify-center">
               Open Nexium Bulletin
             </Link>
           )}
@@ -37,7 +37,7 @@ export default function StudentHomePage() {
           {[0, 1].map((item) => <div key={item} className="card-base h-52 animate-pulse bg-surface" />)}
         </div>
       ) : announcements.length === 0 ? (
-        <div className="card-base p-8 text-center mb-8">
+        <div className="card-base p-6 sm:p-8 text-center mb-8">
           <h2 className="text-lg font-semibold">No announcements yet</h2>
           <p className="text-sm text-muted mt-2">New class updates will appear here after they are published.</p>
         </div>
@@ -72,13 +72,13 @@ export default function StudentHomePage() {
       <section aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading" className="text-xl font-semibold tracking-tight mb-4">Quick actions</h2>
         <div className="grid sm:grid-cols-3 gap-3">
-          <Link to="/student/news" className="card-interactive p-5 min-h-28 flex flex-col justify-between">
+          <Link to="/student/news" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">Nexium Bulletin</span><span className="text-sm text-muted">Browse every class update →</span>
           </Link>
-          <Link to="/student/tickets" className="card-interactive p-5 min-h-28 flex flex-col justify-between">
+          <Link to="/student/tickets" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">My tickets</span><span className="text-sm text-muted">View confirmed collection tickets →</span>
           </Link>
-          <Link to="/transparency" className="card-interactive p-5 min-h-28 flex flex-col justify-between">
+          <Link to="/transparency" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">Class transparency</span><span className="text-sm text-muted">Review the class ledger →</span>
           </Link>
         </div>

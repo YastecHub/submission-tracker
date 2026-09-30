@@ -19,7 +19,7 @@ export function TicketScannerModal({ onScan, onClose, result, onScanAgain }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="ticket-scanner-title">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div ref={panelRef} className="relative card-base w-full max-w-sm overflow-hidden z-10 animate-fade-up">
+      <div ref={panelRef} className="relative card-base w-full max-w-sm max-h-[90dvh] overflow-y-auto z-10 animate-fade-up">
         <div className="flex items-center justify-between px-5 py-4 border-b border-nx">
           <h2 id="ticket-scanner-title" className="font-semibold">Scan ticket</h2>
           <button onClick={onClose} aria-label="Close scanner" className="text-muted hover:text-[color:var(--nx-text)] text-2xl leading-none">&times;</button>

@@ -64,14 +64,14 @@ export default function EventCard({ event, onToggleClose, onExtend, onDelete, ca
 
       <p className="text-xs text-dim">Deadline: {deadlineStr}</p>
 
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
         <Link
           to={`/dashboard/events/${event.id}`}
-          className="btn-primary flex-1 !py-2 !text-sm"
+          className="btn-primary !py-2 !text-sm text-center justify-center"
         >
           View
         </Link>
-        <button type="button" onClick={copyLink} className="btn-secondary flex-1 !py-2 !text-sm">
+        <button type="button" onClick={copyLink} className="btn-secondary !py-2 !text-sm text-center justify-center">
           Copy link
         </button>
         {canManage && (
@@ -79,14 +79,14 @@ export default function EventCard({ event, onToggleClose, onExtend, onDelete, ca
             <button
               type="button"
               onClick={() => onToggleClose(event.id)}
-              className="btn-secondary flex-1 !py-2 !text-sm"
+              className="btn-secondary !py-2 !text-sm text-center justify-center"
             >
               {event.isClosed ? 'Re-open' : 'Close'}
             </button>
             <button
               type="button"
               onClick={() => onExtend(event.id)}
-              className="btn-secondary flex-1 !py-2 !text-sm"
+              className="btn-secondary !py-2 !text-sm text-center justify-center"
               title={closed ? 'Reopen with a new deadline' : 'Extend deadline'}
             >
               {closed ? 'Reopen…' : 'Extend…'}
@@ -94,7 +94,7 @@ export default function EventCard({ event, onToggleClose, onExtend, onDelete, ca
             <button
               type="button"
               onClick={() => onDelete(event.id)}
-              className="btn-ghost !text-sm text-danger"
+              className="btn-ghost !py-2 !text-sm text-danger col-span-2 text-center justify-center"
               title="Delete event"
             >
               Delete

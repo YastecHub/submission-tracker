@@ -25,9 +25,13 @@
     background-color: var(--nx-bg);
     color: var(--nx-text);
     -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
   }
   body {
     @apply font-sans;
+    overflow-x: hidden;
   }
   *:focus-visible {
     outline: 2px solid var(--nx-accent);
@@ -86,6 +90,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    min-height: 2.625rem;
+    touch-action: manipulation;
     background-color: var(--nx-accent);
     color: #18181b;
     font-weight: 600;
@@ -109,6 +115,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    min-height: 2.625rem;
+    touch-action: manipulation;
     background-color: var(--nx-surface-2);
     color: var(--nx-text);
     font-weight: 500;
@@ -132,6 +140,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    touch-action: manipulation;
     background-color: transparent;
     color: var(--nx-text-muted);
     font-weight: 500;

@@ -62,12 +62,12 @@ export default function BulletinFeedPage() {
         <button type="submit" className="btn-primary">Search</button>
       </form>
 
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-2" aria-label="Announcement filters">
-        <button type="button" onClick={() => { const next = new URLSearchParams(); if (search) next.set('search', search); setParams(next); }} className={`btn-ghost whitespace-nowrap ${!category && !importantOnly && !unreadOnly ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>All</button>
-        <button type="button" onClick={() => updateParam('unread', unreadOnly ? undefined : 'true')} className={`btn-ghost whitespace-nowrap ${unreadOnly ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>Unread</button>
-        <button type="button" onClick={() => updateParam('priority', importantOnly ? undefined : 'important')} className={`btn-ghost whitespace-nowrap ${importantOnly ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>Important</button>
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Announcement filters">
+        <button type="button" onClick={() => { const next = new URLSearchParams(); if (search) next.set('search', search); setParams(next); }} className={`shrink-0 btn-ghost whitespace-nowrap ${!category && !importantOnly && !unreadOnly ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>All</button>
+        <button type="button" onClick={() => updateParam('unread', unreadOnly ? undefined : 'true')} className={`shrink-0 btn-ghost whitespace-nowrap ${unreadOnly ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>Unread</button>
+        <button type="button" onClick={() => updateParam('priority', importantOnly ? undefined : 'important')} className={`shrink-0 btn-ghost whitespace-nowrap ${importantOnly ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>Important</button>
         {categories.map((item) => (
-          <button key={item} type="button" onClick={() => updateParam('category', category === item ? undefined : item)} className={`btn-ghost whitespace-nowrap ${category === item ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>
+          <button key={item} type="button" onClick={() => updateParam('category', category === item ? undefined : item)} className={`shrink-0 btn-ghost whitespace-nowrap ${category === item ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}>
             {categoryLabels[item]}
           </button>
         ))}

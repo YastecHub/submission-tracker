@@ -53,19 +53,19 @@ export default function BulletinManagementPage() {
             <h1 className="text-3xl font-semibold tracking-tight mt-1">Nexium Bulletin</h1>
             <p className="text-sm text-muted mt-2">Prepare, review and publish permanent student updates.</p>
           </div>
-          <Link to="/dashboard/bulletin/new" className="btn-primary">Create announcement</Link>
+          <Link to="/dashboard/bulletin/new" className="btn-primary w-full sm:w-auto text-center justify-center">Create announcement</Link>
         </div>
 
         <DashboardSectionNav active="bulletin" />
 
         <div className="card-base p-3 mb-5">
-          <div className="flex gap-1 overflow-x-auto mb-3" aria-label="Announcement status">
+          <div className="flex gap-1 overflow-x-auto pb-1 mb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Announcement status">
             {statuses.map((item) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => updateParams({ status: item.value || undefined })}
-                className={`btn-ghost whitespace-nowrap ${status === (item.value || undefined) ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}
+                className={`shrink-0 btn-ghost whitespace-nowrap ${status === (item.value || undefined) ? 'bg-surface-2 text-[color:var(--nx-text)]' : ''}`}
               >
                 {item.label}
               </button>
@@ -74,15 +74,15 @@ export default function BulletinManagementPage() {
           <form onSubmit={(event) => { event.preventDefault(); updateParams({ search: searchText.trim() || undefined }); }} className="flex gap-2">
             <label htmlFor="admin-bulletin-search" className="sr-only">Search announcements</label>
             <input id="admin-bulletin-search" className="input-base" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search announcements" />
-            <button type="submit" className="btn-secondary">Search</button>
+            <button type="submit" className="btn-secondary shrink-0">Search</button>
           </form>
         </div>
 
         {list.data && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-            <div className="card-base p-4"><p className="text-xs text-dim uppercase tracking-wider">Matching</p><p className="text-2xl font-semibold mt-1">{list.data.total}</p></div>
-            <div className="card-base p-4"><p className="text-xs text-dim uppercase tracking-wider">On this page</p><p className="text-2xl font-semibold mt-1">{list.data.announcements.length}</p></div>
-            <div className="card-base p-4 col-span-2 sm:col-span-1"><p className="text-xs text-dim uppercase tracking-wider">View</p><p className="text-sm font-semibold mt-2 capitalize">{status ?? 'All statuses'}</p></div>
+            <div className="card-base p-3.5 sm:p-4"><p className="text-xs text-dim uppercase tracking-wider">Matching</p><p className="text-xl sm:text-2xl font-semibold mt-1">{list.data.total}</p></div>
+            <div className="card-base p-3.5 sm:p-4"><p className="text-xs text-dim uppercase tracking-wider">On this page</p><p className="text-xl sm:text-2xl font-semibold mt-1">{list.data.announcements.length}</p></div>
+            <div className="card-base p-3.5 sm:p-4 col-span-2 sm:col-span-1"><p className="text-xs text-dim uppercase tracking-wider">View</p><p className="text-sm font-semibold mt-2 capitalize">{status ?? 'All statuses'}</p></div>
           </div>
         )}
 
@@ -95,7 +95,7 @@ export default function BulletinManagementPage() {
         ) : (
           <div className="space-y-3">
             {list.data.announcements.map((announcement) => (
-              <article key={announcement.id} className="card-base p-5">
+              <article key={announcement.id} className="card-base p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap gap-2 mb-2">
@@ -109,7 +109,7 @@ export default function BulletinManagementPage() {
                     <p className="text-sm text-muted mt-1">{announcement.summary}</p>
                     <p className="text-xs text-dim mt-3">Updated by {announcement.updater.name} · {formatBulletinDate(announcement.updatedAt)}{announcement.status === 'published' ? ` · ${announcement.readCount} readers` : ''}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto">
                     {announcement.status === 'published' && (
                       <>
                         <button
@@ -121,14 +121,14 @@ export default function BulletinManagementPage() {
                               requiresAcknowledgement: announcement.requiresAcknowledgement,
                             })
                           }
-                          className="btn-secondary !py-2 text-xs"
+                          className="btn-secondary !py-2 text-xs flex-1 sm:flex-initial text-center justify-center"
                         >
                           Analytics
                         </button>
-                        <Link to={`/student/news/${announcement.slug}`} className="btn-ghost !py-2 text-xs" target="_blank" rel="noreferrer">View</Link>
+                        <Link to={`/student/news/${announcement.slug}`} className="btn-ghost !py-2 text-xs flex-1 sm:flex-initial text-center justify-center" target="_blank" rel="noreferrer">View</Link>
                       </>
                     )}
-                    <Link to={`/dashboard/bulletin/${announcement.id}`} className="btn-secondary !py-2 text-xs">
+                    <Link to={`/dashboard/bulletin/${announcement.id}`} className="btn-secondary !py-2 text-xs flex-1 sm:flex-initial text-center justify-center">
                       {canEditAnnouncement(user, {
                         createdBy: announcement.creator.id,
                         category: announcement.category,

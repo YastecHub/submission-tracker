@@ -155,7 +155,7 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
       <div
         role="dialog"
         aria-label="Bulletin notifications"
-        className="absolute right-0 mt-2 w-72 card-base p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-1"
+        className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] card-base p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-1"
       >
         <div className="flex items-center justify-between">
           <p className="font-semibold text-sm">Bulletin notifications</p>

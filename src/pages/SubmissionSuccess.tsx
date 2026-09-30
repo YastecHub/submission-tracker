@@ -88,7 +88,7 @@ export default function SubmissionSuccess() {
           </div>
         )}
 
-        <div className="card-base p-6 text-center">
+        <div className="card-base p-4 sm:p-6 text-center">
           <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4 bg-surface-2 border border-nx">
             <svg className={`w-7 h-7 ${confirmed ? 'text-success' : 'text-accent'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

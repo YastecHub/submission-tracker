@@ -67,7 +67,7 @@ export default function ExtendDeadlineModal({
 
       <form
         onSubmit={handleSubmit}
-        className="relative card-base w-full max-w-sm p-6 z-10 animate-fade-up"
+        className="relative card-base w-full max-w-sm max-h-[90dvh] overflow-y-auto p-5 sm:p-6 z-10 animate-fade-up"
       >
         <h2 className="text-lg font-semibold mb-2">{title}</h2>
         <p className="text-sm text-muted mb-1">"{eventTitle}"</p>

@@ -17,13 +17,13 @@ export default function DashboardSectionNav({
   counts?: Partial<Record<DashboardSection, number>>;
 }) {
   return (
-    <nav aria-label="Dashboard sections" className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit overflow-x-auto">
+    <nav aria-label="Dashboard sections" className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
       {sections.map((section) => (
         <Link
           key={section.id}
           to={section.to}
           aria-current={active === section.id ? 'page' : undefined}
-          className={`px-3 sm:px-4 py-2 min-h-11 text-sm font-medium rounded-md transition-colors flex items-center justify-center whitespace-nowrap ${
+          className={`shrink-0 px-3 sm:px-4 py-2 min-h-11 text-sm font-medium rounded-md transition-colors flex items-center justify-center whitespace-nowrap ${
             active === section.id
               ? 'bg-surface text-[color:var(--nx-text)] border border-nx'
               : 'text-muted hover:text-[color:var(--nx-text)]'
