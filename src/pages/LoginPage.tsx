@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useStudentAuth } from '../context/StudentAuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
@@ -25,6 +26,7 @@ const FEATURES = [
 
 export default function LoginPage() {
   const { login, user } = useAuth();
+  const { student } = useStudentAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -36,8 +38,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (user) {
       navigate('/dashboard', { replace: true });
+    } else if (student) {
+      navigate('/student', { replace: true });
     }
-  }, [navigate, user]);
+  }, [navigate, user, student]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
@@ -201,12 +205,12 @@ export default function LoginPage() {
 
           {/* Student CTA — prominent, right under the login card on every screen */}
           <Link
-            to="/transparency"
+            to="/student"
             className="mt-5 flex items-center justify-between gap-3 card-base p-4 hover:border-[color:var(--nx-border-hover)] transition-colors group"
           >
             <div className="min-w-0">
               <p className="text-sm font-semibold">Are you a student?</p>
-              <p className="text-xs text-muted mt-0.5">View the class account ledger.</p>
+              <p className="text-xs text-muted mt-0.5">Check class announcements, event tickets &amp; ledger.</p>
             </div>
             <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 border border-nx flex items-center justify-center text-accent group-hover:bg-[color:var(--nx-accent)] group-hover:text-black group-hover:border-[color:var(--nx-accent)] transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

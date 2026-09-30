@@ -16,8 +16,8 @@ export default function StudentLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const requested = params.get('returnTo') ?? '/student';
-  const returnTo = requested.startsWith('/payment/') ? requested : '/student';
+  const requested = params.get('returnTo');
+  const returnTo = requested && (requested.startsWith('/payment/') || requested.startsWith('/pay/')) ? requested : '/student';
   if (student) return <Navigate to={returnTo} replace />;
 
   async function submit(event: FormEvent) {
@@ -27,14 +27,15 @@ export default function StudentLoginPage() {
     try {
       if (mode === 'login') {
         await login(matric, password);
+        navigate(returnTo, { replace: true });
       } else if (!codeSent) {
         await requestRegistrationCode(matric, email);
         setCodeSent(true);
         return;
       } else {
         await register(matric, email, code, password);
+        navigate('/student', { replace: true });
       }
-      navigate(returnTo, { replace: true });
     } catch (caught: unknown) {
       setError(axios.isAxiosError(caught) ? caught.response?.data?.error ?? 'Unable to continue.' : 'Unable to continue.');
     } finally { setLoading(false); }
