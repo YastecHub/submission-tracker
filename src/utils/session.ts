@@ -18,3 +18,17 @@ export function is100LevelEvent(event: { createdAt?: string; deadline?: string }
 export function getEventSessionLabel(event: { createdAt?: string; deadline?: string }): '100L' | '200L' {
   return is100LevelEvent(event) ? '100L' : '200L';
 }
+
+export function is100LevelTransaction(tx: { occurredAt?: string; createdAt?: string }): boolean {
+  if (tx.occurredAt) {
+    return new Date(tx.occurredAt) < SESSION_200L_START;
+  }
+  if (tx.createdAt) {
+    return new Date(tx.createdAt) < SESSION_200L_START;
+  }
+  return true;
+}
+
+export function getTransactionSessionLabel(tx: { occurredAt?: string; createdAt?: string }): '100L' | '200L' {
+  return is100LevelTransaction(tx) ? '100L' : '200L';
+}

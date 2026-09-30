@@ -8,6 +8,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
 import type { Transaction, TransactionType } from '../types';
 import { useAdminLedger } from '../features/ledger/hooks/useAdminLedger';
+import PreviousSessionArchive from '../components/PreviousSessionArchive';
+import { is100LevelTransaction, getTransactionSessionLabel } from '../utils/session';
 
 function formatNaira(amount: string): string {
   const n = Number(amount);
@@ -54,10 +56,97 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
     return () => clearTimeout(t);
   }, [search]);
 
+  const [show100lTransactions, setShow100lTransactions] = useState(false);
+
   const { data: ledger, loading, error, refresh: loadLedger } = useAdminLedger({
     page, limit: 30, type: typeFilter || undefined, search: debouncedSearch || undefined, includeDeleted,
   });
   useEffect(() => { if (error) toast('Failed to load ledger', 'error'); }, [error, toast]);
+
+  const allTransactions = ledger ? ledger.transactions : [];
+  const currentTransactions = allTransactions.filter((t) => !is100LevelTransaction(t));
+  const archive100lTransactions = allTransactions.filter((t) => is100LevelTransaction(t));
+
+  function renderTransactionCard(t: Transaction) {
+    const isCredit = t.type === 'credit';
+    const isAuto = !!t.receiptId;
+    const sessionLabel = getTransactionSessionLabel(t);
+    return (
+      <div key={t.id} className={`card-base p-3.5 sm:p-4 ${t.isDeleted ? 'opacity-50' : ''}`}>
+        <div className="flex gap-3 items-start">
+          <div
+            className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl bg-surface-2 border border-nx ${
+              isCredit ? 'text-success' : 'text-danger'
+            }`}
+          >
+            {isCredit ? '↓' : '↑'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-semibold text-sm sm:text-base break-words">{t.description}</p>
+                  <span className="badge font-mono text-[11px]">{sessionLabel}</span>
+                  {isAuto && <span className="badge badge-accent">Auto</span>}
+                  {t.isDeleted && <span className="badge badge-danger">Deleted</span>}
+                </div>
+                <div className="flex items-center gap-2 mt-0.5 text-xs text-dim flex-wrap">
+                  <span>{formatDate(t.occurredAt)}</span>
+                  {t.category && (
+                    <>
+                      <span>·</span>
+                      <span className="bg-surface-2 border border-nx px-2 py-0.5 rounded-full">
+                        {t.category}
+                      </span>
+                    </>
+                  )}
+                  {t.recorderName && (
+                    <>
+                      <span>·</span>
+                      <span>by {t.recorderName}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <p className={`font-semibold text-sm sm:text-base whitespace-nowrap shrink-0 ${isCredit ? 'text-success' : 'text-danger'}`}>
+                {isCredit ? '+' : '−'} {formatNaira(t.amount)}
+              </p>
+            </div>
+
+            <div className="mt-2 flex items-center gap-3 text-xs">
+              {t.proofUrl && (
+                <button
+                  type="button"
+                  onClick={() => setLightboxUrl(t.proofUrl!)}
+                  className="text-accent hover:underline cursor-pointer"
+                >
+                  View proof
+                </button>
+              )}
+              {canManage && !isAuto && !t.isDeleted && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setEditing(t); setFormOpen(true); }}
+                    className="text-muted hover:text-[color:var(--nx-text)] hover:underline cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(t)}
+                    className="text-danger hover:underline cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   function handleSaved() {
     void loadLedger();
@@ -163,89 +252,71 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
             </div>
           ))}
         </div>
-      ) : ledger && ledger.transactions.length === 0 ? (
+      ) : ledger && allTransactions.length === 0 ? (
         <div className="card-base p-16 text-center">
-          <p className="font-semibold">No transactions yet</p>
-          <p className="text-sm text-muted mt-1">{canManage ? 'Click “+ New transaction” to record the first one.' : 'Transactions will appear here when they are recorded.'}</p>
+          <p className="font-semibold">{debouncedSearch ? 'No transactions match your search' : 'No transactions yet'}</p>
+          <p className="text-sm text-muted mt-1">
+            {debouncedSearch
+              ? 'Try a different search term or clear the filter.'
+              : canManage
+              ? 'Click “+ New transaction” to record the first one.'
+              : 'Transactions will appear here when they are recorded.'}
+          </p>
         </div>
       ) : ledger ? (
-        <div className="space-y-3">
-          {ledger.transactions.map((t) => {
-            const isCredit = t.type === 'credit';
-            const isAuto = !!t.receiptId;
-            return (
-              <div key={t.id} className={`card-base p-3.5 sm:p-4 ${t.isDeleted ? 'opacity-50' : ''}`}>
-                <div className="flex gap-3 items-start">
-                  <div
-                    className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl bg-surface-2 border border-nx ${
-                      isCredit ? 'text-success' : 'text-danger'
-                    }`}
-                  >
-                    {isCredit ? '↓' : '↑'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="font-semibold text-sm sm:text-base break-words">{t.description}</p>
-                          {isAuto && <span className="badge badge-accent">Auto</span>}
-                          {t.isDeleted && <span className="badge badge-danger">Deleted</span>}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-dim flex-wrap">
-                          <span>{formatDate(t.occurredAt)}</span>
-                          {t.category && (
-                            <>
-                              <span>·</span>
-                              <span className="bg-surface-2 border border-nx px-2 py-0.5 rounded-full">
-                                {t.category}
-                              </span>
-                            </>
-                          )}
-                          {t.recorderName && (
-                            <>
-                              <span>·</span>
-                              <span>by {t.recorderName}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <p className={`font-semibold text-sm sm:text-base whitespace-nowrap shrink-0 ${isCredit ? 'text-success' : 'text-danger'}`}>
-                        {isCredit ? '+' : '−'} {formatNaira(t.amount)}
-                      </p>
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-3 text-xs">
-                      {t.proofUrl && (
-                        <button
-                          onClick={() => setLightboxUrl(t.proofUrl!)}
-                          className="text-accent hover:underline"
-                        >
-                          View proof
-                        </button>
-                      )}
-                      {canManage && !isAuto && !t.isDeleted && (
-                        <>
-                          <button
-                            onClick={() => { setEditing(t); setFormOpen(true); }}
-                            className="text-muted hover:text-[color:var(--nx-text)] hover:underline"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(t)}
-                            className="text-danger hover:underline"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
+        <>
+          {/* 200 Level (Current Session) */}
+          {currentTransactions.length === 0 ? (
+            <div className="card-base p-8 text-center border-dashed border-nx mb-6">
+              <div className="w-12 h-12 rounded-full bg-surface-2 border border-nx flex items-center justify-center mx-auto mb-3 text-xl">
+                ⚖️
               </div>
-            );
-          })}
-        </div>
+              <h3 className="font-semibold text-lg">200 Level Transactions</h3>
+              <p className="text-sm text-muted mt-1 max-w-md mx-auto">
+                No 200 Level transactions recorded yet. Class dues, expenses, and records for this session will appear here.
+              </p>
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => { setEditing(null); setFormOpen(true); }}
+                  className="btn-primary mt-4"
+                >
+                  + Record 200L transaction
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    200 Level Transactions
+                    <span className="badge badge-accent">Current Session</span>
+                  </h2>
+                  <p className="text-xs text-muted">Active financial entries and class expenses for 200L</p>
+                </div>
+                <span className="text-xs text-dim font-mono">{currentTransactions.length} active</span>
+              </div>
+              <div className="space-y-3">
+                {currentTransactions.map(renderTransactionCard)}
+              </div>
+            </div>
+          )}
+
+          {/* 100 Level (Previous Session Archive) */}
+          <PreviousSessionArchive
+            title="100 Level Transactions"
+            subtitle={`${archive100lTransactions.length} transaction${archive100lTransactions.length === 1 ? '' : 's'} preserved from last session`}
+            levelLabel="100L"
+            count={archive100lTransactions.length}
+            isOpen={show100lTransactions || debouncedSearch.trim().length > 0}
+            onToggle={() => setShow100lTransactions((prev) => !prev)}
+          >
+            <div className="space-y-3">
+              {archive100lTransactions.map(renderTransactionCard)}
+            </div>
+          </PreviousSessionArchive>
+        </>
       ) : null}
 
       {ledger && ledger.totalPages > 1 && (

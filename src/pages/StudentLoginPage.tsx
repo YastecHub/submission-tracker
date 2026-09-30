@@ -75,7 +75,7 @@ export default function StudentLoginPage() {
               </button>
             </div>
           </div>}
-          {mode === 'register' && !codeSent && <p className="text-xs text-dim">Your matric number must exist in class records, and the email address must reflect the name stored for it.</p>}
+          {mode === 'register' && !codeSent && <p className="text-xs text-dim">Your matric number must exist in class records. We will send a verification code to your email.</p>}
           {mode === 'register' && codeSent && <p className="text-xs text-dim">Enter the 6-digit code sent to {email}. It expires in 10 minutes.</p>}
           <button disabled={loading || (mode === 'register' && codeSent && code.length !== 6)} className="btn-primary w-full">{loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : codeSent ? 'Verify and create account' : 'Send verification code'}</button>
           {mode === 'register' && codeSent && <button type="button" className="btn-ghost w-full" onClick={() => { setCodeSent(false); setCode(''); setPassword(''); setShowPassword(false); setError(''); }}>Change details</button>}
