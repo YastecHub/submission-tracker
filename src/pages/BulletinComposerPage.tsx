@@ -282,8 +282,12 @@ export default function BulletinComposerPage() {
       setAiReview(null);
       setAiResponse(null);
       setAiApplied(false);
-      if (!announcement) navigate(`/dashboard/bulletin/${saved.id}`, { replace: true });
-      if (showToast) toast(saved.status === 'published' ? 'Announcement updated.' : 'Draft saved.', 'success');
+      if (showToast) {
+        toast(saved.status === 'published' ? 'Announcement updated successfully.' : 'Draft saved successfully.', 'success');
+        navigate('/dashboard/bulletin');
+      } else if (!announcement) {
+        navigate(`/dashboard/bulletin/${saved.id}`, { replace: true });
+      }
       return saved;
     } catch (caught) {
       const message = errorMessage(caught);
@@ -305,7 +309,8 @@ export default function BulletinComposerPage() {
         const archived = await archiveAdminAnnouncement(announcement.id, announcement.version);
         setAnnouncement(archived);
         setDirty(false);
-        toast('Announcement archived.', 'success');
+        toast('Announcement archived successfully.', 'success');
+        navigate('/dashboard/bulletin');
       } else {
         let current = announcement;
         if (!current || dirty) current = await save(false);
@@ -313,7 +318,8 @@ export default function BulletinComposerPage() {
         const published = await publishAdminAnnouncement(current.id, current.version, form.changeNote || undefined);
         setAnnouncement(published);
         setDirty(false);
-        toast('Announcement published to Nexium Bulletin.', 'success');
+        toast('Announcement published successfully to Nexium Bulletin.', 'success');
+        navigate('/dashboard/bulletin');
       }
     } catch (caught) {
       const message = errorMessage(caught);
