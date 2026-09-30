@@ -1,8 +1,20 @@
 import React from 'react';
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          void reg.update();
+        }
+      });
+      setInterval(() => {
+        void reg.update();
+      }, 30 * 60 * 1000);
+    } catch {
+      // SW registration failed
+    }
   });
 }
 
@@ -35,6 +47,7 @@ import PaymentMyTickets from './pages/PaymentMyTickets';
 import PaymentEventDetail from './pages/PaymentEventDetail';
 import TransparencyPage from './pages/TransparencyPage';
 import InstallBanner from './components/InstallBanner';
+import PwaUpdatePrompt from './components/PwaUpdatePrompt';
 
 const StudentShell = React.lazy(() => import('./features/bulletin/components/StudentShell'));
 const StudentHomePage = React.lazy(() => import('./pages/StudentHomePage'));
@@ -55,6 +68,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <StudentAuthProvider><ToastProvider>
           <InstallBanner />
+          <PwaUpdatePrompt />
           {enableAnalytics && (
             <React.Suspense fallback={null}>
               <Analytics />

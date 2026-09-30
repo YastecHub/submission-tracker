@@ -1,6 +1,6 @@
 // NEXIUM Bulletin Service Worker — offline-first for student articles
 // Version: increment when cache strategy changes
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const STATIC_CACHE = `nexium-static-${CACHE_VERSION}`;
 const ARTICLE_CACHE = `nexium-articles-${CACHE_VERSION}`;
 const FEED_CACHE = `nexium-feed-${CACHE_VERSION}`;
@@ -12,7 +12,7 @@ const PRECACHE_URLS = [
   '/student/news',
   '/student/login',
   '/icon.svg',
-  '/manifest.json',
+  '/manifest.webmanifest',
 ];
 
 // Install: precache static assets
@@ -23,7 +23,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches and notify client windows of update
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -32,12 +32,19 @@ self.addEventListener('activate', (event) => {
           .filter((key) => !key.startsWith(STATIC_CACHE) && !key.startsWith(ARTICLE_CACHE) && !key.startsWith(FEED_CACHE))
           .map((key) => caches.delete(key))
       )
-    )
+    ).then(() => {
+      return self.clients.claim();
+    }).then(() => {
+      return self.clients.matchAll({ type: 'window' });
+    }).then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage({ type: 'sw:updated', version: CACHE_VERSION });
+      });
+    })
   );
-  self.clients.claim();
 });
 
-// Network-first for API, cache-first for articles/feeds with network fallback
+// Network-first for navigation & API, cache-first for articles/feeds with network fallback
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -55,6 +62,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Navigation requests (HTML document loads) — Network-First with cache fallback
+  // Ensures PWA users always get the freshest deployment when online
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirstNavigation(event.request));
+    return;
+  }
+
   if (isArticlePage) {
     // Cache-first for article pages (HTML), network fallback
     event.respondWith(cacheFirstThenNetwork(event.request, ARTICLE_CACHE));
@@ -67,9 +81,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache-first
+  // Static assets (hashed JS, CSS, icons): cache-first
   event.respondWith(cacheFirst(event.request, STATIC_CACHE));
 });
+
+// Network-first for HTML navigation with offline fallback
+async function networkFirstNavigation(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch {
+    const cache = await caches.open(STATIC_CACHE);
+    const cached =
+      (await cache.match(request)) ||
+      (await cache.match('/student')) ||
+      (await cache.match('/'));
+    if (cached) return cached;
+    return new Response('Offline — please check your internet connection.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
+}
 
 // Cache-first strategy
 async function cacheFirst(request, cacheName) {
