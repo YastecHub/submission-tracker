@@ -14,6 +14,7 @@ import { canManagePaymentEvent } from '../features/auth/model/capabilities';
 import { type DisplayPaymentReceipt,
   PICNIC_EXPORT_AMOUNT, PICNIC_LEGACY_EVENT_ID, PICNIC_LEGACY_EVENT_TITLE,
   isPicnicPaymentEvent, dedupePicnicReceipts } from '../features/payments/model/picnic';
+import { getEventSessionLabel } from '../utils/session';
 
 
 const PAGE_SIZE = 50;
@@ -326,8 +327,11 @@ export default function PaymentEventDetail() {
         <div className="card-base p-4 sm:p-5 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
-              <span className="badge badge-accent">Payment Collection</span>
-              <h1 className="text-lg sm:text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="badge badge-accent">Payment Collection</span>
+                <span className="badge font-mono text-[11px]">{getEventSessionLabel(event)}</span>
+              </div>
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight mt-1">{event.title}</h1>
               {event.description && <p className="text-sm text-muted mt-1">{event.description}</p>}
               <p className="text-xs text-dim mt-2">Deadline: {deadline}</p>
             </div>

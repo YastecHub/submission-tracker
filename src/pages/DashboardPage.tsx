@@ -7,6 +7,7 @@ import EventCard from '../components/EventCard';
 import PaymentEventCard from '../components/PaymentEventCard';
 import ConfirmModal from '../components/ConfirmModal';
 import ExtendDeadlineModal from '../components/ExtendDeadlineModal';
+import PreviousSessionArchive from '../components/PreviousSessionArchive';
 import DashboardLedger from './DashboardLedger';
 import { useAuth } from '../context/AuthContext';
 import type { SubmissionEvent, EventType, PaymentEvent } from '../types';
@@ -15,6 +16,7 @@ import { useRemoteData } from '../hooks/useRemoteData';
 import { listSubmissionEvents, createSubmissionEvent, extendSubmissionEvent, toggleSubmissionEvent, deleteSubmissionEvent } from '../features/submissions/api/events';
 import { listPaymentEvents, createPaymentEvent, extendPaymentEvent, togglePaymentEvent, deletePaymentEvent } from '../features/payments/api/events';
 import { canManagePaymentEvent, canManageSubmissionEvent, dashboardCapabilities } from '../features/auth/model/capabilities';
+import { is100LevelEvent } from '../utils/session';
 
 const EVENT_TYPES: EventType[] = ['assignment', 'attendance', 'lab', 'other'];
 
@@ -78,6 +80,15 @@ export default function DashboardPage() {
   });
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [paymentFormError, setPaymentFormError] = useState('');
+
+  const [show100lSubmissions, setShow100lSubmissions] = useState(false);
+  const [show100lPayments, setShow100lPayments] = useState(false);
+
+  const currentSubmissions: SubmissionEvent[] = events.filter((e) => !is100LevelEvent(e));
+  const archive100lSubmissions: SubmissionEvent[] = events.filter((e) => is100LevelEvent(e));
+
+  const currentPaymentEvents: PaymentEvent[] = paymentEvents.filter((e) => !is100LevelEvent(e));
+  const archive100lPaymentEvents: PaymentEvent[] = paymentEvents.filter((e) => is100LevelEvent(e));
 
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -334,24 +345,78 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : events.length === 0 ? (
-              <div className="text-center py-20 text-muted">
-                <p className="text-lg font-medium">No submission events yet</p>
-                {access.createSubmissions && <p className="text-sm text-dim mt-2">Create your first submission event to get started.</p>}
-              </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {events.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    onToggleClose={(id) => requestToggleClose(id, 'submission')}
-                    onExtend={(id) => requestExtend(id, 'submission')}
-                    onDelete={(id) => requestDelete(id, 'submission')}
-                    canManage={canManageSubmissionEvent(user?.role, user?.id, event.createdBy)}
-                  />
-                ))}
-              </div>
+              <>
+                {/* 200 Level (Current Session) */}
+                {currentSubmissions.length === 0 ? (
+                  <div className="card-base p-8 text-center border-dashed border-nx mb-6">
+                    <div className="w-12 h-12 rounded-full bg-surface-2 border border-nx flex items-center justify-center mx-auto mb-3 text-xl">
+                      🎓
+                    </div>
+                    <h3 className="font-semibold text-lg">200 Level Submissions</h3>
+                    <p className="text-sm text-muted mt-1 max-w-md mx-auto">
+                      No 200 Level submission events have been created yet. As you create assignments, attendance, or lab submissions for this session, they will appear here.
+                    </p>
+                    {access.createSubmissions && (
+                      <button
+                        type="button"
+                        onClick={() => setShowEventForm(true)}
+                        className="btn-primary mt-4"
+                      >
+                        + Create 200L event
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-lg font-semibold flex items-center gap-2">
+                          200 Level Submissions
+                          <span className="badge badge-accent">Current Session</span>
+                        </h2>
+                        <p className="text-xs text-muted">Active assignments and submission collections for 200L</p>
+                      </div>
+                      <span className="text-xs text-dim font-mono">{currentSubmissions.length} active</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {currentSubmissions.map((event) => (
+                        <EventCard
+                          key={event.id}
+                          event={event}
+                          onToggleClose={(id) => requestToggleClose(id, 'submission')}
+                          onExtend={(id) => requestExtend(id, 'submission')}
+                          onDelete={(id) => requestDelete(id, 'submission')}
+                          canManage={canManageSubmissionEvent(user?.role, user?.id, event.createdBy)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 100 Level (Previous Session Archive) */}
+                <PreviousSessionArchive
+                  title="100 Level Submissions"
+                  subtitle={`${archive100lSubmissions.length} submission event${archive100lSubmissions.length === 1 ? '' : 's'} preserved from last session`}
+                  levelLabel="100L"
+                  count={archive100lSubmissions.length}
+                  isOpen={show100lSubmissions}
+                  onToggle={() => setShow100lSubmissions((prev) => !prev)}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {archive100lSubmissions.map((event) => (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        onToggleClose={(id) => requestToggleClose(id, 'submission')}
+                        onExtend={(id) => requestExtend(id, 'submission')}
+                        onDelete={(id) => requestDelete(id, 'submission')}
+                        canManage={canManageSubmissionEvent(user?.role, user?.id, event.createdBy)}
+                      />
+                    ))}
+                  </div>
+                </PreviousSessionArchive>
+              </>
             )}
           </>
         )}
@@ -485,24 +550,78 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : paymentEvents.length === 0 ? (
-              <div className="text-center py-20 text-muted">
-                <p className="text-lg font-medium">No payment collections yet</p>
-                {access.createPayments && <p className="text-sm text-dim mt-2">Create one to start collecting payment receipts.</p>}
-              </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {paymentEvents.map((event) => (
-                  <PaymentEventCard
-                    key={event.id}
-                    event={event}
-                    onToggleClose={(id) => requestToggleClose(id, 'payment')}
-                    onExtend={(id) => requestExtend(id, 'payment')}
-                    onDelete={(id) => requestDelete(id, 'payment')}
-                    canManage={canManagePaymentEvent(user?.role, user?.id, event.createdBy)}
-                  />
-                ))}
-              </div>
+              <>
+                {/* 200 Level (Current Session) */}
+                {currentPaymentEvents.length === 0 ? (
+                  <div className="card-base p-8 text-center border-dashed border-nx mb-6">
+                    <div className="w-12 h-12 rounded-full bg-surface-2 border border-nx flex items-center justify-center mx-auto mb-3 text-xl">
+                      💳
+                    </div>
+                    <h3 className="font-semibold text-lg">200 Level Payments</h3>
+                    <p className="text-sm text-muted mt-1 max-w-md mx-auto">
+                      No 200 Level payment collections created yet. Dues, tickets, and packages created for this session will show up here.
+                    </p>
+                    {access.createPayments && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentForm(true)}
+                        className="btn-primary mt-4"
+                      >
+                        + Create 200L collection
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-lg font-semibold flex items-center gap-2">
+                          200 Level Payments
+                          <span className="badge badge-accent">Current Session</span>
+                        </h2>
+                        <p className="text-xs text-muted">Active dues and payment collections for 200L</p>
+                      </div>
+                      <span className="text-xs text-dim font-mono">{currentPaymentEvents.length} active</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {currentPaymentEvents.map((event) => (
+                        <PaymentEventCard
+                          key={event.id}
+                          event={event}
+                          onToggleClose={(id) => requestToggleClose(id, 'payment')}
+                          onExtend={(id) => requestExtend(id, 'payment')}
+                          onDelete={(id) => requestDelete(id, 'payment')}
+                          canManage={canManagePaymentEvent(user?.role, user?.id, event.createdBy)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 100 Level (Previous Session Archive) */}
+                <PreviousSessionArchive
+                  title="100 Level Payments"
+                  subtitle={`${archive100lPaymentEvents.length} payment collection${archive100lPaymentEvents.length === 1 ? '' : 's'} preserved from last session`}
+                  levelLabel="100L"
+                  count={archive100lPaymentEvents.length}
+                  isOpen={show100lPayments}
+                  onToggle={() => setShow100lPayments((prev) => !prev)}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {archive100lPaymentEvents.map((event) => (
+                      <PaymentEventCard
+                        key={event.id}
+                        event={event}
+                        onToggleClose={(id) => requestToggleClose(id, 'payment')}
+                        onExtend={(id) => requestExtend(id, 'payment')}
+                        onDelete={(id) => requestDelete(id, 'payment')}
+                        canManage={canManagePaymentEvent(user?.role, user?.id, event.createdBy)}
+                      />
+                    ))}
+                  </div>
+                </PreviousSessionArchive>
+              </>
             )}
           </>
         )}

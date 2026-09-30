@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { PaymentEvent } from '../types';
 import { useToast } from '../context/ToastContext';
+import { getEventSessionLabel } from '../utils/session';
 
 interface Props {
   event: PaymentEvent;
@@ -14,6 +15,7 @@ export default function PaymentEventCard({ event, onToggleClose, onExtend, onDel
   const { toast } = useToast();
   const isExpired = new Date() > new Date(event.deadline);
   const isClosed = event.isClosed || isExpired;
+  const sessionLabel = getEventSessionLabel(event);
 
   const deadline = new Date(event.deadline).toLocaleString('en-GB', {
     day: '2-digit',
@@ -49,6 +51,7 @@ export default function PaymentEventCard({ event, onToggleClose, onExtend, onDel
       <div>
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="badge badge-accent">Payment</span>
+          <span className="badge font-mono text-[11px]">{sessionLabel}</span>
           {isClosed && (
             <span className="badge">{isExpired && !event.isClosed ? 'Expired' : 'Closed'}</span>
           )}

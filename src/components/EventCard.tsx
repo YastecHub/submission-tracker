@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { SubmissionEvent } from '../types';
 import { useToast } from '../context/ToastContext';
+import { getEventSessionLabel } from '../utils/session';
 
 interface Props {
   event: SubmissionEvent;
@@ -24,6 +25,7 @@ export default function EventCard({ event, onToggleClose, onExtend, onDelete, ca
 
   const shareLink = `${window.location.origin}/submitit/${event.slug}`;
   const closed = event.isClosed || isExpired;
+  const sessionLabel = getEventSessionLabel(event);
 
   async function copyLink(): Promise<void> {
     try {
@@ -40,6 +42,7 @@ export default function EventCard({ event, onToggleClose, onExtend, onDelete, ca
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="badge">{event.type}</span>
+            <span className="badge font-mono text-[11px]">{sessionLabel}</span>
             {closed && <span className="badge badge-danger">Closed</span>}
           </div>
           <h3 className="font-semibold truncate">{event.title}</h3>

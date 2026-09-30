@@ -8,6 +8,7 @@ import { useSubmissionDetail } from '../features/submissions/hooks/useSubmission
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { canManageSubmissionEvent } from '../features/auth/model/capabilities';
+import { getEventSessionLabel } from '../utils/session';
 
 
 function EventDetailSkeleton() {
@@ -115,8 +116,11 @@ export default function EventDetail() {
 
         {event && (
           <div className="card-base p-5 mb-6">
-            <span className="badge badge-accent">{event.type}</span>
-            <h1 className="text-xl font-semibold tracking-tight mt-3">{event.title}</h1>
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className="badge badge-accent">{event.type}</span>
+              <span className="badge font-mono text-[11px]">{getEventSessionLabel(event)}</span>
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight mt-1">{event.title}</h1>
             <p className="text-sm text-muted mt-1">{event.courseCode}</p>
             {event.description && (
               <p className="text-sm text-muted mt-2 leading-relaxed">{event.description}</p>
