@@ -64,6 +64,7 @@ export default function BulletinArticlePage() {
           navigator.serviceWorker.controller.postMessage({
             type: 'queue-acknowledge',
             url: `/api/bulletin/feed/${article.data!.id}/acknowledge`,
+            token,
           });
           toast('You are offline. Acknowledgement will be sent when back online.', 'info');
         } else {

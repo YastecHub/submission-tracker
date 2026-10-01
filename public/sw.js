@@ -46,6 +46,9 @@ self.addEventListener('activate', (event) => {
 
 // Network-first for navigation & API, cache-first for articles/feeds with network fallback
 self.addEventListener('fetch', (event) => {
+  // Service worker cache strategies only apply to GET requests
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
   // Only handle same-origin requests
@@ -164,16 +167,66 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('nexium-offline-db', 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('actions')) {
+        db.createObjectStore('actions', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function queueOfflineAction(action) {
+  try {
+    const db = await openOfflineDB();
+    const tx = db.transaction('actions', 'readwrite');
+    tx.objectStore('actions').add(action);
+    await new Promise((res, rej) => {
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+  } catch {
+    // Ignore storage failure
+  }
+}
+
 async function syncAcknowledgements() {
-  const cache = await caches.open('nexium-offline-actions');
-  const requests = await cache.keys();
-  for (const request of requests) {
-    try {
-      await fetch(request);
-      await cache.delete(request);
-    } catch {
-      // Leave in cache for next sync
+  try {
+    const db = await openOfflineDB();
+    const tx = db.transaction('actions', 'readwrite');
+    const store = tx.objectStore('actions');
+    const getAllReq = store.getAll();
+    const actions = await new Promise((res, rej) => {
+      getAllReq.onsuccess = () => res(getAllReq.result || []);
+      getAllReq.onerror = () => rej(getAllReq.error);
+    });
+
+    for (const item of actions) {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (item.token) {
+          headers['Authorization'] = `Bearer ${item.token}`;
+        }
+        const res = await fetch(item.url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({}),
+        });
+        if (res.ok || res.status === 400 || res.status === 409) {
+          const deleteTx = db.transaction('actions', 'readwrite');
+          deleteTx.objectStore('actions').delete(item.id);
+        }
+      } catch {
+        // Leave in queue for next sync
+      }
     }
+  } catch {
+    // IndexedDB or network error
   }
 }
 
@@ -227,7 +280,14 @@ self.addEventListener('message', (event) => {
     });
   }
   if (event.data?.type === 'queue-acknowledge') {
-    caches.open('nexium-offline-actions').then((c) => c.put(event.data.url, new Request(event.data.url, { method: 'POST' })));
-    self.registration.sync.register('acknowledge-sync').catch(() => {});
+    queueOfflineAction({
+      url: event.data.url,
+      token: event.data.token,
+      timestamp: Date.now(),
+    }).then(() => {
+      if ('sync' in self.registration) {
+        return self.registration.sync.register('acknowledge-sync');
+      }
+    }).catch(() => {});
   }
 });

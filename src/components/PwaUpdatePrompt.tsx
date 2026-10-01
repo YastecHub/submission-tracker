@@ -6,9 +6,13 @@ export default function PwaUpdatePrompt() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
+    // Track whether a service worker was already controlling the page on mount
+    // to distinguish true updates from initial first-visit registration
+    const hadControllerOnLoad = Boolean(navigator.serviceWorker.controller);
+
     // Listen for broadcast from activated new service worker
     const onMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'sw:updated') {
+      if (event.data?.type === 'sw:updated' && hadControllerOnLoad) {
         setUpdateAvailable(true);
       }
     };
@@ -17,14 +21,14 @@ export default function PwaUpdatePrompt() {
     // Also check if a service worker is waiting or update is detected
     navigator.serviceWorker.getRegistration().then((reg) => {
       if (!reg) return;
-      if (reg.waiting) {
+      if (reg.waiting && hadControllerOnLoad) {
         setUpdateAvailable(true);
       }
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (!newWorker) return;
         newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          if (newWorker.state === 'installed' && hadControllerOnLoad) {
             setUpdateAvailable(true);
           }
         });
@@ -36,15 +40,7 @@ export default function PwaUpdatePrompt() {
     };
   }, []);
 
-  async function handleUpdate() {
-    if ('caches' in window) {
-      try {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      } catch {
-        // Fallback to reload
-      }
-    }
+  function handleUpdate() {
     window.location.reload();
   }
 
