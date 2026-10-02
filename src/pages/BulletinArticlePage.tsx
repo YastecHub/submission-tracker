@@ -27,7 +27,7 @@ export default function BulletinArticlePage() {
     let active = true;
     markBulletinArticleRead(article.data.id, token)
       .then(() => { if (active) window.dispatchEvent(new Event('bulletin:read')); })
-      .catch(() => {});
+      .catch(() => { });
     return () => { active = false; };
   }, [article.data?.id, article.data?.isUnread, article.data?.version, token]);
 
@@ -107,7 +107,7 @@ export default function BulletinArticlePage() {
             <PriorityBadge priority={data.priority} />
             {data.isPinned && <span className="badge">Pinned</span>}
             {data.requiresAcknowledgement && <span className="badge badge-accent">Acknowledgement required</span>}
-            {offline && <span className="badge" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline — cached</span>}
+            {offline && <span className="badge" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline - cached</span>}
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight leading-tight break-words">{data.title}</h1>
           <p className="text-base sm:text-lg text-muted leading-7 sm:leading-8 mt-4">{data.summary}</p>

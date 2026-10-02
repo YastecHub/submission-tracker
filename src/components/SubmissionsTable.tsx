@@ -71,7 +71,7 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
 
   return (
     <>
-      {/* Card list — mobile */}
+      {/* Card list - mobile */}
       <ul className="divide-y divide-[color:var(--nx-border)] md:hidden">
         {submissions.map((s, i) => {
           const submittedAt = new Date(s.submittedAt).toLocaleString('en-GB', {
@@ -110,7 +110,7 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
         })}
       </ul>
 
-      {/* Table — desktop */}
+      {/* Table - desktop */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>

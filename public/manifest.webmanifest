@@ -1,7 +1,7 @@
 {
   "name": "NEXIUM",
   "short_name": "NEXIUM",
-  "description": "NEXIUM — class submissions, payments and account transparency",
+  "description": "NEXIUM - class submissions, payments and account transparency",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#4c1d95",

@@ -40,14 +40,14 @@ function makePNG(size) {
   const BG_MID = [107, 33, 168];   // purple-800 #6b21a8
   const BG_BOT = [76, 29, 149];    // violet-900 #4c1d95
   const GOLD_LIGHT = [253, 230, 138]; // amber-200 #fde68a
-  const GOLD_MID   = [251, 191, 36];  // amber-400 #fbbf24
-  const GOLD_DEEP  = [217, 119, 6];   // amber-600 #d97706
+  const GOLD_MID = [251, 191, 36];  // amber-400 #fbbf24
+  const GOLD_DEEP = [217, 119, 6];   // amber-600 #d97706
 
   const cx = size / 2;
   const cy = size / 2;
   const radius = size * 0.215; // rounded corner radius (matches SVG rx=110/512)
 
-  // "N" geometry — big gold N occupying the middle 50%
+  // "N" geometry - big gold N occupying the middle 50%
   const nW = size * 0.44;
   const nH = size * 0.5;
   const nLeft = cx - nW / 2;
@@ -66,7 +66,7 @@ function makePNG(size) {
     return Math.hypot(px - ix, py - iy);
   }
 
-  // Rounded rectangle mask — returns true if pixel is inside the rounded square
+  // Rounded rectangle mask - returns true if pixel is inside the rounded square
   function insideRounded(x, y) {
     if (x >= radius && x <= size - radius) return y >= 0 && y <= size;
     if (y >= radius && y <= size - radius) return x >= 0 && x <= size;

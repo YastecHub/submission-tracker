@@ -7,40 +7,40 @@ const metaCache = new Map();
 
 const STATIC_LABELS = {
   'payment-form': {
-    title: 'Upload Payment Receipt — NEXIUM',
+    title: 'Upload Payment Receipt - NEXIUM',
     desc: 'Submit your payment receipt for verification.',
   },
   'payment-success': {
-    title: 'Payment Receipt Status — NEXIUM',
+    title: 'Payment Receipt Status - NEXIUM',
     desc: 'Track the status of your submitted payment receipt.',
   },
   'payment-closed': {
-    title: 'Payment Closed — NEXIUM',
+    title: 'Payment Closed - NEXIUM',
     desc: 'This payment collection has been closed.',
   },
   'payment-tickets': {
-    title: 'My Payment Tickets — NEXIUM',
+    title: 'My Payment Tickets - NEXIUM',
     desc: 'View your previously submitted payment tickets.',
   },
   'submission-form': {
-    title: 'Submit Assignment — NEXIUM',
+    title: 'Submit Assignment - NEXIUM',
     desc: 'Upload your submission for class.',
   },
   'submission-success': {
-    title: 'Submission Received — NEXIUM',
+    title: 'Submission Received - NEXIUM',
     desc: 'Your submission was received.',
   },
   'submission-closed': {
-    title: 'Submission Closed — NEXIUM',
+    title: 'Submission Closed - NEXIUM',
     desc: 'This submission has been closed.',
   },
   transparency: {
-    title: 'Class Transparency — NEXIUM',
+    title: 'Class Transparency - NEXIUM',
     desc: 'Class account transparency and ledger.',
   },
   default: {
     title: 'NEXIUM',
-    desc: 'NEXIUM — class submissions, payments and account transparency',
+    desc: 'NEXIUM - class submissions, payments and account transparency',
   },
 };
 
@@ -122,7 +122,7 @@ async function resolveMeta(pathname) {
         kind === 'payment-form'
           ? `Submit your payment receipt for ${eventTitle}.`
           : `Upload your submission for ${eventTitle}.`;
-      return { title: `${verb}: ${eventTitle} — NEXIUM`, desc };
+      return { title: `${verb}: ${eventTitle} - NEXIUM`, desc };
     }
   }
 

@@ -61,7 +61,7 @@ export default function TicketCard({
         }, 'image/png');
       });
     } catch {
-      // swallow — the QR-only fallback is always available
+      // swallow - the QR-only fallback is always available
     } finally {
       setSaving(false);
     }
@@ -79,8 +79,8 @@ export default function TicketCard({
   if (isClaimed) {
     const claimedTime = claimedAt
       ? new Date(claimedAt).toLocaleString('en-GB', {
-          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-        })
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      })
       : '';
 
     return (
@@ -144,7 +144,7 @@ export default function TicketCard({
 
           {status === 'rejected' && (
             <div className="mt-3 alert-danger text-center">
-              <p className="text-xs font-medium">This ticket is invalid — your receipt was rejected.</p>
+              <p className="text-xs font-medium">This ticket is invalid - your receipt was rejected.</p>
             </div>
           )}
         </div>

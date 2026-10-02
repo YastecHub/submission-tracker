@@ -1,4 +1,4 @@
-// NEXIUM Bulletin Service Worker — offline-first for student articles
+// NEXIUM Bulletin Service Worker - offline-first for student articles
 // Version: increment when cache strategy changes
 const CACHE_VERSION = 'v7';
 const STATIC_CACHE = `nexium-static-${CACHE_VERSION}`;
@@ -59,13 +59,13 @@ self.addEventListener('fetch', (event) => {
   const isApi = url.pathname.startsWith('/api/');
 
   if (isApi) {
-    // Network-first for API — never cache auth/mutations
+    // Network-first for API - never cache auth/mutations
     if (event.request.method !== 'GET') return;
     event.respondWith(networkFirstApi(event.request));
     return;
   }
 
-  // Navigation requests (HTML document loads) — Network-First with cache fallback
+  // Navigation requests (HTML document loads) - Network-First with cache fallback
   // Ensures PWA users always get the freshest deployment when online
   if (event.request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(event.request));
@@ -104,7 +104,7 @@ async function networkFirstNavigation(request) {
       (await cache.match('/student')) ||
       (await cache.match('/'));
     if (cached) return cached;
-    return new Response('Offline — please check your internet connection.', {
+    return new Response('Offline - please check your internet connection.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
@@ -288,6 +288,6 @@ self.addEventListener('message', (event) => {
       if ('sync' in self.registration) {
         return self.registration.sync.register('acknowledge-sync');
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
 });

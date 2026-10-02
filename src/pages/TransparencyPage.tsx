@@ -60,7 +60,7 @@ export default function TransparencyPage() {
         setLedger(null);
         toast('Your student session expired. Please sign in again.', 'info');
       } else {
-        toast('Failed to load ledger — the server may still be starting up.', 'error');
+        toast('Failed to load ledger - the server may still be starting up.', 'error');
       }
     } finally {
       setLoading(false);
@@ -139,17 +139,17 @@ export default function TransparencyPage() {
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           <StatCard
             label="Money in"
-            value={ledger ? formatNaira(ledger.totalCredits, { compact: true }) : '—'}
+            value={ledger ? formatNaira(ledger.totalCredits, { compact: true }) : '-'}
             tone="success"
           />
           <StatCard
             label="Money out"
-            value={ledger ? formatNaira(ledger.totalDebits, { compact: true }) : '—'}
+            value={ledger ? formatNaira(ledger.totalDebits, { compact: true }) : '-'}
             tone="danger"
           />
           <StatCard
             label="Entries"
-            value={ledger ? String(ledger.transactionCount) : '—'}
+            value={ledger ? String(ledger.transactionCount) : '-'}
             tone="neutral"
           />
         </div>
@@ -426,9 +426,8 @@ function TransactionCard({
     <div className="card-base p-3 sm:p-4">
       <div className="flex gap-3">
         <div
-          className={`flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg font-semibold bg-surface-2 border border-nx ${
-            isCredit ? 'text-success' : 'text-danger'
-          }`}
+          className={`flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg font-semibold bg-surface-2 border border-nx ${isCredit ? 'text-success' : 'text-danger'
+            }`}
         >
           {isCredit ? '↓' : '↑'}
         </div>
@@ -438,9 +437,8 @@ function TransactionCard({
               {transaction.description}
             </p>
             <p
-              className={`font-semibold text-sm sm:text-base whitespace-nowrap text-right flex-shrink-0 ${
-                isCredit ? 'text-success' : 'text-danger'
-              }`}
+              className={`font-semibold text-sm sm:text-base whitespace-nowrap text-right flex-shrink-0 ${isCredit ? 'text-success' : 'text-danger'
+                }`}
             >
               {isCredit ? '+' : '−'} {formatNaira(transaction.amount)}
             </p>

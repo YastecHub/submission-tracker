@@ -75,9 +75,8 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
       <div key={t.id} className={`card-base p-3.5 sm:p-4 ${t.isDeleted ? 'opacity-50' : ''}`}>
         <div className="flex gap-3 items-start">
           <div
-            className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl bg-surface-2 border border-nx ${
-              isCredit ? 'text-success' : 'text-danger'
-            }`}
+            className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl bg-surface-2 border border-nx ${isCredit ? 'text-success' : 'text-danger'
+              }`}
           >
             {isCredit ? '↓' : '↑'}
           </div>
@@ -182,7 +181,7 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
           <div className="min-w-0">
             <p className="text-sm text-muted">Class account balance</p>
             <p className={`text-3xl sm:text-4xl font-semibold tracking-tight mt-1 break-words ${balanceClass}`}>
-              {ledger ? formatNairaShort(ledger.balance) : '—'}
+              {ledger ? formatNairaShort(ledger.balance) : '-'}
             </p>
             {ledger && (
               <p className="text-xs text-dim mt-0.5">{formatNaira(ledger.balance)}</p>
@@ -259,8 +258,8 @@ export default function DashboardLedger({ canManage = true }: { canManage?: bool
             {debouncedSearch
               ? 'Try a different search term or clear the filter.'
               : canManage
-              ? 'Click “+ New transaction” to record the first one.'
-              : 'Transactions will appear here when they are recorded.'}
+                ? 'Click “+ New transaction” to record the first one.'
+                : 'Transactions will appear here when they are recorded.'}
           </p>
         </div>
       ) : ledger ? (

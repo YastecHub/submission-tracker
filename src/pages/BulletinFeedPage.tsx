@@ -53,7 +53,7 @@ export default function BulletinFeedPage() {
           <h1 className="text-3xl font-semibold tracking-tight mt-1">Nexium Bulletin</h1>
           <p className="text-sm text-muted mt-2">Search announcements, guides, finance updates and opportunities.</p>
         </div>
-        {offline && <span className="badge self-end" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline — cached</span>}
+        {offline && <span className="badge self-end" style={{ background: 'var(--nx-warning-bg)', color: 'var(--nx-warning)' }}>Offline - cached</span>}
       </div>
 
       <form onSubmit={submitSearch} role="search" className="flex gap-2 mb-4">

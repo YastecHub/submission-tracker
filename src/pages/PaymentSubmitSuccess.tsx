@@ -115,7 +115,7 @@ export default function PaymentSubmitSuccess() {
     return <Navigate to={`/payment/${slug}`} replace />;
   }
 
-  // URL-only mode (no router state) — hydrate failed or still loading
+  // URL-only mode (no router state) - hydrate failed or still loading
   if (!stateReceipt || !stateEvent) {
     if (hydrateError) {
       return (
@@ -341,7 +341,7 @@ export default function PaymentSubmitSuccess() {
           </div>
 
           {hasTickets ? (
-            <p className="text-xs text-dim">Save your ticket below — you'll need it at the event.</p>
+            <p className="text-xs text-dim">Save your ticket below - you'll need it at the event.</p>
           ) : (
             <p className="text-xs text-dim">Bookmark this page to check your status later.</p>
           )}

@@ -11,9 +11,11 @@ import { ReceiptReviewModal, type ReceiptAction } from '../features/payments/com
 import { TicketScannerModal, type ClaimResult } from '../features/payments/components/TicketScannerModal';
 import { useAuth } from '../context/AuthContext';
 import { canManagePaymentEvent } from '../features/auth/model/capabilities';
-import { type DisplayPaymentReceipt,
+import {
+  type DisplayPaymentReceipt,
   PICNIC_EXPORT_AMOUNT, PICNIC_LEGACY_EVENT_ID, PICNIC_LEGACY_EVENT_TITLE,
-  isPicnicPaymentEvent, dedupePicnicReceipts } from '../features/payments/model/picnic';
+  isPicnicPaymentEvent, dedupePicnicReceipts
+} from '../features/payments/model/picnic';
 import { getEventSessionLabel } from '../utils/session';
 
 
@@ -441,11 +443,10 @@ export default function PaymentEventDetail() {
               </button>
             </div>
             {claimResult && (
-              <div className={`mt-3 rounded-lg px-4 py-3 text-sm ${
-                claimResult.type === 'success' ? 'alert-success' :
-                claimResult.type === 'warning' ? 'bg-[color:var(--nx-accent-soft)] border border-[color:var(--nx-accent)] text-[color:var(--nx-accent)]' :
-                'alert-danger'
-              }`}>
+              <div className={`mt-3 rounded-lg px-4 py-3 text-sm ${claimResult.type === 'success' ? 'alert-success' :
+                  claimResult.type === 'warning' ? 'bg-[color:var(--nx-accent-soft)] border border-[color:var(--nx-accent)] text-[color:var(--nx-accent)]' :
+                    'alert-danger'
+                }`}>
                 <p className="font-semibold">{claimResult.message}</p>
                 {claimResult.fullName && (
                   <p className="text-xs mt-0.5 opacity-80">{claimResult.fullName} ({claimResult.matricNumber})</p>
@@ -534,7 +535,7 @@ export default function PaymentEventDetail() {
                     {receipt.confirmedBy && (
                       <p className="text-xs text-muted mt-0.5 break-words">
                         {receipt.status === 'confirmed' ? 'Confirmed' : 'Rejected'} by {receipt.confirmedBy}
-                        {receipt.note && <span className="italic"> — &ldquo;{receipt.note}&rdquo;</span>}
+                        {receipt.note && <span className="italic"> - &ldquo;{receipt.note}&rdquo;</span>}
                       </p>
                     )}
                   </div>

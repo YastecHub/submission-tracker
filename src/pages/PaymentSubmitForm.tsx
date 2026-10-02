@@ -226,7 +226,7 @@ export default function PaymentSubmitForm() {
                   className="w-full border border-dashed border-nx rounded-lg px-4 py-8 text-center hover:border-[color:var(--nx-border-hover)] transition-colors bg-surface-2"
                 >
                   <p className="text-sm font-medium">Tap to upload receipt</p>
-                  <p className="text-xs text-dim mt-1">JPEG, PNG, WEBP — max 5 MB</p>
+                  <p className="text-xs text-dim mt-1">JPEG, PNG, WEBP - max 5 MB</p>
                 </button>
               )}
             </div>

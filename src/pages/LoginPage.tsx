@@ -52,10 +52,10 @@ export default function LoginPage() {
       const roleLabel = loggedInUser.role === 'acr'
         ? 'Assistant CR'
         : loggedInUser.role === 'fin_sec'
-        ? 'Financial Secretary'
-        : loggedInUser.role === 'dev'
-        ? 'Developer'
-        : 'Class Rep';
+          ? 'Financial Secretary'
+          : loggedInUser.role === 'dev'
+            ? 'Developer'
+            : 'Class Rep';
       toast(`Welcome back, ${loggedInUser.name} (${roleLabel})!`, 'success');
       navigate('/dashboard');
     } catch (err: unknown) {
@@ -75,7 +75,7 @@ export default function LoginPage() {
 
   return (
     <main className="page-base px-4 py-8 sm:py-16">
-      {/* Mobile brand header — desktop hides this, brand lives in left column */}
+      {/* Mobile brand header - desktop hides this, brand lives in left column */}
       <div className="md:hidden flex items-center gap-3 mb-6 max-w-md mx-auto">
         <div className="w-10 h-10 rounded-xl bg-surface-2 border border-nx flex items-center justify-center overflow-hidden">
           <img src="/icon.svg" alt="" className="w-full h-full object-contain" />
@@ -87,7 +87,7 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-5xl mx-auto grid md:grid-cols-2 gap-10 md:gap-16 md:items-center animate-fade-up">
-        {/* Left — brand + features (desktop; hidden on mobile top, shown below form) */}
+        {/* Left - brand + features (desktop; hidden on mobile top, shown below form) */}
         <div className="order-2 md:order-1">
           <div className="hidden md:flex items-center gap-3 mb-6">
             <div className="w-11 h-11 rounded-xl bg-surface-2 border border-nx flex items-center justify-center overflow-hidden">
@@ -119,7 +119,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        {/* Right — login card */}
+        {/* Right - login card */}
         <div className="order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 md:justify-self-end">
           <div className="card-base p-5 sm:p-8">
             <h2 className="text-xl font-semibold">Sign in</h2>
@@ -203,7 +203,7 @@ export default function LoginPage() {
             Protected portal. Contact your admin if you need access.
           </p>
 
-          {/* Student CTA — prominent, right under the login card on every screen */}
+          {/* Student CTA - prominent, right under the login card on every screen */}
           <Link
             to="/student"
             className="mt-5 flex items-center justify-between gap-3 card-base p-4 hover:border-[color:var(--nx-border-hover)] transition-colors group"

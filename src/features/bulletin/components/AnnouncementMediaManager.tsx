@@ -50,7 +50,7 @@ function message(error: unknown): string {
 }
 
 function sectionLabel(section: AnnouncementSection, index: number): string {
-  return `Section ${index + 1}${section.heading ? ` — ${section.heading}` : ''}`;
+  return `Section ${index + 1}${section.heading ? ` - ${section.heading}` : ''}`;
 }
 
 export default function AnnouncementMediaManager({
