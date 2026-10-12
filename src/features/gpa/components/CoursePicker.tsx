@@ -1,7 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { newCourseKey } from '../model/drafts';
 import { catalogForSlot, searchCatalog } from '../model/courses';
-import { courseKey, MAX_UNITS_PER_COURSE, normalizeCourseCode, shortSemesterTitle } from '../model/gpa';
+import { courseKey, courseRowKey, MAX_UNITS_PER_COURSE, normalizeCourseCode, shortSemesterTitle } from '../model/gpa';
 import type { CatalogCourse, GpaCourse } from '../model/types';
 
 /**
@@ -45,7 +44,7 @@ export default function CoursePicker({
     if (existingCodes.has(courseKey(code))) return setCustomError(`${code} is already in this semester.`);
     if (!Number.isInteger(units) || units < 1 || units > MAX_UNITS_PER_COURSE) return setCustomError(`Units must be between 1 and ${MAX_UNITS_PER_COURSE}.`);
     onAddCustom({
-      key: newCourseKey(), catalogCourseId: null, code, title: custom.title.trim() || code, units,
+      key: courseRowKey(code), catalogCourseId: null, code, title: custom.title.trim() || code, units,
       grade: null, isCarryover: false, isRetake: false,
     });
     setCustom({ code: '', title: '', units: '3' });

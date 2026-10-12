@@ -1,4 +1,4 @@
-import { compareSlots, courseTotals } from './gpa';
+import { compareSlots, courseRowKey, courseTotals } from './gpa';
 import type { GpaCourse, GpaRecordDto, GpaSemesterDto, SemesterView, SyncState } from './types';
 
 /**
@@ -57,7 +57,7 @@ export function newCourseKey(): string {
 export function coursesFromServer(semester: GpaSemesterDto): GpaCourse[] {
   return semester.courses.map((course) => ({
     id: course.id,
-    key: course.id,
+    key: courseRowKey(course.code),
     catalogCourseId: course.catalogCourseId,
     code: course.code,
     title: course.title,

@@ -103,3 +103,12 @@ test('six-year programme: 100L-600L and sessions 2025/2026 to 2030/2031', () => 
   assert.equal(gpa.sessionForLevel(600), '2030/2031');
   assert.deepEqual([...gpa.SESSIONS], ['2025/2026', '2026/2027', '2027/2028', '2028/2029', '2029/2030', '2030/2031']);
 });
+
+test('course rows keep the same key after the server saves them (no re-mount, no jump)', () => {
+  const catalogCourse = { id: 'cat-1', code: 'COS 101', title: 'Intro', units: 3, level: 100, semester: 1, isElective: false };
+  const local = courses.courseFromCatalog(catalogCourse);
+  const saved = drafts.coursesFromServer({ id: 's', level: 100, semester: 1, sessionLabel: null, status: 'draft', finalizedAt: null, version: 2, updatedAt: '',
+    courses: [{ id: 'server-id-9', catalogCourseId: 'cat-1', code: 'COS 101', title: 'Intro', units: 3, grade: 'A', isCarryover: false, isRetake: false, sortOrder: 0 }],
+    totals: { units: 3, points: 15, gpa: 5, gradedCourses: 1, pendingCourses: 0, pendingUnits: 0 } });
+  assert.equal(saved[0].key, local.key);
+});
