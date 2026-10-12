@@ -19,6 +19,8 @@ const CACHEABLE_API = [
   /^\/api\/payment-receipts\/my-tickets$/,
   /^\/api\/payment-receipts\/status\/[^/]+$/,
   /^\/api\/transparency\/ledger$/,
+  /^\/api\/gpa$/,
+  /^\/api\/gpa\/catalog$/,
 ];
 
 // ---------------------------------------------------------------------------

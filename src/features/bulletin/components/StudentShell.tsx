@@ -5,10 +5,11 @@ import { getBulletinUnreadCount } from '../api/bulletin';
 import StudentNotificationBell from './StudentNotificationBell';
 
 const navItems = [
-  { to: '/student', label: 'Home', end: true },
-  { to: '/student/news', label: 'Bulletin', end: false },
-  { to: '/student/tickets', label: 'Tickets', end: false },
-  { to: '/transparency', label: 'Transparency', end: false },
+  { to: '/student', label: 'Home', shortLabel: 'Home', end: true },
+  { to: '/student/news', label: 'Bulletin', shortLabel: 'Bulletin', end: false },
+  { to: '/student/gpa', label: 'GPA', shortLabel: 'GPA', end: false },
+  { to: '/student/tickets', label: 'Tickets', shortLabel: 'Tickets', end: false },
+  { to: '/transparency', label: 'Transparency', shortLabel: 'Ledger', end: false },
 ];
 
 function navClass({ isActive }: { isActive: boolean }) {
@@ -99,12 +100,12 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
 
       <nav
         aria-label="Student mobile navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx px-2 pt-2 grid grid-cols-4"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx px-2 pt-2 grid grid-cols-5"
         style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
       >
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `${navClass({ isActive })} !px-1 flex-col gap-0.5 text-xs py-1.5`}>
-            <span>{item.label}</span>
+            <span>{item.shortLabel}</span>
             {item.to === '/student/news' && unreadCount > 0 && <span className="text-[10px] text-accent font-semibold">{unreadCount} new</span>}
           </NavLink>
         ))}

@@ -257,3 +257,10 @@
     transform: translateY(-1px);
   }
 }
+
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
