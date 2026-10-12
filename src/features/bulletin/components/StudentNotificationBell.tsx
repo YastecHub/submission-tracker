@@ -7,6 +7,7 @@ import {
   getStudentPushSubscriptionStatus,
   saveStudentPushSubscription,
 } from '../api/bulletin';
+import { getActiveServiceWorker } from '../../../pwa/serviceWorker';
 
 type PushState = 'loading' | 'unsupported' | 'unconfigured' | 'disabled' | 'enabled' | 'denied';
 
@@ -69,7 +70,11 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
           setState('denied');
           return;
         }
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await getActiveServiceWorker();
+        if (!registration) {
+          if (active) setState('unsupported');
+          return;
+        }
         const subscription = await registration.pushManager.getSubscription();
         if (!subscription) {
           if (active) setState('disabled');
@@ -97,7 +102,8 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
         toast('Notifications remain off. You can change this in your browser settings.', 'info');
         return;
       }
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getActiveServiceWorker();
+      if (!registration) throw new Error('Service worker unavailable');
       const subscription =
         (await registration.pushManager.getSubscription()) ??
         (await registration.pushManager.subscribe({
@@ -118,8 +124,8 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
     if (busy) return;
     setBusy(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const registration = await getActiveServiceWorker();
+      const subscription = await registration?.pushManager.getSubscription();
       if (subscription) await deleteStudentPushSubscription(subscription.endpoint, token);
       setState('disabled');
       toast('Bulletin notifications disabled on this device.', 'success');

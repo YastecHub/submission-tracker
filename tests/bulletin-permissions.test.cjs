@@ -1,17 +1,21 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { canEditAnnouncement, canPublishAnnouncement } = require('./load-ts.cjs')('src/features/bulletin/model/permissions.ts');
+const loadTs = require('./load-ts.cjs');
+const { canEditAnnouncement, canPublishAnnouncement } = loadTs('src/features/bulletin/model/permissions.ts', {
+  '../../auth/model/capabilities': loadTs('src/features/auth/model/capabilities.ts'),
+});
 
-test('bulletin publication allows all exco roles to publish', () => {
+test('bulletin publication allows every class rep to publish', () => {
   assert.equal(canPublishAnnouncement('dev', 'finance'), true);
   assert.equal(canPublishAnnouncement('cr', 'finance'), true);
   assert.equal(canPublishAnnouncement('acr', 'finance'), true);
   assert.equal(canPublishAnnouncement('fin_sec', 'finance'), true);
   assert.equal(canPublishAnnouncement('fin_sec', 'general'), true);
   assert.equal(canPublishAnnouncement(undefined, 'general'), false);
+  assert.equal(canPublishAnnouncement('student', 'general'), false);
 });
 
-test('all exco roles can edit active announcements even if they did not create them', () => {
+test('every class rep can edit active announcements even if they did not create them', () => {
   const ownDraft = { createdBy: 'user-1', category: 'general', status: 'draft' };
   const otherDraft = { ...ownDraft, createdBy: 'user-2' };
   const published = { ...ownDraft, status: 'published' };

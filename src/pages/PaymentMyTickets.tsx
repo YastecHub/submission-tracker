@@ -128,7 +128,7 @@ export default function PaymentMyTickets() {
             <p className="text-sm font-medium">No confirmed payment found</p>
             <p className="text-xs text-dim mt-2">
               We couldn't find a confirmed payment for that matric number on this event.
-              If you've paid but don't see a ticket, check with your Fin Sec or class rep.
+              If you've paid but don't see a ticket, check with a class rep.
             </p>
           </div>
         )}

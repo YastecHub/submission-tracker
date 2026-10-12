@@ -74,7 +74,7 @@ export default function SubmissionSuccess() {
       <div className="w-full max-w-sm animate-fade-up">
         {confirmed && (
           <div className={`alert-success mb-4 text-center ${justConfirmed ? 'animate-bounce-once' : ''}`}>
-            <p className="font-semibold">CR has confirmed your submission.</p>
+            <p className="font-semibold">A class rep has confirmed your submission.</p>
             {confirmedBy && <p className="text-xs opacity-80 mt-1">Confirmed by {confirmedBy}</p>}
           </div>
         )}
@@ -83,7 +83,7 @@ export default function SubmissionSuccess() {
           <div className="card-base mb-4 px-4 py-3 text-center">
             <div className="flex items-center justify-center gap-2 text-muted text-sm">
               <span className="w-2 h-2 rounded-full bg-[color:var(--nx-accent)] inline-block" />
-              Waiting for CR to confirm your submission…
+              Waiting for a class rep to confirm your submission…
             </div>
           </div>
         )}

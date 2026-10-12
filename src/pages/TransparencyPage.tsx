@@ -377,7 +377,7 @@ function GroupedTransactions({
     return (
       <div className="card-base p-16 text-center">
         <p className="font-semibold">No transactions yet</p>
-        <p className="text-sm text-muted mt-1">Entries will appear here once the fin sec records them.</p>
+        <p className="text-sm text-muted mt-1">Entries will appear here once a class rep records them.</p>
       </div>
     );
   }

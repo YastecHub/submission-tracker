@@ -35,7 +35,7 @@ src/features/payments/api/        # Receipt queries and bounded legacy fetching
 src/features/payments/hooks/      # Receipt request lifecycle
 src/features/payments/model/      # Pure legacy reconciliation rules
 src/features/payments/components/ # Payment-specific dialogs and scanner UI
-src/features/bulletin/api/         # Student and staff Bulletin request contracts
+src/features/bulletin/api/         # Student and class rep Bulletin request contracts
 src/features/bulletin/hooks/       # Cancellable Bulletin feed state
 src/features/bulletin/model/       # Announcement wire types and presentation rules
 src/features/bulletin/components/  # Student shell, article renderer and feed cards
@@ -73,7 +73,7 @@ independently. ConfirmButton/QRScanner perform the existing mutation and the pag
 refreshes authoritative list counts. Bulk confirmation also refreshes the list.
 Export keeps the existing XLSX request/download contract. Failures have a retry UI.
 
-Nexium Bulletin uses separate role shells: staff routes compose the management list
+Nexium Bulletin uses separate role shells: class rep routes compose the management list
 and structured composer, while `/student` owns the student shell, home, feed,
 article and tickets routes. Bulletin route modules are lazy-loaded. Feed filters
 live in URL query parameters, article content is rendered from validated structured

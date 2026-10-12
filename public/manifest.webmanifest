@@ -1,10 +1,12 @@
 {
+  "id": "/",
   "name": "NEXIUM",
   "short_name": "NEXIUM",
-  "description": "NEXIUM - class submissions, payments and account transparency",
-  "start_url": "/dashboard",
+  "description": "NEXIUM - class announcements, submissions, payments, tickets and account transparency for students and class reps",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#4c1d95",
+  "background_color": "#09090b",
   "theme_color": "#6b21a8",
   "orientation": "portrait-primary",
   "icons": [
@@ -29,14 +31,19 @@
   ],
   "shortcuts": [
     {
-      "name": "Dashboard",
-      "url": "/dashboard",
-      "description": "View your events and submissions"
+      "name": "Student home",
+      "url": "/student",
+      "description": "Announcements, tickets and the class ledger"
     },
     {
-      "name": "Transparency",
-      "url": "/transparency",
-      "description": "View class account balance and transactions"
+      "name": "Nexium Bulletin",
+      "url": "/student/news",
+      "description": "Read class announcements"
+    },
+    {
+      "name": "Class rep dashboard",
+      "url": "/dashboard",
+      "description": "Manage submissions, payments, the ledger and the Bulletin"
     }
   ]
 }

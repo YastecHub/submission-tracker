@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../api/axios';
+import { getActiveServiceWorker } from '../pwa/serviceWorker';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
@@ -55,8 +56,11 @@ export default function Navbar() {
         toast('Notification permission denied', 'error');
         return;
       }
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
+      const reg = await getActiveServiceWorker();
+      if (!reg) {
+        toast('Notifications are only available in the installed app or production site', 'error');
+        return;
+      }
       const existing = await reg.pushManager.getSubscription();
       const subscription =
         existing ??
