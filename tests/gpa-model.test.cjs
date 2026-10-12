@@ -20,6 +20,7 @@ test('semester GPA and CGPA match the server calculator', () => {
   assert.equal(summary.degreeClass, 'Second Class Lower');
   assert.equal(gpa.roundGpa(4005, 1000), 4.01);
   assert.equal(gpa.normalizeCourseCode('pct201'), 'PCT 201');
+  assert.equal(gpa.normalizeCourseCode('chm-cm101'), 'CHM-CM 101');
 });
 
 test('target planner works out the GPA needed next semester', () => {
@@ -30,7 +31,8 @@ test('target planner works out the GPA needed next semester', () => {
 });
 
 test('the next semester to add follows the latest one', () => {
-  assert.deepEqual(gpa.nextOpenSlot([]), { level: 200, semester: 1 });
+  assert.deepEqual(gpa.nextOpenSlot([]), { level: 100, semester: 1 });
+  assert.deepEqual(gpa.nextOpenSlot([], 200), { level: 200, semester: 1 });
   assert.deepEqual(gpa.nextOpenSlot([{ level: 200, semester: 1 }]), { level: 200, semester: 2 });
   assert.deepEqual(gpa.nextOpenSlot([{ level: 200, semester: 1 }, { level: 200, semester: 2 }]), { level: 300, semester: 1 });
   assert.deepEqual(gpa.nextOpenSlot([{ level: 100, semester: 2 }]), { level: 200, semester: 1 });
@@ -93,4 +95,11 @@ test('CSV backup uses the import format and escapes values', () => {
   ].join('\n'));
   assert.match(csv.importTemplate(), /^# NEXIUM GPA tracker/);
   assert.ok(csv.importTemplate().includes('\nlevel,semester,code,title,units,grade,carryover,retake,session\n'));
+});
+
+test('six-year programme: 100L-600L and sessions 2025/2026 to 2030/2031', () => {
+  assert.deepEqual([...gpa.LEVELS], [100, 200, 300, 400, 500, 600]);
+  assert.equal(gpa.sessionForLevel(100), '2025/2026');
+  assert.equal(gpa.sessionForLevel(600), '2030/2031');
+  assert.deepEqual([...gpa.SESSIONS], ['2025/2026', '2026/2027', '2027/2028', '2028/2029', '2029/2030', '2030/2031']);
 });

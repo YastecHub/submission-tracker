@@ -1,5 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { getStudent, loginStudent, registerStudent, requestStudentRegistrationCode, type StudentAccount } from '../features/student-auth/api/studentAuth';
+import {
+  getStudent,
+  loginStudent,
+  registerStudent,
+  requestStudentPasswordReset,
+  requestStudentRegistrationCode,
+  resetStudentPassword,
+  type PasswordResetRequested,
+  type StudentAccount,
+} from '../features/student-auth/api/studentAuth';
 import axios from 'axios';
 import { postToServiceWorker } from '../pwa/serviceWorker';
 
@@ -17,6 +26,8 @@ interface StudentAuthValue {
   login: (matricNumber: string, password: string) => Promise<void>;
   requestRegistrationCode: (matricNumber: string, email: string) => Promise<void>;
   register: (matricNumber: string, email: string, code: string, password: string) => Promise<void>;
+  requestPasswordReset: (identifier: string) => Promise<PasswordResetRequested>;
+  resetPassword: (identifier: string, code: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -61,9 +72,14 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (matricNumber: string, password: string) => { applySession(await loginStudent(matricNumber, password)); }, [applySession]);
   const requestRegistrationCode = useCallback(async (matricNumber: string, email: string) => { await requestStudentRegistrationCode(matricNumber, email); }, []);
   const register = useCallback(async (matricNumber: string, email: string, code: string, password: string) => { applySession(await registerStudent(matricNumber, email, code, password)); }, [applySession]);
+  const requestPasswordReset = useCallback((identifier: string) => requestStudentPasswordReset(identifier), []);
+  const resetPassword = useCallback(async (identifier: string, code: string, password: string) => { applySession(await resetStudentPassword(identifier, code, password)); }, [applySession]);
   const logout = useCallback(() => { clearOfflineStudentData(); localStorage.removeItem('studentToken'); setToken(null); setStudent(null); }, []);
   const retrySession = useCallback(() => setRestoreVersion((value) => value + 1), []);
-  const value = useMemo(() => ({ student, token, loading, sessionError, retrySession, login, requestRegistrationCode, register, logout }), [student, token, loading, sessionError, retrySession, login, requestRegistrationCode, register, logout]);
+  const value = useMemo(
+    () => ({ student, token, loading, sessionError, retrySession, login, requestRegistrationCode, register, requestPasswordReset, resetPassword, logout }),
+    [student, token, loading, sessionError, retrySession, login, requestRegistrationCode, register, requestPasswordReset, resetPassword, logout],
+  );
 
   return <StudentAuthContext.Provider value={value}>{children}</StudentAuthContext.Provider>;
 }
