@@ -40,6 +40,8 @@ src/features/bulletin/hooks/       # Cancellable Bulletin feed state
 src/features/bulletin/model/       # Announcement wire types and presentation rules
 src/features/bulletin/components/  # Student shell, article renderer and feed cards
 src/features/ledger/hooks/        # Admin ledger loading
+src/features/gpa/                 # Student GPA tracker: maths, offline drafts + sync, UI
+src/pwa/                          # Service worker registration and messaging
 src/hooks/useRemoteData.ts        # Domain-neutral cancellable component state
 src/pages/                       # Route composition and local interaction state
 src/api/                         # Shared Axios transport and existing ledger API

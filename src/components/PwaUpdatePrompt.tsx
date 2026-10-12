@@ -50,7 +50,7 @@ export default function PwaUpdatePrompt() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm z-50 bg-surface border border-nx rounded-xl p-3.5 shadow-2xl flex items-center justify-between gap-3 animate-fade-up"
+      className="print:hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm z-50 bg-surface border border-nx rounded-xl p-3.5 shadow-2xl flex items-center justify-between gap-3 animate-fade-up"
     >
       <div className="min-w-0">
         <p className="text-sm font-semibold text-[color:var(--nx-text)]">Update available</p>

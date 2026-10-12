@@ -40,6 +40,10 @@ const StudentHomePage = React.lazy(() => import('./pages/StudentHomePage'));
 const BulletinFeedPage = React.lazy(() => import('./pages/BulletinFeedPage'));
 const BulletinArticlePage = React.lazy(() => import('./pages/BulletinArticlePage'));
 const StudentTicketsPage = React.lazy(() => import('./pages/StudentTicketsPage'));
+const GpaLayout = React.lazy(() => import('./pages/GpaLayout'));
+const GpaOverviewPage = React.lazy(() => import('./pages/GpaOverviewPage'));
+const GpaSemesterPage = React.lazy(() => import('./pages/GpaSemesterPage'));
+const GpaTranscriptPage = React.lazy(() => import('./pages/GpaTranscriptPage'));
 const BulletinManagementPage = React.lazy(() => import('./pages/BulletinManagementPage'));
 const BulletinComposerPage = React.lazy(() => import('./pages/BulletinComposerPage'));
 
@@ -73,7 +77,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="news" element={<BulletinFeedPage />} />
               <Route path="news/:slug" element={<BulletinArticlePage />} />
               <Route path="tickets" element={<StudentTicketsPage />} />
+              <Route path="gpa" element={<GpaLayout />}>
+                <Route index element={<GpaOverviewPage />} />
+                <Route path="semester/:id" element={<GpaSemesterPage />} />
+              </Route>
             </Route>
+            <Route
+              path="/student/gpa/transcript"
+              element={<StudentProtectedRoute><GpaLayout><GpaTranscriptPage /></GpaLayout></StudentProtectedRoute>}
+            />
             <Route
               path="/dashboard"
               element={

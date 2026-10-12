@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useStudentAuth } from '../context/StudentAuthContext';
 
-const STUDENT_POINTS = ['Class announcements on Nexium Bulletin', 'Payment tickets, even offline', 'The class account ledger'];
+const STUDENT_POINTS = ['Class announcements on Nexium Bulletin', 'Your private GPA and CGPA tracker', 'Payment tickets and the class ledger'];
 const CLASS_REP_POINTS = ['Submissions and QR confirmation', 'Payments, receipts and tickets', 'Ledger and Bulletin publishing'];
 
 function Points({ items }: { items: string[] }) {

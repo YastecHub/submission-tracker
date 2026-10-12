@@ -71,9 +71,12 @@ export default function StudentHomePage() {
 
       <section aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading" className="text-xl font-semibold tracking-tight mb-4">Quick actions</h2>
-        <div className="grid sm:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Link to="/student/news" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">Nexium Bulletin</span><span className="text-sm text-muted">Browse every class update →</span>
+          </Link>
+          <Link to="/student/gpa" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
+            <span className="font-semibold">GPA tracker</span><span className="text-sm text-muted">Your GPA and CGPA, private to you →</span>
           </Link>
           <Link to="/student/tickets" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">My tickets</span><span className="text-sm text-muted">View confirmed collection tickets →</span>

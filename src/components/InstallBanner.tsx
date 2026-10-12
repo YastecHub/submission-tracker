@@ -37,7 +37,7 @@ export default function InstallBanner() {
   if (!prompt || dismissed) return null;
 
   return (
-    <div className="bg-surface border-b border-nx px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
+    <div className="print:hidden bg-surface border-b border-nx px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
       <div className="flex items-center gap-2 text-xs sm:text-sm min-w-0">
         <img src="/icon.svg" alt="" className="w-5 h-5 sm:w-6 sm:h-6 rounded shrink-0" />
         <span className="truncate">Install <span className="font-semibold text-accent">NEXIUM</span> for quick access.</span>

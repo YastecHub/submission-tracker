@@ -41,6 +41,11 @@
       "description": "Read class announcements"
     },
     {
+      "name": "GPA tracker",
+      "url": "/student/gpa",
+      "description": "Your GPA and CGPA"
+    },
+    {
       "name": "Class rep dashboard",
       "url": "/dashboard",
       "description": "Manage submissions, payments, the ledger and the Bulletin"
