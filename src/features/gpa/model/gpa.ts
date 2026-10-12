@@ -19,7 +19,8 @@ export function sessionForLevel(level: number): string {
 /** 2025/2026 (100L) to 2030/2031 (600L). */
 export const SESSIONS: readonly string[] = LEVELS.map(sessionForLevel);
 export const SEMESTERS = [1, 2] as const;
-export const MAX_UNITS_PER_COURSE = 12;
+/** The heaviest course in the programme carries 6 units. */
+export const MAX_UNITS_PER_COURSE = 6;
 export const MAX_COURSES_PER_SEMESTER = 30;
 export const MAX_GPA = 5;
 

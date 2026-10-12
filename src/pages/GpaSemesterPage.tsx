@@ -254,7 +254,7 @@ export default function GpaSemesterPage() {
             <p className="text-[11px] text-dim uppercase tracking-wider">Semester GPA</p>
             <p className="text-2xl font-semibold tabular-nums leading-tight" aria-live="polite">
               {formatGpa(totals.gpa)}
-              {totals.pendingCourses > 0 && <span className="text-xs text-dim font-normal ml-2">{totals.pendingCourses} pending</span>}
+              {totals.pendingCourses > 0 && <span className="text-xs text-dim font-normal ml-2">{totals.pendingCourses} blank, not counted yet</span>}
             </p>
           </div>
           {current.status === 'draft' ? (

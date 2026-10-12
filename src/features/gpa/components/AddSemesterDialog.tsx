@@ -85,13 +85,26 @@ export default function AddSemesterDialog({
               </select>
             </div>
             {listed.length > 0 ? (
+              <>
               <label className="flex items-start gap-3 mt-4 cursor-pointer bg-surface-2 border border-nx rounded-lg px-3 py-3">
                 <input type="checkbox" className="mt-1 accent-[color:var(--nx-accent)]" checked={useCatalog} onChange={(event) => setUseCatalog(event.target.checked)} />
                 <span>
                   <span className="text-sm font-medium">Start with the {listed.length} listed course{listed.length === 1 ? '' : 's'}</span>
-                  <span className="block text-xs text-dim mt-0.5">{listed.reduce((sum, course) => sum + course.units, 0)} units. Then just pick each grade from its dropdown. You can remove or add courses after.</span>
+                  <span className="block text-xs text-dim mt-0.5">{listed.reduce((sum, course) => sum + course.units, 0)} units. Then just pick each grade from its dropdown. Leave a grade blank if the result isn't out yet.</span>
                 </span>
               </label>
+              {useCatalog && (
+                <ul className="mt-2 border border-nx rounded-lg divide-y divide-[color:var(--nx-border)] max-h-56 overflow-y-auto" aria-label="Courses that will be added">
+                  {listed.map((course) => (
+                    <li key={course.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                      <span className="font-semibold shrink-0 w-[5.5rem]">{course.code}</span>
+                      <span className="text-muted truncate flex-1 min-w-0">{course.title}</span>
+                      <span className="text-xs text-dim shrink-0 tabular-nums">{course.units} unit{course.units === 1 ? '' : 's'}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              </>
             ) : (
               <p className="text-xs text-dim mt-4">No courses are listed for this semester yet. You can add your courses one by one.</p>
             )}
