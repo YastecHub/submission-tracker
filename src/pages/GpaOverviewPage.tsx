@@ -7,6 +7,7 @@ import AddSemesterDialog from '../features/gpa/components/AddSemesterDialog';
 import CgpaHero from '../features/gpa/components/CgpaHero';
 import GpaPlanner from '../features/gpa/components/GpaPlanner';
 import ImportDialog from '../features/gpa/components/ImportDialog';
+import ListedSemesters from '../features/gpa/components/ListedSemesters';
 import SemesterCard from '../features/gpa/components/SemesterCard';
 import { catalogForSlot } from '../features/gpa/model/courses';
 import { downloadText, exportRecordCsv } from '../features/gpa/model/csv';
@@ -120,8 +121,8 @@ export default function GpaOverviewPage() {
           <p className="text-sm text-muted mt-2">Add each semester as results come out. Your CGPA updates instantly and your history is kept safe.</p>
           <ol className="mt-5 space-y-3">
             {[
-              ['Add a semester', 'Pick the level and semester. Listed courses are filled in for you.'],
-              ['Tap your grades', 'A to F for each course. Use “?” for results that aren’t out yet.'],
+              ['Pick a semester', 'Its courses and units are filled in for you.'],
+              ['Pick your grades', 'Choose A to F for each course. Leave a grade blank if the result isn’t out yet; your GPA counts the rest.'],
               ['Finalize when official', 'Final semesters count towards your CGPA. You can unlock them to fix mistakes.'],
             ].map(([title, body], index) => (
               <li key={title} className="flex gap-3">
@@ -133,8 +134,9 @@ export default function GpaOverviewPage() {
               </li>
             ))}
           </ol>
+          <div className="mt-6"><ListedSemesters catalog={catalog} semesters={semesters} onCreate={createSemester} /></div>
           <div className="flex flex-col sm:flex-row gap-2 mt-6">
-            <button type="button" className="btn-primary justify-center" onClick={() => setAdding(true)}>Add your first semester</button>
+            <button type="button" className={catalog.length ? 'btn-secondary justify-center' : 'btn-primary justify-center'} onClick={() => setAdding(true)}>{catalog.length ? 'Choose another semester' : 'Add your first semester'}</button>
             <button type="button" className="btn-secondary justify-center" onClick={() => setImporting(true)}>Import from a spreadsheet</button>
           </div>
         </section>
@@ -163,6 +165,8 @@ export default function GpaOverviewPage() {
           </div>
         </section>
       ))}
+
+      <ListedSemesters catalog={catalog} semesters={semesters} onCreate={createSemester} />
 
       <GpaPlanner semesters={semesters} nextSemesterUnits={nextUnits} />
       {dialogs}

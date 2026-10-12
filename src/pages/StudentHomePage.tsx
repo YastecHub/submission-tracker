@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { useStudentAuth } from '../context/StudentAuthContext';
 import AnnouncementCard from '../features/bulletin/components/AnnouncementCard';
 import { useBulletinFeed } from '../features/bulletin/hooks/useBulletinFeed';
+import DashboardCgpaCard from '../features/gpa/components/DashboardCgpaCard';
+import { GpaProvider } from '../features/gpa/hooks/GpaProvider';
 
 export default function StudentHomePage() {
   const { student, token } = useStudentAuth();
@@ -27,6 +29,8 @@ export default function StudentHomePage() {
           )}
         </div>
       </section>
+
+      {student && <GpaProvider><DashboardCgpaCard studentId={student.id} /></GpaProvider>}
 
       {feed.error ? (
         <div role="alert" className="alert-danger mb-8">

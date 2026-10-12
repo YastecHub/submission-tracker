@@ -6,9 +6,21 @@ import type { Grade, GpaSummary, GpaTotals, SemesterStatus } from './types';
  */
 export const GRADES: readonly Grade[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 export const GRADE_POINTS: Record<Grade, number> = { A: 5, B: 4, C: 3, D: 2, E: 1, F: 0 };
-export const LEVELS = [100, 200, 300, 400, 500] as const;
+/** Pharm. D. is a six-year programme: 100L to 600L. */
+export const LEVELS = [100, 200, 300, 400, 500, 600] as const;
+/** The set's first session (100L). Each level after it is one session later. */
+export const FIRST_SESSION_START_YEAR = 2025;
+
+export function sessionForLevel(level: number): string {
+  const start = FIRST_SESSION_START_YEAR + Math.max(0, Math.round(level / 100) - 1);
+  return `${start}/${start + 1}`;
+}
+
+/** 2025/2026 (100L) to 2030/2031 (600L). */
+export const SESSIONS: readonly string[] = LEVELS.map(sessionForLevel);
 export const SEMESTERS = [1, 2] as const;
-export const MAX_UNITS_PER_COURSE = 12;
+/** The heaviest course in the programme carries 6 units. */
+export const MAX_UNITS_PER_COURSE = 6;
 export const MAX_COURSES_PER_SEMESTER = 30;
 export const MAX_GPA = 5;
 
@@ -103,7 +115,7 @@ export function requiredGpa(currentPoints: number, currentUnits: number, target:
 
 export function normalizeCourseCode(value: string): string {
   const compact = value.trim().toUpperCase().replace(/\s+/g, ' ');
-  const match = compact.replace(/\s+/g, '').match(/^([A-Z]{2,5})(\d{3,4}[A-Z]?)$/);
+  const match = compact.replace(/\s+/g, '').match(/^([A-Z]{2,5}(?:-[A-Z]{1,5})?)(\d{3,4}[A-Z]?)$/);
   return match ? `${match[1]} ${match[2]}` : compact;
 }
 
@@ -128,7 +140,7 @@ export function compareSlots(a: { level: number; semester: number }, b: { level:
 }
 
 /** The first level/semester the student has not added yet (200L first semester by default). */
-export function nextOpenSlot(taken: Array<{ level: number; semester: number }>, startLevel = 200): { level: number; semester: number } {
+export function nextOpenSlot(taken: Array<{ level: number; semester: number }>, startLevel = 100): { level: number; semester: number } {
   const used = new Set(taken.map((slot) => slotKey(slot.level, slot.semester)));
   const sorted = [...taken].sort(compareSlots);
   const latest = sorted[sorted.length - 1];

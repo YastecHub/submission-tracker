@@ -11,7 +11,7 @@ function cell(value: string | number | boolean | null | undefined): string {
 export function importTemplate(): string {
   return [
     '# NEXIUM GPA tracker - import template. One row per course. Lines starting with # are ignored.',
-    '# level: 100, 200, 300, 400 or 500   semester: 1 or 2',
+    '# level: 100, 200, 300, 400, 500 or 600   semester: 1 or 2',
     '# grade: A, B, C, D, E or F - leave it blank if the result is not out yet',
     '# carryover / retake: yes or no (optional)   session: e.g. 2025/2026 (optional)',
     '# title and units can be left blank for courses that are in the NEXIUM course list.',

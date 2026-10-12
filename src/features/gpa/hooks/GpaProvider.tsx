@@ -12,7 +12,7 @@ import {
   updateGpaSemester,
 } from '../api/gpa';
 import { loadDrafts, mergeSemesters, newCourseKey, storeDrafts, type DraftMap, type LocalDraft } from '../model/drafts';
-import { summarize } from '../model/gpa';
+import { sessionForLevel, summarize } from '../model/gpa';
 import type { CatalogCourse, GpaCourse, GpaRecordDto, GpaSemesterDto, GpaSummary, ImportResult, SemesterView } from '../model/types';
 
 interface GpaContextValue {
@@ -59,7 +59,7 @@ function upsertSemester(record: GpaRecordDto | null, semester: GpaSemesterDto): 
 export function GpaProvider({ children }: { children: ReactNode }) {
   const { student, token } = useStudentAuth();
   const studentId = student?.id ?? null;
-  const [record, setRecord] = useState<GpaRecordDto | null>(null);
+  const [record, setRecordState] = useState<GpaRecordDto | null>(null);
   const [catalog, setCatalog] = useState<CatalogCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -70,7 +70,12 @@ export function GpaProvider({ children }: { children: ReactNode }) {
   const syncing = useRef<Promise<void> | null>(null);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  recordRef.current = record;
+  // Keeps recordRef current immediately, so an action right after a sync (finalize) sees the new version.
+  const setRecord = useCallback((update: GpaRecordDto | null | ((current: GpaRecordDto | null) => GpaRecordDto | null)) => {
+    const next = typeof update === 'function' ? update(recordRef.current) : update;
+    recordRef.current = next;
+    setRecordState(next);
+  }, []);
 
   const setDrafts = useCallback((update: (current: DraftMap) => DraftMap) => {
     const next = update(draftsRef.current);
@@ -201,7 +206,8 @@ export function GpaProvider({ children }: { children: ReactNode }) {
         id,
         level: input.level,
         semester: input.semester,
-        sessionLabel: input.sessionLabel ?? null,
+        // Not given: use the level's session for this set (100L = 2025/2026, ...).
+        sessionLabel: input.sessionLabel === undefined ? sessionForLevel(input.level) : input.sessionLabel,
         courses: input.courses,
         baseVersion: null,
         revision: 1,
@@ -247,13 +253,19 @@ export function GpaProvider({ children }: { children: ReactNode }) {
 
   /** Sends any unsynced edits for this semester first; fails if they can't be saved. */
   const flushSemester = useCallback(async (id: string) => {
-    if (!draftsRef.current[id]) return;
-    await syncNow();
+    // A pass may already be running with an older copy, and an edit made meanwhile is sent
+    // by the next pass, so allow a few rounds.
+    for (let round = 0; round < 3 && draftsRef.current[id]; round += 1) {
+      if (syncing.current) await syncing.current;
+      if (!draftsRef.current[id]) break;
+      await syncNow();
+      if (draftsRef.current[id]?.sync !== 'pending') break;
+    }
     const draft = draftsRef.current[id];
     if (draft) {
-      throw new Error(draft.sync === 'conflict' || draft.sync === 'error'
-        ? draft.syncMessage ?? 'Resolve the problem with this semester first.'
-        : 'You are offline. Your changes are saved on this device; connect to the internet to continue.');
+      throw new Error(draft.syncMessage ?? (draft.sync === 'conflict' || draft.sync === 'error'
+        ? 'Resolve the problem with this semester first.'
+        : 'You are offline. Your changes are saved on this device; connect to the internet to continue.'));
     }
   }, [syncNow]);
 

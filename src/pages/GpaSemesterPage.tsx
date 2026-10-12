@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
 import CoursePicker from '../features/gpa/components/CoursePicker';
-import GradePicker from '../features/gpa/components/GradePicker';
+import GradeSelect from '../features/gpa/components/GradeSelect';
 import { SyncBadge } from '../features/gpa/components/SemesterCard';
 import { useGpa } from '../features/gpa/hooks/GpaProvider';
 import { courseFromCatalog, previousAttempt } from '../features/gpa/model/courses';
-import { courseKey, formatGpa, MAX_COURSES_PER_SEMESTER, MAX_UNITS_PER_COURSE, semesterTitle } from '../features/gpa/model/gpa';
+import { courseKey, formatGpa, MAX_COURSES_PER_SEMESTER, MAX_UNITS_PER_COURSE, semesterTitle, SESSIONS } from '../features/gpa/model/gpa';
 import type { CatalogCourse, GpaCourse } from '../features/gpa/model/types';
 
 const UNIT_OPTIONS = Array.from({ length: MAX_UNITS_PER_COURSE }, (_, index) => index + 1);
@@ -35,10 +35,6 @@ export default function GpaSemesterPage() {
   const semester = gpa.getSemester(id);
   const [busy, setBusy] = useState<'finalize' | 'unlock' | 'delete' | 'resolve' | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [sessionText, setSessionText] = useState(semester?.sessionLabel ?? '');
-
-  useEffect(() => { setSessionText(semester?.sessionLabel ?? ''); }, [semester?.id, semester?.sessionLabel]);
-
   const existingCodes = useMemo(() => new Set((semester?.courses ?? []).map((course) => courseKey(course.code))), [semester?.courses]);
 
   if (!semester) {
@@ -56,9 +52,10 @@ export default function GpaSemesterPage() {
 
   const current = semester;
   const editable = current.status === 'draft' && current.sync !== 'conflict';
+  // An older or imported session outside the programme years stays selectable.
+  const sessionOptions = current.sessionLabel && !SESSIONS.includes(current.sessionLabel) ? [current.sessionLabel, ...SESSIONS] : SESSIONS;
   const { totals } = current;
   const totalUnits = totals.units + totals.pendingUnits;
-  const sessionValid = !sessionText.trim() || /^\d{4}\/\d{4}$/.test(sessionText.trim());
 
   function save(courses: GpaCourse[], sessionLabel = current.sessionLabel) {
     gpa.saveSemester(current.id, { sessionLabel, courses });
@@ -150,22 +147,18 @@ export default function GpaSemesterPage() {
       )}
 
       <div className="mt-5">
-        <label htmlFor="session-label" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Session <span className="normal-case font-normal text-dim">(optional)</span></label>
-        <input
+        <label htmlFor="session-label" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Session</label>
+        <select
           id="session-label"
           className="input-base max-w-[12rem]"
-          placeholder="2025/2026"
-          inputMode="numeric"
           disabled={!editable}
-          value={sessionText}
-          aria-invalid={!sessionValid}
-          onChange={(event) => {
-            const value = event.target.value;
-            setSessionText(value);
-            if (!value.trim() || /^\d{4}\/\d{4}$/.test(value.trim())) save(current.courses, value.trim() || null);
-          }}
-        />
-        {!sessionValid && <p className="text-xs text-danger mt-1">Use the format 2025/2026.</p>}
+          value={current.sessionLabel ?? ''}
+          onChange={(event) => save(current.courses, event.target.value || null)}
+        >
+          {sessionOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          <option value="">Not set</option>
+        </select>
+        {!editable && <p className="text-xs text-dim mt-1">Unlock the semester to change it.</p>}
       </div>
 
       <section className="mt-6" aria-labelledby="courses-heading">
@@ -190,15 +183,6 @@ export default function GpaSemesterPage() {
                   </div>
                   {editable ? (
                     <>
-                      <label className="sr-only" htmlFor={`units-${course.key}`}>Units for {course.code}</label>
-                      <select
-                        id={`units-${course.key}`}
-                        className="input-base !w-auto !py-1.5 !px-2 text-sm"
-                        value={course.units}
-                        onChange={(event) => updateCourse(course.key, { units: Number(event.target.value) })}
-                      >
-                        {UNIT_OPTIONS.map((units) => <option key={units} value={units}>{units} u</option>)}
-                      </select>
                       <button
                         type="button"
                         className="text-dim hover:text-[color:var(--nx-danger)] w-9 h-9 -mr-1 text-xl leading-none shrink-0"
@@ -214,7 +198,20 @@ export default function GpaSemesterPage() {
                 </div>
                 {editable && (
                   <>
-                    <div className="mt-3"><GradePicker value={course.grade} label={course.code} onChange={(grade) => updateCourse(course.key, { grade })} /></div>
+                    <div className="mt-3 flex gap-2">
+                      <div className="min-w-0 flex-1">
+                        <GradeSelect id={`grade-${course.key}`} value={course.grade} label={course.code} onChange={(grade) => updateCourse(course.key, { grade })} />
+                      </div>
+                      <label className="sr-only" htmlFor={`units-${course.key}`}>Units for {course.code}</label>
+                      <select
+                        id={`units-${course.key}`}
+                        className="input-base !w-auto !py-2 !px-2 text-sm shrink-0"
+                        value={course.units}
+                        onChange={(event) => updateCourse(course.key, { units: Number(event.target.value) })}
+                      >
+                        {UNIT_OPTIONS.map((units) => <option key={units} value={units}>{units} unit{units === 1 ? '' : 's'}</option>)}
+                      </select>
+                    </div>
                     <div className="flex gap-2 mt-2.5">
                       <FlagToggle pressed={course.isCarryover} onClick={() => updateCourse(course.key, { isCarryover: !course.isCarryover })}>Carryover</FlagToggle>
                       <FlagToggle pressed={course.isRetake} onClick={() => updateCourse(course.key, { isRetake: !course.isRetake })}>Retake</FlagToggle>
@@ -257,7 +254,7 @@ export default function GpaSemesterPage() {
             <p className="text-[11px] text-dim uppercase tracking-wider">Semester GPA</p>
             <p className="text-2xl font-semibold tabular-nums leading-tight" aria-live="polite">
               {formatGpa(totals.gpa)}
-              {totals.pendingCourses > 0 && <span className="text-xs text-dim font-normal ml-2">{totals.pendingCourses} pending</span>}
+              {totals.pendingCourses > 0 && <span className="text-xs text-dim font-normal ml-2">{totals.pendingCourses} blank, not counted yet</span>}
             </p>
           </div>
           {current.status === 'draft' ? (
