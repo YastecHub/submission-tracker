@@ -10,7 +10,7 @@ test('session restores on public landing; late bootstrap cannot overwrite a new 
   global.localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) };
   global.window = { location: { pathname: '/login' } };
   let resolveBootstrap;
-  const user = { id: 'new', name: 'Staff', role: 'cr' };
+  const user = { id: 'new', name: 'Class Rep', role: 'cr' };
   const { AuthProvider, useAuth } = loadTs('src/context/AuthContext.tsx', {
     '../features/auth/api/auth': {
       getCurrentUser: () => new Promise((resolve) => { resolveBootstrap = resolve; }),
@@ -21,7 +21,7 @@ test('session restores on public landing; late bootstrap cannot overwrite a new 
   function Probe() { state = useAuth(); return null; }
   await act(async () => { view = create(React.createElement(AuthProvider, null, React.createElement(Probe))); });
   assert.equal(typeof resolveBootstrap, 'function');
-  await act(async () => { await state.login('staff@example.test', 'password'); });
+  await act(async () => { await state.login('classrep@example.test', 'password'); });
   await act(async () => resolveBootstrap({ id: 'old' }));
   assert.equal(state.user.id, 'new');
   assert.equal(storage.get('token'), 'new-token');
@@ -37,7 +37,7 @@ test('temporary session restore failure remains recoverable without deleting the
   const storage = new Map([['token', 'valid-token']]);
   global.localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) };
   let attempts = 0;
-  const user = { id: 'user', name: 'Staff', role: 'cr' };
+  const user = { id: 'user', name: 'Class Rep', role: 'cr' };
   const { AuthProvider, useAuth } = loadTs('src/context/AuthContext.tsx', {
     '../features/auth/api/auth': {
       getCurrentUser: async () => {
@@ -76,6 +76,7 @@ test('temporary student session failure keeps the token and retries safely', asy
       registerStudent: async () => { throw new Error('Unexpected registration'); },
       requestStudentRegistrationCode: async () => { throw new Error('Unexpected code request'); },
     },
+    '../pwa/serviceWorker': { postToServiceWorker: async () => false },
   });
   let state, view;
   function Probe() { state = useStudentAuth(); return null; }

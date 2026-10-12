@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getStudent, loginStudent, registerStudent, requestStudentRegistrationCode, type StudentAccount } from '../features/student-auth/api/studentAuth';
 import axios from 'axios';
+import { postToServiceWorker } from '../pwa/serviceWorker';
+
+// Offline copies of student data belong to one account; drop them when the account changes.
+function clearOfflineStudentData() {
+  void postToServiceWorker({ type: 'clear-student-cache' });
+}
 
 interface StudentAuthValue {
   student: StudentAccount | null;
@@ -45,6 +51,7 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
   }, [token, restoreVersion]);
 
   const applySession = useCallback((result: { token: string; student: StudentAccount }) => {
+    clearOfflineStudentData();
     localStorage.setItem('studentToken', result.token);
     setToken(result.token);
     setStudent(result.student);
@@ -54,7 +61,7 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (matricNumber: string, password: string) => { applySession(await loginStudent(matricNumber, password)); }, [applySession]);
   const requestRegistrationCode = useCallback(async (matricNumber: string, email: string) => { await requestStudentRegistrationCode(matricNumber, email); }, []);
   const register = useCallback(async (matricNumber: string, email: string, code: string, password: string) => { applySession(await registerStudent(matricNumber, email, code, password)); }, [applySession]);
-  const logout = useCallback(() => { localStorage.removeItem('studentToken'); setToken(null); setStudent(null); }, []);
+  const logout = useCallback(() => { clearOfflineStudentData(); localStorage.removeItem('studentToken'); setToken(null); setStudent(null); }, []);
   const retrySession = useCallback(() => setRestoreVersion((value) => value + 1), []);
   const value = useMemo(() => ({ student, token, loading, sessionError, retrySession, login, requestRegistrationCode, register, logout }), [student, token, loading, sessionError, retrySession, login, requestRegistrationCode, register, logout]);
 

@@ -161,7 +161,7 @@ export default function PaymentSubmitSuccess() {
             <div className="card-base px-4 py-3 text-center">
               <div className="flex items-center justify-center gap-2 text-muted text-sm">
                 <span className="w-2 h-2 rounded-full bg-[color:var(--nx-accent)] inline-block" />
-                Waiting for Fin Sec to confirm your payment…
+                Waiting for a class rep to confirm your payment…
               </div>
             </div>
           )}
@@ -242,7 +242,7 @@ export default function PaymentSubmitSuccess() {
             <p className="font-semibold">Receipt rejected</p>
             {confirmedBy && <p className="text-xs opacity-80 mt-1">Reviewed by {confirmedBy}</p>}
             {note && <p className="text-xs mt-2">Reason: {note}</p>}
-            <p className="text-xs mt-2">Please contact your Fin Sec or class rep.</p>
+            <p className="text-xs mt-2">Please contact a class rep.</p>
           </div>
         )}
 
@@ -250,7 +250,7 @@ export default function PaymentSubmitSuccess() {
           <div className="card-base px-4 py-3 text-center">
             <div className="flex items-center justify-center gap-2 text-muted text-sm">
               <span className="w-2 h-2 rounded-full bg-[color:var(--nx-accent)] inline-block" />
-              Waiting for Fin Sec to confirm your payment…
+              Waiting for a class rep to confirm your payment…
             </div>
           </div>
         )}

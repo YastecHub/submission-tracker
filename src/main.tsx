@@ -1,22 +1,7 @@
 import React from 'react';
+import { startServiceWorker } from './pwa/serviceWorker';
 
-if ('serviceWorker' in navigator && !import.meta.env.DEV) {
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          void reg.update();
-        }
-      });
-      setInterval(() => {
-        void reg.update();
-      }, 30 * 60 * 1000);
-    } catch {
-      // SW registration failed
-    }
-  });
-}
+startServiceWorker();
 
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
@@ -34,6 +19,7 @@ import StudentProtectedRoute from './components/StudentProtectedRoute';
 import StudentLoginPage from './pages/StudentLoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import EventDetail from './pages/EventDetail';
 import ProfilePage from './pages/ProfilePage';
@@ -76,6 +62,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           )}
           <React.Suspense fallback={<div className="page-base flex items-center justify-center"><div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin border-[color:var(--nx-accent)]" /></div>}>
           <Routes>
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/student/login" element={<StudentLoginPage />} />
             <Route
@@ -146,7 +133,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           </React.Suspense>
         </ToastProvider></StudentAuthProvider>

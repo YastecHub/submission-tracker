@@ -38,7 +38,7 @@ export interface AnnouncementMediaMutationResponse {
   media: AnnouncementMedia[];
 }
 
-export interface BulletinStaffSummary {
+export interface BulletinClassRepSummary {
   id: string;
   name: string;
   role: UserRole;
@@ -94,7 +94,7 @@ export interface BulletinRevision {
   changeNote: string | null;
   origin: string;
   createdAt: string;
-  creator: BulletinStaffSummary;
+  creator: BulletinClassRepSummary;
 }
 
 export interface AdminAnnouncement {
@@ -122,9 +122,9 @@ export interface AdminAnnouncement {
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  creator: BulletinStaffSummary;
-  updater: BulletinStaffSummary;
-  publisher: BulletinStaffSummary | null;
+  creator: BulletinClassRepSummary;
+  updater: BulletinClassRepSummary;
+  publisher: BulletinClassRepSummary | null;
   revisions: BulletinRevision[];
   media: AnnouncementMedia[];
   readCount?: number;
@@ -143,8 +143,8 @@ export interface AdminAnnouncementListItem {
   version: number;
   publishedAt: string | null;
   updatedAt: string;
-  creator: BulletinStaffSummary;
-  updater: BulletinStaffSummary;
+  creator: BulletinClassRepSummary;
+  updater: BulletinClassRepSummary;
   readCount: number;
 }
 

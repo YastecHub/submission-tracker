@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useStudentAuth } from '../context/StudentAuthContext';
+import { safeStudentReturnTo } from '../features/student-auth/model/returnTo';
 
 export default function StudentLoginPage() {
   const { student, login, requestRegistrationCode, register } = useStudentAuth();
@@ -16,8 +17,7 @@ export default function StudentLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const requested = params.get('returnTo');
-  const returnTo = requested && (requested.startsWith('/payment/') || requested.startsWith('/pay/')) ? requested : '/student';
+  const returnTo = safeStudentReturnTo(params.get('returnTo'));
   if (student) return <Navigate to={returnTo} replace />;
 
   async function submit(event: FormEvent) {
@@ -34,7 +34,7 @@ export default function StudentLoginPage() {
         return;
       } else {
         await register(matric, email, code, password);
-        navigate('/student', { replace: true });
+        navigate(returnTo, { replace: true });
       }
     } catch (caught: unknown) {
       setError(axios.isAxiosError(caught) ? caught.response?.data?.error ?? 'Unable to continue.' : 'Unable to continue.');
@@ -44,7 +44,7 @@ export default function StudentLoginPage() {
   return (
     <main className="page-base flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
-        <Link to="/login" className="btn-ghost !px-0 mb-4">← Back to NEXIUM home</Link>
+        <Link to="/" className="btn-ghost !px-0 mb-4">← Back to NEXIUM home</Link>
       <div className="card-base p-5 sm:p-6">
         <h1 className="text-xl font-semibold">Student account</h1>
         <p className="text-sm text-muted mt-1">Sign in to read Nexium Bulletin, manage payments and retrieve your tickets.</p>

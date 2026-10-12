@@ -4,12 +4,12 @@ const { dedupePicnicReceipts } = require('./load-ts.cjs')('src/features/payments
 
 test('legacy merge preserves earliest receipt, sources and collection state without mutating inputs', () => {
   const first = Object.freeze({ id: 'old', matricNumber: ' ab/1 ', submittedAt: '2026-01-01', sourceEventTitle: 'Legacy', isClaimed: false });
-  const next = Object.freeze({ id: 'new', matricNumber: 'AB/1', submittedAt: '2026-02-01', sourceEventTitle: 'Current', isClaimed: true, claimedBy: 'Staff', claimedAt: '2026-03-01' });
+  const next = Object.freeze({ id: 'new', matricNumber: 'AB/1', submittedAt: '2026-02-01', sourceEventTitle: 'Current', isClaimed: true, claimedBy: 'Class Rep', claimedAt: '2026-03-01' });
   const result = dedupePicnicReceipts([first, next]);
   assert.equal(result.length, 1);
   assert.equal(result[0].id, 'old');
   assert.equal(result[0].isClaimed, true);
-  assert.equal(result[0].claimedBy, 'Staff');
+  assert.equal(result[0].claimedBy, 'Class Rep');
   assert.equal(result[0].sourceEventTitle, 'Legacy + Current');
   assert.equal(first.isClaimed, false);
 });

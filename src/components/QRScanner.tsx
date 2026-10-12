@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import api from '../api/axios';
 import type { Submission } from '../types';
 import { useTicketCamera } from '../features/payments/hooks/useTicketCamera';
@@ -33,8 +34,9 @@ export default function QRScanner({ onClose, onConfirmed }: Props) {
           : { type: 'success', submission: res.data.submission }
       );
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Could not confirm submission.';
+      const msg = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? (err.response ? 'Could not confirm submission.' : 'Network error - check your connection and scan again.')
+        : 'Could not confirm submission.';
       setResult({ type: 'error', message: msg });
     }
   }

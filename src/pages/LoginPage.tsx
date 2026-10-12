@@ -1,7 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useStudentAuth } from '../context/StudentAuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
@@ -26,7 +25,6 @@ const FEATURES = [
 
 export default function LoginPage() {
   const { login, user } = useAuth();
-  const { student } = useStudentAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -36,12 +34,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard', { replace: true });
-    } else if (student) {
-      navigate('/student', { replace: true });
-    }
-  }, [navigate, user, student]);
+    if (user) navigate('/dashboard', { replace: true });
+  }, [navigate, user]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
@@ -75,6 +69,9 @@ export default function LoginPage() {
 
   return (
     <main className="page-base px-4 py-8 sm:py-16">
+      <div className="max-w-5xl mx-auto mb-4">
+        <Link to="/" className="btn-ghost !px-0">← Back to NEXIUM home</Link>
+      </div>
       {/* Mobile brand header - desktop hides this, brand lives in left column */}
       <div className="md:hidden flex items-center gap-3 mb-6 max-w-md mx-auto">
         <div className="w-10 h-10 rounded-xl bg-surface-2 border border-nx flex items-center justify-center overflow-hidden">
@@ -123,7 +120,7 @@ export default function LoginPage() {
         <div className="order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 md:justify-self-end">
           <div className="card-base p-5 sm:p-8">
             <h2 className="text-xl font-semibold">Sign in</h2>
-            <p className="text-sm text-muted mt-1">Staff access only.</p>
+            <p className="text-sm text-muted mt-1">Class reps only.</p>
 
             {error && (
               <div className="alert-danger mt-5 flex items-start gap-2">
@@ -136,9 +133,9 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <label htmlFor="staff-email" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Email</label>
+                <label htmlFor="classrep-email" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Email</label>
                 <input
-                  id="staff-email"
+                  id="classrep-email"
                   type="email"
                   required
                   autoComplete="email"
@@ -150,10 +147,10 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label htmlFor="staff-password" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Password</label>
+                <label htmlFor="classrep-password" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Password</label>
                 <div className="relative">
                   <input
-                    id="staff-password"
+                    id="classrep-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
@@ -205,7 +202,7 @@ export default function LoginPage() {
 
           {/* Student CTA - prominent, right under the login card on every screen */}
           <Link
-            to="/student"
+            to="/student/login"
             className="mt-5 flex items-center justify-between gap-3 card-base p-4 hover:border-[color:var(--nx-border-hover)] transition-colors group"
           >
             <div className="min-w-0">

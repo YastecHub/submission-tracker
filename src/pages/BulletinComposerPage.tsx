@@ -33,6 +33,7 @@ import type {
 } from '../features/bulletin/model/types';
 import { canEditAnnouncement, canPublishAnnouncement } from '../features/bulletin/model/permissions';
 import { applyAiSuggestion } from '../features/bulletin/model/applyAiSuggestion';
+import { AI_SOURCE_MAX_LENGTH, AI_SOURCE_MIN_LENGTH, aiSourceStatus } from '../features/bulletin/model/aiLimits';
 
 interface ComposerForm {
   title: string;
@@ -151,6 +152,8 @@ export default function BulletinComposerPage() {
   }, [user, form.category]);
   const canEdit = !announcement || canEditAnnouncement(user, announcement);
   const readOnly = !canEdit;
+  const sourceLength = form.rawSource.trim().length;
+  const sourceStatus = aiSourceStatus(form.rawSource);
 
   function change<K extends keyof ComposerForm>(key: K, value: ComposerForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -174,7 +177,7 @@ export default function BulletinComposerPage() {
   }
 
   async function organizeSource() {
-    if (organizing || readOnly) return;
+    if (organizing || readOnly || sourceStatus !== 'ok') return;
     setOrganizing(true);
     setError('');
     setAiResponse(null);
@@ -350,15 +353,12 @@ export default function BulletinComposerPage() {
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {!readOnly && <button type="button" onClick={() => void save()} disabled={saving || organizing || mediaBusy} className="btn-secondary flex-1 sm:flex-initial text-center justify-center">{saving ? 'Saving…' : 'Save'}</button>}
             {(!announcement || announcement.status === 'draft') && (
-              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || mediaBusy || mediaDirty || !canPublish} className="btn-primary flex-1 sm:flex-initial text-center justify-center" title={!canPublish ? 'Your role can save this draft but cannot publish this category.' : mediaDirty ? 'Upload or save the pending image changes before publishing.' : undefined}>Publish</button>
+              <button type="button" onClick={() => setPendingAction('publish')} disabled={saving || organizing || mediaBusy || mediaDirty || !canPublish} className="btn-primary flex-1 sm:flex-initial text-center justify-center" title={!canPublish ? 'Only class reps can publish announcements.' : mediaDirty ? 'Upload or save the pending image changes before publishing.' : undefined}>Publish</button>
             )}
             {announcement?.status === 'published' && canPublish && <button type="button" onClick={() => setPendingAction('archive')} disabled={saving || mediaBusy || mediaDirty} className="btn-ghost text-danger flex-1 sm:flex-initial text-center justify-center">Archive</button>}
           </div>
         </div>
 
-        {!canPublish && (!announcement || announcement.status === 'draft') && (
-          <div className="card-base p-4 mb-5 text-sm text-muted">You can prepare and save this draft. A {form.category === 'finance' ? 'Financial Secretary' : 'Class Representative'} must review and publish it.</div>
-        )}
         {error && <div role="alert" className="alert-danger mb-5">{error}</div>}
         {readOnly && <div className="card-base p-4 mb-5 text-sm text-muted">{announcement?.status === 'archived' ? 'This announcement is archived and retained as a read-only record.' : 'You have view-only access to this announcement.'}</div>}
 
@@ -373,7 +373,8 @@ export default function BulletinComposerPage() {
                 type="button"
                 className="btn-primary shrink-0 w-full sm:w-auto"
                 onClick={() => void organizeSource()}
-                disabled={saving || organizing || form.rawSource.trim().length < 20 || form.rawSource.trim().length > 30_000}
+                disabled={saving || organizing || sourceStatus !== 'ok'}
+                title={sourceStatus === 'too-long' ? `The assistant can organize up to ${AI_SOURCE_MAX_LENGTH.toLocaleString()} characters` : sourceStatus === 'too-short' ? `Add at least ${AI_SOURCE_MIN_LENGTH} characters first` : undefined}
               >
                 {organizing ? 'Organizing…' : 'Organize with assistant'}
               </button>
@@ -383,8 +384,15 @@ export default function BulletinComposerPage() {
           <textarea id="raw-source" rows={9} className="input-base" value={form.rawSource} disabled={readOnly || organizing} aria-describedby="source-help source-limit" onChange={(event) => changeRawSource(event.target.value)} placeholder="Paste WhatsApp messages, notes or the original announcement…" />
           <div id="source-limit" className="flex flex-col sm:flex-row sm:justify-between gap-1 mt-2 text-xs text-dim">
             <span>The assistant proposes organization only. It cannot save or publish.</span>
-            <span>{form.rawSource.length.toLocaleString()}/30,000 characters for organization</span>
+            <span className={sourceStatus === 'too-long' ? 'text-danger font-medium' : undefined}>
+              {sourceLength.toLocaleString()}/{AI_SOURCE_MAX_LENGTH.toLocaleString()} characters for the assistant
+            </span>
           </div>
+          {sourceStatus === 'too-long' && !readOnly && (
+            <p role="alert" className="text-xs text-danger mt-2">
+              The assistant can organize up to {AI_SOURCE_MAX_LENGTH.toLocaleString()} characters. Shorten the source to use it, or write the sections yourself. You can still save longer source material.
+            </p>
+          )}
         </section>
 
         {aiResponse && (

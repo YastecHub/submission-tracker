@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
 import { Link, useParams } from 'react-router-dom';
 import AnnouncementContent from '../features/bulletin/components/AnnouncementContent';
 import PriorityBadge from '../features/bulletin/components/PriorityBadge';
@@ -7,6 +8,7 @@ import { categoryLabels, formatBulletinDateTime, sourceTypeLabels } from '../fea
 import { useStudentAuth } from '../context/StudentAuthContext';
 import { useRemoteData } from '../hooks/useRemoteData';
 import { useToast } from '../context/ToastContext';
+import { apiUrl, postToServiceWorker } from '../pwa/serviceWorker';
 
 function formatNaira(amount: string) {
   const value = Number(amount);
@@ -18,6 +20,7 @@ export default function BulletinArticlePage() {
   const { token } = useStudentAuth();
   const { toast } = useToast();
   const [acknowledging, setAcknowledging] = useState(false);
+  const [ackQueued, setAckQueued] = useState(false);
   const [offline, setOffline] = useState(false);
   const load = useCallback((signal: AbortSignal) => getBulletinArticle(slug, token!, signal), [slug, token]);
   const article = useRemoteData(load, 0, Boolean(token && slug));
@@ -43,12 +46,25 @@ export default function BulletinArticlePage() {
     };
   }, []);
 
-  // Cache article for offline reading when loaded
+  // The service worker sends queued (offline) acknowledgements once the connection returns.
+  const articleId = article.data?.id;
+  const refreshArticle = article.refresh;
   useEffect(() => {
-    if (article.data && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'cache-article', url: window.location.href });
-    }
-  }, [article.data]);
+    if (!('serviceWorker' in navigator) || !articleId) return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.announcementId !== articleId) return;
+      if (event.data.type === 'bulletin:acknowledged') {
+        setAckQueued(false);
+        toast('Your offline acknowledgement has been recorded.', 'success');
+        void refreshArticle(true);
+      } else if (event.data.type === 'bulletin:acknowledge-failed') {
+        setAckQueued(false);
+        toast('Your offline acknowledgement could not be recorded. Please try again.', 'error');
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [articleId, refreshArticle, toast]);
 
   async function handleAcknowledge() {
     if (!token || acknowledging) return;
@@ -56,20 +72,19 @@ export default function BulletinArticlePage() {
     try {
       await acknowledgeBulletinArticle(article.data!.id, token);
       toast('Acknowledgement recorded.', 'success');
-      article.refresh();
-    } catch {
-      if (offline) {
-        // Queue for background sync
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'queue-acknowledge',
-            url: `/api/bulletin/feed/${article.data!.id}/acknowledge`,
-            token,
-          });
-          toast('You are offline. Acknowledgement will be sent when back online.', 'info');
-        } else {
-          toast('Acknowledgement could not be recorded.', 'error');
-        }
+      void article.refresh(true);
+    } catch (error) {
+      // No response at all means we are offline: queue it in the service worker.
+      const networkFailure = !axios.isAxiosError(error) || !error.response || error.response.status === 503;
+      const queued = networkFailure && await postToServiceWorker({
+        type: 'queue-acknowledge',
+        url: apiUrl(`/api/bulletin/feed/${article.data!.id}/acknowledge`),
+        token,
+        announcementId: article.data!.id,
+      });
+      if (queued) {
+        setAckQueued(true);
+        toast('You are offline. Your acknowledgement will be sent automatically when you are back online.', 'info');
       } else {
         toast('Acknowledgement could not be recorded.', 'error');
       }
@@ -127,7 +142,14 @@ export default function BulletinArticlePage() {
 
         {wasUpdated && <div className="badge badge-accent mb-6">This announcement has been updated since publication</div>}
 
-        {data.requiresAcknowledgement && !data.isAcknowledged && (
+        {data.requiresAcknowledgement && !data.isAcknowledged && ackQueued && (
+          <aside className="card-base p-4 mb-6 border-[color:var(--nx-accent)]" role="status">
+            <p className="text-sm font-semibold text-accent">Acknowledgement saved on this device</p>
+            <p className="text-sm text-muted mt-1">It will be sent automatically as soon as you are back online.</p>
+          </aside>
+        )}
+
+        {data.requiresAcknowledgement && !data.isAcknowledged && !ackQueued && (
           <aside className="card-base p-4 sm:p-5 mb-6 border-[color:var(--nx-accent)]" aria-labelledby="ack-heading">
             <p className="text-xs uppercase tracking-wider text-accent font-semibold">Action required</p>
             <p className="text-sm mt-2">This announcement requires your acknowledgement. Please confirm you have read and understood the content.</p>
