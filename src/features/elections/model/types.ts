@@ -116,17 +116,6 @@ export interface AdminElectionSummary {
   counts: { positions: number; candidates: number; voters: number; voted: number };
 }
 
-export interface VoterUploadResult {
-  mode: 'replace' | 'add';
-  total: number;
-  emailOnly: number;
-  added: number;
-  removed: number;
-  errors: string[];
-  errorCount: number;
-  applied: boolean;
-}
-
 export interface Registration {
   matricNumber: string;
   fullName: string;

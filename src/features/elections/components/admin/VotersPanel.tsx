@@ -1,62 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRemoteData } from '../../../../hooks/useRemoteData';
-import { getRegistrations, setSuspension, uploadVoters } from '../../api/elections';
+import { getRegistrations, setSuspension } from '../../api/elections';
 import { useAction } from '../../hooks/useAction';
 import { formatLagos } from '../../model/election';
-import type { AdminElection, Registration, VoterUploadResult } from '../../model/types';
+import type { AdminElection, Registration } from '../../model/types';
 
 type Filter = 'all' | 'unregistered' | 'registered' | 'suspended';
-
-function Upload({ election, onApplied }: { election: AdminElection; onApplied: () => void }) {
-  const { busy, run } = useAction();
-  const [csv, setCsv] = useState('');
-  const [preview, setPreview] = useState<VoterUploadResult | null>(null);
-  const locked = election.status !== 'draft';
-  async function check() {
-    const result = await run('check', () => uploadVoters(election.id, csv, true));
-    if (result) setPreview(result);
-  }
-  async function apply() {
-    const result = await run('apply', () => uploadVoters(election.id, csv, false), locked ? 'Voters added.' : 'Voter list saved.');
-    if (result?.applied) { setPreview(null); setCsv(''); onApplied(); }
-  }
-  return (
-    <div className="card-base p-5 space-y-3">
-      <h2 className="font-semibold">{locked ? 'Add late voters' : 'Upload the voter list'}</h2>
-      <p className="text-sm text-muted">
-        CSV with a header: <code className="text-xs">matricNumber,fullName,email</code>. Email is optional, except for students without a matric number (e.g. JUPEB): they register with that email and the code goes only there.
-        {locked ? ' The election is locked, so you can only add people now; nobody is removed.' : ' Uploading replaces the current list.'}
-      </p>
-      <label className="btn-secondary !py-2 cursor-pointer w-fit">
-        Choose CSV file
-        <input type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={async (event) => { const file = event.target.files?.[0]; if (file) { setCsv(await file.text()); setPreview(null); } }} />
-      </label>
-      <label htmlFor="voter-csv" className="sr-only">Voter list CSV</label>
-      <textarea id="voter-csv" rows={6} className="input-base font-mono text-xs" placeholder={'matricNumber,fullName,email\n251106026,Yasir Oladimeji Oyebo,\n,Jupeb Student Name,jupeb.student@gmail.com'}
-        value={csv} onChange={(event) => { setCsv(event.target.value); setPreview(null); }} />
-      {preview && (
-        <div className={`rounded-lg border p-3 text-sm ${preview.errorCount ? 'border-[color:var(--nx-danger)]' : 'border-nx bg-surface-2'}`}>
-          {preview.errorCount ? (
-            <>
-              <p className="font-semibold text-danger">{preview.errorCount} problem{preview.errorCount === 1 ? '' : 's'} to fix first</p>
-              <ul className="list-disc pl-5 mt-1 space-y-0.5">{preview.errors.map((error) => <li key={error}>{error}</li>)}</ul>
-            </>
-          ) : (
-            <p>
-              <span className="font-semibold">{preview.total} voters</span>
-              {preview.emailOnly > 0 && ` (${preview.emailOnly} sign up with email only)`}. {preview.added} new
-              {preview.mode === 'replace' && preview.removed > 0 && `, ${preview.removed} will be removed`}.
-            </p>
-          )}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <button type="button" className="btn-secondary" disabled={!csv.trim() || busy !== null} onClick={() => void check()}>{busy === 'check' ? 'Checking…' : 'Check file'}</button>
-        <button type="button" className="btn-primary" disabled={!preview || preview.errorCount > 0 || busy !== null} onClick={() => void apply()}>{busy === 'apply' ? 'Saving…' : locked ? 'Add voters' : 'Save voter list'}</button>
-      </div>
-    </div>
-  );
-}
 
 function SuspendDialog({ row, onConfirm, onClose, busy }: { row: Registration; onConfirm: (reason: string) => void; onClose: () => void; busy: boolean }) {
   const [reason, setReason] = useState('');
@@ -87,7 +36,6 @@ export default function VotersPanel({ election, role, onChanged }: { election: A
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [suspending, setSuspending] = useState<Registration | null>(null);
-  const canUpload = isDev && !['closed', 'published'].includes(election.status);
 
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -112,7 +60,11 @@ export default function VotersPanel({ election, role, onChanged }: { election: A
 
   return (
     <div className="space-y-4">
-      {canUpload && <Upload election={election} onApplied={() => { void refresh(true); onChanged(); }} />}
+      {isDev && (
+        <p className="text-sm text-muted">
+          The voter list is the class list seeded into the app ({counts.all} students). To add someone (for example JUPEB students), send their details to be added to the class list; they then appear here by themselves.
+        </p>
+      )}
       <div className="card-base p-4 sm:p-5">
         <div className="flex flex-wrap gap-1 bg-surface-2 border border-nx rounded-lg p-1 w-full sm:w-fit">
           {(['all', 'unregistered', 'registered', 'suspended'] as Filter[]).map((value) => (

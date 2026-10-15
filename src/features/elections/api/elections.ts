@@ -1,7 +1,7 @@
 import api from '../../../api/axios';
 import { studentAuthHeader } from '../../student-auth/api/studentAuth';
 import type {
-  AdminElection, AdminElectionSummary, AuditEntry, BallotChoice, ElectionResults, Registration, StudentElection, VoterUploadResult,
+  AdminElection, AdminElectionSummary, AuditEntry, BallotChoice, ElectionResults, Registration, StudentElection,
 } from '../model/types';
 
 // ---- Students --------------------------------------------------------------
@@ -84,10 +84,6 @@ export async function updateCandidate(id: string, candidateId: string, fields: R
 
 export async function removeCandidate(id: string, candidateId: string) {
   return (await api.delete<AdminElection>(`${base}/${id}/candidates/${candidateId}`)).data;
-}
-
-export async function uploadVoters(id: string, csv: string, dryRun: boolean) {
-  return (await api.put<VoterUploadResult>(`${base}/${id}/voters`, { csv, dryRun })).data;
 }
 
 export async function getRegistrations(id: string, signal?: AbortSignal) {

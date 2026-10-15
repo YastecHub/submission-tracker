@@ -13,6 +13,7 @@ const ACTIONS: Record<string, string> = {
   'candidate-edited': 'edited a candidate',
   'candidate-removed': 'removed a candidate',
   'voters-replaced': 'uploaded the voter list',
+  'voters-from-class-list': 'filled the voter list from the class list',
   'voters-added': 'added voters',
   'locked-ready': 'locked the election and handed it over',
   'unlocked-draft': 'unlocked the election for changes',
