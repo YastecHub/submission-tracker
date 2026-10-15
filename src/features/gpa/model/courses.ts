@@ -1,10 +1,9 @@
-import { newCourseKey } from './drafts';
-import { compareSlots, courseKey } from './gpa';
+import { compareSlots, courseKey, courseRowKey } from './gpa';
 import type { CatalogCourse, GpaCourse, Grade, SemesterView } from './types';
 
 export function courseFromCatalog(course: CatalogCourse, previousGrade: Grade | null = null): GpaCourse {
   return {
-    key: newCourseKey(),
+    key: courseRowKey(course.code),
     catalogCourseId: course.id,
     code: course.code,
     title: course.title,

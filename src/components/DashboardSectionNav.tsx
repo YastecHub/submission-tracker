@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { canAccessElections } from '../features/auth/model/capabilities';
 
 export type DashboardSection = 'submissions' | 'payments' | 'ledger' | 'bulletin';
 
@@ -16,6 +18,7 @@ export default function DashboardSectionNav({
   active: DashboardSection;
   counts?: Partial<Record<DashboardSection, number>>;
 }) {
+  const { user } = useAuth();
   return (
     <nav aria-label="Dashboard sections" className="flex gap-1 bg-surface-2 border border-nx rounded-lg p-1 mb-6 w-full sm:w-fit overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
       {sections.map((section) => (
@@ -33,6 +36,11 @@ export default function DashboardSectionNav({
           {counts[section.id] !== undefined && <span className="ml-2 badge">{counts[section.id]}</span>}
         </Link>
       ))}
+      {canAccessElections(user?.role) && (
+        <Link to="/elections" className="shrink-0 px-3 sm:px-4 py-2 min-h-11 text-sm font-medium rounded-md transition-colors flex items-center justify-center whitespace-nowrap text-muted hover:text-[color:var(--nx-text)]">
+          Elections
+        </Link>
+      )}
     </nav>
   );
 }

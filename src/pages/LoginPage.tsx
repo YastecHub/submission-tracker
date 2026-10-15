@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { homePathFor } from '../features/auth/model/capabilities';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
@@ -34,7 +35,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (user) navigate('/dashboard', { replace: true });
+    if (user) navigate(homePathFor(user.role), { replace: true });
   }, [navigate, user]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
@@ -49,9 +50,11 @@ export default function LoginPage() {
           ? 'Financial Secretary'
           : loggedInUser.role === 'dev'
             ? 'Developer'
-            : 'Class Rep';
+            : loggedInUser.role === 'electoral_committee'
+              ? 'Electoral Committee'
+              : 'Class Rep';
       toast(`Welcome back, ${loggedInUser.name} (${roleLabel})!`, 'success');
-      navigate('/dashboard');
+      navigate(homePathFor(loggedInUser.role));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (!err.response) {
@@ -120,7 +123,7 @@ export default function LoginPage() {
         <div className="order-1 md:order-2 w-full max-w-md mx-auto md:mx-0 md:justify-self-end">
           <div className="card-base p-5 sm:p-8">
             <h2 className="text-xl font-semibold">Sign in</h2>
-            <p className="text-sm text-muted mt-1">Class reps only.</p>
+            <p className="text-sm text-muted mt-1">Class reps and the electoral committee.</p>
 
             {error && (
               <div className="alert-danger mt-5 flex items-start gap-2">

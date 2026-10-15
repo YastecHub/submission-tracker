@@ -1,7 +1,7 @@
 export type EventType = 'assignment' | 'attendance' | 'lab' | 'other';
 export type Level = '100L' | '200L' | '300L' | '400L' | '500L' | 'Postgrad';
 
-export type UserRole = 'cr' | 'acr' | 'fin_sec' | 'dev';
+export type UserRole = 'cr' | 'acr' | 'fin_sec' | 'dev' | 'electoral_committee';
 export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
 export type AmountCheckStatus = 'pending' | 'matched' | 'mismatch' | 'unreadable' | 'unavailable';
 

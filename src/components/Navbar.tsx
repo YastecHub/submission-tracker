@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { homePathFor, isClassRep } from '../features/auth/model/capabilities';
 import { useToast } from '../context/ToastContext';
 import api from '../api/axios';
 import { getActiveServiceWorker } from '../pwa/serviceWorker';
@@ -77,7 +78,7 @@ export default function Navbar() {
   }
 
   const roleLabel =
-    user?.role === 'acr' ? 'Asst. CR' : user?.role === 'fin_sec' ? 'Fin Sec' : user?.role === 'dev' ? 'Developer' : 'Class Rep';
+    user?.role === 'acr' ? 'Asst. CR' : user?.role === 'fin_sec' ? 'Fin Sec' : user?.role === 'dev' ? 'Developer' : user?.role === 'electoral_committee' ? 'Electoral Committee' : 'Class Rep';
 
   const roleLongLabel =
     user?.role === 'acr'
@@ -86,11 +87,13 @@ export default function Navbar() {
       ? 'Financial Secretary'
       : user?.role === 'dev'
       ? 'Developer'
+      : user?.role === 'electoral_committee'
+      ? 'Electoral Committee'
       : 'Class Representative';
 
   return (
     <nav className="bg-surface border-b border-nx px-4 py-3 flex items-center justify-between">
-      <Link to="/dashboard" className="text-base font-semibold tracking-tight flex items-center gap-2">
+      <Link to={homePathFor(user?.role)} className="text-base font-semibold tracking-tight flex items-center gap-2">
         <img src="/icon.svg" alt="" className="w-7 h-7 rounded-md" />
         NEXIUM
       </Link>
@@ -135,6 +138,7 @@ export default function Navbar() {
                   Edit profile & password
                 </Link>
 
+                {isClassRep(user.role) && (
                 <button
                   onClick={handleEnableNotifications}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-surface-2 transition-colors"
@@ -144,6 +148,7 @@ export default function Navbar() {
                   </svg>
                   Enable notifications
                 </button>
+                )}
 
                 <div className="border-t border-nx mt-1 pt-1">
                   <button

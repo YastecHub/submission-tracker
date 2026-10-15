@@ -27,8 +27,14 @@ export default function SemesterCard({ semester }: { semester: SemesterView }) {
         <p className="text-xs text-dim mt-1">
           {semester.sessionLabel ? `${semester.sessionLabel} · ` : ''}
           {semester.courses.length} course{semester.courses.length === 1 ? '' : 's'} · {totals.units + totals.pendingUnits} units
-          {totals.pendingCourses > 0 ? ` · ${totals.pendingCourses} waiting for results` : ''}
         </p>
+        {semester.status === 'draft' && semester.courses.length > 0 && (
+          <p className={`text-xs mt-1 font-medium ${totals.pendingCourses > 0 ? 'text-accent' : 'text-emerald-400'}`}>
+            {totals.pendingCourses > 0
+              ? `${semester.courses.length - totals.pendingCourses} of ${semester.courses.length} graded · tap to continue`
+              : 'All graded · ready to finalize'}
+          </p>
+        )}
       </div>
       <div className="text-right shrink-0">
         <p className="text-2xl font-semibold tabular-nums">{formatGpa(totals.gpa)}</p>

@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import type { User } from '../types';
+import { homePathFor } from '../features/auth/model/capabilities';
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -86,10 +87,10 @@ export default function ProfilePage() {
       <Navbar />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(homePathFor(user?.role))}
           className="btn-ghost !px-0 mb-6"
         >
-          ← Back to dashboard
+          ← Back
         </button>
 
         <h1 className="text-2xl font-semibold tracking-tight mb-6">My profile</h1>

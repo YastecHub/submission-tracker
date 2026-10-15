@@ -123,6 +123,15 @@ export function courseKey(code: string): string {
   return code.replace(/\s+/g, '').toUpperCase();
 }
 
+/**
+ * Stable identity for a course row. Codes are unique within a semester, and the key must
+ * not change when the server saves the semester (it gives courses new ids), or every
+ * row would re-mount mid-edit and the page would jump.
+ */
+export function courseRowKey(code: string): string {
+  return `course:${courseKey(code)}`;
+}
+
 export function semesterTitle(level: number, semester: number): string {
   return `${level} Level · ${semester === 1 ? 'First' : 'Second'} semester`;
 }

@@ -4,7 +4,6 @@ import ConfirmModal from '../components/ConfirmModal';
 import { useToast } from '../context/ToastContext';
 import CoursePicker from '../features/gpa/components/CoursePicker';
 import GradeSelect from '../features/gpa/components/GradeSelect';
-import { SyncBadge } from '../features/gpa/components/SemesterCard';
 import { useGpa } from '../features/gpa/hooks/GpaProvider';
 import { courseFromCatalog, previousAttempt } from '../features/gpa/model/courses';
 import { courseKey, formatGpa, MAX_COURSES_PER_SEMESTER, MAX_UNITS_PER_COURSE, semesterTitle, SESSIONS } from '../features/gpa/model/gpa';
@@ -35,6 +34,7 @@ export default function GpaSemesterPage() {
   const semester = gpa.getSemester(id);
   const [busy, setBusy] = useState<'finalize' | 'unlock' | 'delete' | 'resolve' | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmFinalize, setConfirmFinalize] = useState(false);
   const existingCodes = useMemo(() => new Set((semester?.courses ?? []).map((course) => courseKey(course.code))), [semester?.courses]);
 
   if (!semester) {
@@ -76,16 +76,36 @@ export default function GpaSemesterPage() {
     if (retakes.length) toast(`${retakes.join(', ')} marked as retake (you had an F before).`, 'info');
   }
 
-  async function run(action: 'finalize' | 'unlock', work: () => Promise<void>, success: string) {
-    setBusy(action);
+  async function unlock() {
+    setBusy('unlock');
     try {
-      await work();
-      toast(success, 'success');
+      await gpa.unlockSemester(current.id);
+      toast('Unlocked. Fix the grades, then finalize again.', 'success');
     } catch (error) {
       toast(error instanceof Error ? error.message : 'Something went wrong.', 'error');
     } finally {
       setBusy(null);
     }
+  }
+
+  async function finalize() {
+    setBusy('finalize');
+    try {
+      await gpa.finalizeSemester(current.id);
+      toast(`${semesterTitle(current.level, current.semester)} finalized - GPA ${formatGpa(totals.gpa)}. It now counts in your CGPA.`, 'success');
+      navigate('/student/gpa');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Something went wrong.', 'error');
+      setBusy(null);
+      setConfirmFinalize(false);
+    }
+  }
+
+  function finishLater() {
+    toast(gpa.online
+      ? 'Saved. Come back any time to fill in the rest.'
+      : 'Saved on this phone. It will sync when you are back online.', 'success');
+    navigate('/student/gpa');
   }
 
   async function remove() {
@@ -113,10 +133,15 @@ export default function GpaSemesterPage() {
     }
   }
 
-  const finalizeBlocker = current.courses.length === 0 ? 'Add your courses first.'
-    : totals.pendingCourses > 0 ? `${totals.pendingCourses} course${totals.pendingCourses === 1 ? ' has' : 's have'} no grade yet.`
-      : !gpa.online ? 'Connect to the internet to finalize.'
-        : null;
+  const courseCount = current.courses.length;
+  const graded = courseCount - totals.pendingCourses;
+  const complete = courseCount > 0 && totals.pendingCourses === 0;
+  const progress = courseCount ? Math.round((graded / courseCount) * 100) : 0;
+  // Fixed-width status text in the bottom bar (never a badge that appears and pushes the page).
+  const saveStatus = current.sync === 'conflict' ? 'Needs attention'
+    : current.sync === 'error' ? 'Not saved'
+      : current.sync === 'synced' ? 'Saved'
+        : gpa.online ? 'Saving…' : 'Saved offline';
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-6 pb-40">
@@ -124,12 +149,11 @@ export default function GpaSemesterPage() {
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">{semesterTitle(current.level, current.semester)}</h1>
         {current.status === 'finalized' ? <span className="badge badge-success">Final</span> : <span className="badge badge-accent">Draft</span>}
-        <SyncBadge semester={current} />
       </div>
       <p className="text-sm text-muted mt-1">
         {current.status === 'finalized'
           ? `Final results${current.finalizedAt ? ` since ${new Date(current.finalizedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}. Unlock to correct a grade.`
-          : 'Changes save automatically, even offline. Finalize when the official results are out.'}
+          : 'Pick a grade for each course. Every pick is saved as you go, so nothing is lost. Leave a grade blank if the result is not out yet.'}
       </p>
 
       {current.sync === 'conflict' && (
@@ -249,40 +273,63 @@ export default function GpaSemesterPage() {
       <div
         className="fixed inset-x-0 z-30 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-0"
       >
+        {current.status === 'draft' && courseCount > 0 && (
+          <div className="h-1 bg-surface-2" aria-hidden="true">
+            <div className={`h-full transition-[width] duration-300 ${complete ? 'bg-emerald-500' : 'bg-[color:var(--nx-accent)]'}`} style={{ width: `${progress}%` }} />
+          </div>
+        )}
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] text-dim uppercase tracking-wider">Semester GPA</p>
-            <p className="text-2xl font-semibold tabular-nums leading-tight" aria-live="polite">
-              {formatGpa(totals.gpa)}
-              {totals.pendingCourses > 0 && <span className="text-xs text-dim font-normal ml-2">{totals.pendingCourses} blank, not counted yet</span>}
-            </p>
+            <p className="text-[11px] text-dim uppercase tracking-wider">{complete || current.status === 'finalized' ? 'Semester GPA' : 'GPA so far'}</p>
+            <p className="text-2xl font-semibold tabular-nums leading-tight" aria-live="polite">{formatGpa(totals.gpa)}</p>
+            {current.status === 'draft' && (
+              <p className="text-[11px] text-dim truncate" data-testid="grade-progress">
+                <span className={complete ? 'text-emerald-400 font-medium' : ''}>{graded} of {courseCount} graded</span>
+                <span aria-live="polite"> · {saveStatus}</span>
+              </p>
+            )}
           </div>
           {current.status === 'draft' ? (
-            <div className="text-right">
-              <button
-                type="button"
-                className="btn-primary !py-2.5"
-                disabled={busy !== null || finalizeBlocker !== null || current.sync === 'conflict'}
-                title={finalizeBlocker ?? undefined}
-                onClick={() => void run('finalize', () => gpa.finalizeSemester(current.id), 'Semester finalized. It now counts in your CGPA.')}
-              >
-                {busy === 'finalize' ? 'Finalizing…' : 'Finalize results'}
+            complete && gpa.online && current.sync !== 'conflict' ? (
+              <button type="button" className="btn-primary !py-2.5 shrink-0" disabled={busy !== null} onClick={() => setConfirmFinalize(true)}>
+                Finalize results
               </button>
-              {finalizeBlocker && <p className="text-[11px] text-dim mt-1">{finalizeBlocker}</p>}
-            </div>
+            ) : (
+              <div className="text-right shrink-0">
+                <button type="button" className="btn-secondary !py-2 !px-3 text-sm" onClick={finishLater}>Finish later</button>
+                <p className="text-[11px] text-dim mt-1 max-w-[10rem]">
+                  {courseCount === 0 ? 'Add your courses first.'
+                    : !complete ? 'Finalize shows once every course has a grade.'
+                      : current.sync === 'conflict' ? 'Sort out the message above first.'
+                        : 'Connect to the internet to finalize.'}
+                </p>
+              </div>
+            )
           ) : (
             <button
               type="button"
-              className="btn-secondary !py-2.5"
+              className="btn-secondary !py-2.5 shrink-0"
               disabled={busy !== null || !gpa.online}
               title={gpa.online ? undefined : 'Connect to the internet to unlock'}
-              onClick={() => void run('unlock', () => gpa.unlockSemester(current.id), 'Unlocked. Fix the grades, then finalize again.')}
+              onClick={() => void unlock()}
             >
               {busy === 'unlock' ? 'Unlocking…' : 'Unlock to edit'}
             </button>
           )}
         </div>
       </div>
+
+      {confirmFinalize && (
+        <ConfirmModal
+          title={`Finalize ${semesterTitle(current.level, current.semester)}?`}
+          message={`GPA ${formatGpa(totals.gpa)} from ${totals.units} units (${courseCount} courses). It will count in your CGPA. If you spot a mistake later, you can unlock it and fix it.`}
+          confirmLabel={busy === 'finalize' ? 'Finalizing…' : 'Finalize'}
+          variant="warning"
+          loading={busy === 'finalize'}
+          onConfirm={() => void finalize()}
+          onCancel={() => setConfirmFinalize(false)}
+        />
+      )}
 
       {confirmDelete && (
         <ConfirmModal

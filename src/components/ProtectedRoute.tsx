@@ -1,8 +1,14 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { CLASS_ROLES, homePathFor } from '../features/auth/model/capabilities';
+import type { UserRole } from '../types';
 
-export default function ProtectedRoute({ children }: { children: ReactNode }) {
+/**
+ * Staff pages. By default only class reps get in; the electoral committee is sent to
+ * the elections area (its only area). Pass `roles` to open a page to other roles.
+ */
+export default function ProtectedRoute({ children, roles = CLASS_ROLES }: { children: ReactNode; roles?: readonly UserRole[] }) {
   const { user, loading, sessionError, retrySession } = useAuth();
 
   if (loading) {
@@ -25,5 +31,6 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (!roles.includes(user.role)) return <Navigate to={homePathFor(user.role)} replace />;
   return <>{children}</>;
 }

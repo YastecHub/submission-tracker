@@ -7,6 +7,7 @@ import StudentNotificationBell from './StudentNotificationBell';
 const navItems = [
   { to: '/student', label: 'Home', shortLabel: 'Home', end: true },
   { to: '/student/news', label: 'Bulletin', shortLabel: 'Bulletin', end: false },
+  { to: '/student/elections', label: 'Elections', shortLabel: 'Vote', end: false },
   { to: '/student/gpa', label: 'GPA', shortLabel: 'GPA', end: false },
   { to: '/student/tickets', label: 'Tickets', shortLabel: 'Tickets', end: false },
   { to: '/transparency', label: 'Transparency', shortLabel: 'Ledger', end: false },
@@ -100,7 +101,7 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
 
       <nav
         aria-label="Student mobile navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx px-2 pt-2 grid grid-cols-5"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[color:rgba(24,24,27,0.97)] backdrop-blur border-t border-nx px-1 pt-2 grid grid-cols-6"
         style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
       >
         {navItems.map((item) => (

@@ -3,6 +3,7 @@ import { useStudentAuth } from '../context/StudentAuthContext';
 import AnnouncementCard from '../features/bulletin/components/AnnouncementCard';
 import { useBulletinFeed } from '../features/bulletin/hooks/useBulletinFeed';
 import DashboardCgpaCard from '../features/gpa/components/DashboardCgpaCard';
+import HomeElectionCard from '../features/elections/components/HomeElectionCard';
 import { GpaProvider } from '../features/gpa/hooks/GpaProvider';
 
 export default function StudentHomePage() {
@@ -29,6 +30,8 @@ export default function StudentHomePage() {
           )}
         </div>
       </section>
+
+      {token && <HomeElectionCard token={token} />}
 
       {student && <GpaProvider><DashboardCgpaCard studentId={student.id} /></GpaProvider>}
 
