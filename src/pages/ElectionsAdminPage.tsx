@@ -24,7 +24,7 @@ function NewElectionForm({ onCreated }: { onCreated: (id: string) => void }) {
       closesAt: fromLocalInput(form.closesAt),
       registrationDeadline: fromLocalInput(form.registrationDeadline),
       isTest: form.isTest,
-    }), 'Election created. Add positions, candidates and the voter list next.');
+    }), 'Election created with the class list as voters. Add positions and candidates next.');
     if (created) onCreated(created.id);
   }
   return (

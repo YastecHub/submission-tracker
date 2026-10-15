@@ -6,6 +6,7 @@ import { useNow } from '../../hooks/useNow';
 import { formatDuration, formatLagos, formatTime, fromLocalInput, toLocalInput } from '../../model/election';
 import type { AdminElection, ElectionResults } from '../../model/types';
 import ResultsView from '../ResultsView';
+import NotificationsCard from './NotificationsCard';
 import { TurnoutBar } from '../ElectionBits';
 
 type Confirm = { command: ElectionCommand | 'publish'; title: string; message: string; label: string } | null;
@@ -110,7 +111,7 @@ export default function ControlPanel({ election, role, userId, onChange }: { ele
             <div className="pt-2 border-t border-nx">
               <label htmlFor="extend-to" className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Extend closing time</label>
               <div className="flex gap-2">
-                <input id="extend-to" type="datetime-local" className="input-base" min={toLocalInput(election.closesAt)} value={extendTo} onChange={(event) => setExtendTo(event.target.value)} />
+                <input id="extend-to" type="datetime-local" className="input-base min-w-0" min={toLocalInput(election.closesAt)} value={extendTo} onChange={(event) => setExtendTo(event.target.value)} />
                 <button type="button" className="btn-secondary shrink-0" disabled={busy !== null || !extendTo} onClick={() => void extend()}>Extend</button>
               </div>
               <p className="text-xs text-dim mt-1">Currently {formatLagos(election.closesAt)}. It can be made later, never earlier.</p>
@@ -134,6 +135,8 @@ export default function ControlPanel({ election, role, userId, onChange }: { ele
           )}
         </div>
       )}
+
+      {status !== 'draft' && <NotificationsCard election={election} role={role} onChange={onChange} />}
 
       {isDev && status === 'closed' && (
         <p className="text-sm text-muted card-base p-4">Voting has closed. You will see the results once the electoral committee publishes them.</p>

@@ -66,7 +66,7 @@ export default function SetupPanel({ election, role, onChange }: { election: Adm
   const problems = [
     !election.positions.length && 'Add at least one position.',
     ...election.positions.filter((position) => !position.candidates.length).map((position) => `Add a candidate for ${position.title}.`),
-    !election.counts.voters && 'Upload the voter list (Voters tab).',
+    !election.counts.voters && 'The voter list is empty: the class list has not been seeded yet.',
     new Date(election.closesAt).getTime() < Date.now() + 5 * 60_000 && 'The closing time has passed. Change the times.',
   ].filter(Boolean) as string[];
 

@@ -1,7 +1,7 @@
 import api from '../../../api/axios';
 import { studentAuthHeader } from '../../student-auth/api/studentAuth';
 import type {
-  AdminElection, AdminElectionSummary, AuditEntry, BallotChoice, ElectionResults, Registration, StudentElection, VoterUploadResult,
+  AdminElection, AdminElectionSummary, AuditEntry, BallotChoice, ElectionResults, Registration, StudentElection,
 } from '../model/types';
 
 // ---- Students --------------------------------------------------------------
@@ -86,10 +86,6 @@ export async function removeCandidate(id: string, candidateId: string) {
   return (await api.delete<AdminElection>(`${base}/${id}/candidates/${candidateId}`)).data;
 }
 
-export async function uploadVoters(id: string, csv: string, dryRun: boolean) {
-  return (await api.put<VoterUploadResult>(`${base}/${id}/voters`, { csv, dryRun })).data;
-}
-
 export async function getRegistrations(id: string, signal?: AbortSignal) {
   return (await api.get<Registration[]>(`${base}/${id}/registrations`, { signal })).data;
 }
@@ -102,6 +98,11 @@ export type ElectionCommand = 'ready' | 'draft' | 'open' | 'pause' | 'resume' | 
 
 export async function runCommand(id: string, command: ElectionCommand) {
   return (await api.post<AdminElection>(`${base}/${id}/${command}`)).data;
+}
+
+/** Committee: push "you haven't voted yet" to students who haven't voted. */
+export async function remindNonVoters(id: string) {
+  return (await api.post<AdminElection>(`${base}/${id}/remind`)).data;
 }
 
 export async function extendElection(id: string, closesAt: string) {
