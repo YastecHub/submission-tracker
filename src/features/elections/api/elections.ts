@@ -100,6 +100,11 @@ export async function runCommand(id: string, command: ElectionCommand) {
   return (await api.post<AdminElection>(`${base}/${id}/${command}`)).data;
 }
 
+/** Committee: push "you haven't voted yet" to students who haven't voted. */
+export async function remindNonVoters(id: string) {
+  return (await api.post<AdminElection>(`${base}/${id}/remind`)).data;
+}
+
 export async function extendElection(id: string, closesAt: string) {
   return (await api.post<AdminElection>(`${base}/${id}/extend`, { closesAt })).data;
 }

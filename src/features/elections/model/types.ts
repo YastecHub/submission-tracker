@@ -102,6 +102,18 @@ export interface AdminElection {
   approvals: Array<{ userId: string; name: string; at: string }>;
   soloPublishAt: string | null;
   committee: Array<{ id: string; name: string }>;
+  /** Newest first. */
+  notifications: ElectionNotice[];
+  /** When the committee can send the next reminder (null if none was sent). */
+  reminderAvailableAt: string | null;
+}
+
+export interface ElectionNotice {
+  kind: 'opened' | 'closing-60' | 'closing-15' | 'reminder' | 'results' | string;
+  at: string;
+  sentBy: string | null;
+  pushQueued: number;
+  emailsSent: number;
 }
 
 export interface AdminElectionSummary {
