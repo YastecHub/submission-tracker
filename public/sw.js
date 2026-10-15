@@ -254,7 +254,8 @@ self.addEventListener('push', (event) => {
         requireInteraction: data.priority === 'urgent',
       }),
       self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-        clientList.forEach((client) => client.postMessage({ type: 'bulletin:notification' }));
+        // Open NEXIUM tabs also show it inside the app.
+        clientList.forEach((client) => client.postMessage({ type: 'bulletin:notification', title: data.title, body: data.body, url: data.url }));
       }),
     ])
   );

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useStudentAuth } from '../../../context/StudentAuthContext';
+import { useToast } from '../../../context/ToastContext';
 import { getBulletinUnreadCount } from '../api/bulletin';
 import StudentNotificationBell from './StudentNotificationBell';
 
@@ -21,6 +22,7 @@ function navClass({ isActive }: { isActive: boolean }) {
 
 export default function StudentShell({ children }: { children?: ReactNode }) {
   const { student, token, logout } = useStudentAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const firstName = student?.fullName.trim().split(/\s+/)[0] || 'Student';
@@ -38,7 +40,12 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
     window.addEventListener('bulletin:read', refresh);
     window.addEventListener('focus', refresh);
     const onWorkerMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'bulletin:notification') refresh();
+      if (event.data?.type !== 'bulletin:notification') return;
+      refresh();
+      // The phone shows it in the notification tray too; this shows it inside the open app.
+      if (typeof event.data.title === 'string' && document.visibilityState === 'visible') {
+        toast(event.data.body ? `${event.data.title}: ${event.data.body}` : event.data.title, 'info');
+      }
     };
     navigator.serviceWorker?.addEventListener('message', onWorkerMessage);
     return () => {
@@ -46,7 +53,7 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
       window.removeEventListener('focus', refresh);
       navigator.serviceWorker?.removeEventListener('message', onWorkerMessage);
     };
-  }, [loadUnread]);
+  }, [loadUnread, toast]);
 
   function signOut() {
     logout();

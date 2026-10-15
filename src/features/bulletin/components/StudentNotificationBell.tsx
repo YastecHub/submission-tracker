@@ -6,6 +6,7 @@ import {
   getStudentPushConfig,
   getStudentPushSubscriptionStatus,
   saveStudentPushSubscription,
+  sendStudentTestPush,
 } from '../api/bulletin';
 import { getActiveServiceWorker } from '../../../pwa/serviceWorker';
 
@@ -20,6 +21,19 @@ function urlBase64ToUint8Array(value: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+/** iPhone/iPad only allow notifications for apps added to the Home Screen. */
+function isIosBrowserTab(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.matchMedia?.('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return ios && !standalone;
+}
+
+function apiError(error: unknown, fallback: string): string {
+  const data = (error as { response?: { data?: { error?: unknown } } })?.response?.data;
+  return typeof data?.error === 'string' ? data.error : fallback;
+}
+
 function supportsPush(): boolean {
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
@@ -27,6 +41,7 @@ function supportsPush(): boolean {
 export default function StudentNotificationBell({ unreadCount, token }: { unreadCount: number; token: string }) {
   const { toast } = useToast();
   const [state, setState] = useState<PushState>('loading');
+  const iosTab = isIosBrowserTab();
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -112,9 +127,34 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
         }));
       await saveStudentPushSubscription(subscription.toJSON(), token);
       setState('enabled');
-      toast('Bulletin notifications enabled.', 'success');
+      try {
+        await sendStudentTestPush(subscription.endpoint, token);
+        toast('Notifications are on. We just sent a test notification to this device.', 'success');
+      } catch (error) {
+        toast(`Notifications are on, but the test didn't arrive: ${apiError(error, 'please try "Send a test notification".')}`, 'info');
+      }
     } catch {
-      toast('Notifications could not be enabled right now.', 'error');
+      toast('Notifications could not be turned on right now.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendTest() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const registration = await getActiveServiceWorker();
+      const subscription = await registration?.pushManager.getSubscription();
+      if (!subscription) {
+        setState('disabled');
+        toast('Notifications are off on this device. Turn them on first.', 'info');
+        return;
+      }
+      await sendStudentTestPush(subscription.endpoint, token);
+      toast('Test sent. It should appear on this device in a few seconds.', 'success');
+    } catch (error) {
+      toast(apiError(error, 'The test notification could not be sent right now.'), 'error');
     } finally {
       setBusy(false);
     }
@@ -128,7 +168,7 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
       const subscription = await registration?.pushManager.getSubscription();
       if (subscription) await deleteStudentPushSubscription(subscription.endpoint, token);
       setState('disabled');
-      toast('Bulletin notifications disabled on this device.', 'success');
+      toast('Notifications turned off on this device.', 'success');
     } catch {
       toast('Notifications could not be changed right now.', 'error');
     } finally {
@@ -144,7 +184,7 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
     <details ref={detailsRef} className="relative shrink-0 group">
       <summary
         className="list-none min-h-11 min-w-11 flex items-center justify-center rounded-lg cursor-pointer hover:bg-surface-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none [&::-webkit-details-marker]:hidden"
-        aria-label={unreadCount > 0 ? `${unreadCount} unread announcements` : 'Bulletin notifications'}
+        aria-label={unreadCount > 0 ? `${unreadCount} unread announcements` : 'Notifications'}
         aria-haspopup="dialog"
       >
         <span className="relative">
@@ -160,11 +200,11 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
       </summary>
       <div
         role="dialog"
-        aria-label="Bulletin notifications"
+        aria-label="Notifications"
         className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] card-base p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-1"
       >
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-sm">Bulletin notifications</p>
+          <p className="font-semibold text-sm">Notifications</p>
           {unreadCount > 0 && (
             <span className="badge badge-accent text-xs">
               {unreadCount} new
@@ -185,14 +225,30 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
         </Link>
         <div className="divider my-3" />
         {state === 'enabled' && (
+          <>
+            <p className="text-xs text-emerald-400 mb-2">On for this device: Bulletin posts and election updates (voting open, reminders, results).</p>
+            <button
+              type="button"
+              className="btn-secondary w-full text-xs !py-2 mb-1"
+              disabled={busy}
+              onClick={() => void sendTest()}
+            >
+              {busy ? 'Sending…' : 'Send a test notification'}
+            </button>
+          </>
+        )}
+        {state === 'enabled' && (
           <button
             type="button"
             className="btn-ghost w-full text-xs text-danger hover:bg-danger-soft"
             disabled={busy}
             onClick={() => void disable()}
           >
-            {busy ? 'Updating…' : 'Disable push notifications'}
+            {busy ? 'Updating…' : 'Turn off notifications'}
           </button>
+        )}
+        {state === 'disabled' && (
+          <p className="text-xs text-muted mb-2">Get a ping on this phone for Bulletin posts and election updates, like any other app.</p>
         )}
         {state === 'disabled' && (
           <button
@@ -201,18 +257,22 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
             disabled={busy}
             onClick={() => void enable()}
           >
-            {busy ? 'Enabling…' : 'Enable push notifications'}
+            {busy ? 'Turning on…' : 'Turn on notifications'}
           </button>
         )}
         {state === 'loading' && <p className="text-xs text-dim">Checking this device…</p>}
         {state === 'denied' && (
-          <p className="text-xs text-dim">Notifications are blocked in this browser’s site settings.</p>
+          <p className="text-xs text-dim">Notifications are blocked for NEXIUM. Allow them in your browser&apos;s site settings (tap the lock or ⓘ next to the address), then come back.</p>
         )}
         {state === 'unsupported' && (
-          <p className="text-xs text-dim">This browser does not support push notifications.</p>
+          <p className="text-xs text-dim">
+            {iosTab
+              ? 'On iPhone: tap Share, then "Add to Home Screen". Open NEXIUM from the Home Screen icon and turn notifications on here.'
+              : "This browser can't show notifications. Try Chrome on Android, or add NEXIUM to your Home Screen on iPhone."}
+          </p>
         )}
         {state === 'unconfigured' && (
-          <p className="text-xs text-dim">Push notifications are not available yet.</p>
+          <p className="text-xs text-dim">Notifications aren&apos;t switched on for NEXIUM yet.</p>
         )}
       </div>
     </details>

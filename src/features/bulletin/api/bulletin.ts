@@ -133,6 +133,13 @@ export async function saveStudentPushSubscription(subscription: PushSubscription
   })).data;
 }
 
+/** Sends a test notification to this device (the student's own subscription). */
+export async function sendStudentTestPush(endpoint: string, studentToken: string) {
+  return (await api.post<{ sent: true }>('/api/bulletin/push/test', { endpoint }, {
+    headers: studentAuthHeader(studentToken),
+  })).data;
+}
+
 export async function deleteStudentPushSubscription(endpoint: string, studentToken: string) {
   return (await api.delete<{ subscribed: false }>('/api/bulletin/push/subscriptions', {
     headers: studentAuthHeader(studentToken),
