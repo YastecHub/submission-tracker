@@ -46,6 +46,12 @@ const GpaSemesterPage = React.lazy(() => import('./pages/GpaSemesterPage'));
 const GpaTranscriptPage = React.lazy(() => import('./pages/GpaTranscriptPage'));
 const BulletinManagementPage = React.lazy(() => import('./pages/BulletinManagementPage'));
 const BulletinComposerPage = React.lazy(() => import('./pages/BulletinComposerPage'));
+const StudentElectionsPage = React.lazy(() => import('./pages/StudentElectionsPage'));
+const StudentElectionPage = React.lazy(() => import('./pages/StudentElectionPage'));
+const StudentBallotPage = React.lazy(() => import('./pages/StudentBallotPage'));
+const ElectionsAdminPage = React.lazy(() => import('./pages/ElectionsAdminPage'));
+const ElectionAdminPage = React.lazy(() => import('./pages/ElectionAdminPage'));
+const ELECTION_STAFF = ['dev', 'electoral_committee'] as const;
 
 const enableAnalytics = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
 const Analytics = React.lazy(() =>
@@ -77,6 +83,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="news" element={<BulletinFeedPage />} />
               <Route path="news/:slug" element={<BulletinArticlePage />} />
               <Route path="tickets" element={<StudentTicketsPage />} />
+              <Route path="elections" element={<StudentElectionsPage />} />
+              <Route path="elections/:id" element={<StudentElectionPage />} />
+              <Route path="elections/:id/vote" element={<StudentBallotPage />} />
               <Route path="gpa" element={<GpaLayout />}>
                 <Route index element={<GpaOverviewPage />} />
                 <Route path="semester/:id" element={<GpaSemesterPage />} />
@@ -114,10 +123,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               path="/dashboard/bulletin/:id"
               element={<ProtectedRoute><BulletinComposerPage /></ProtectedRoute>}
             />
+            <Route path="/elections" element={<ProtectedRoute roles={ELECTION_STAFF}><ElectionsAdminPage /></ProtectedRoute>} />
+            <Route path="/elections/:id" element={<ProtectedRoute roles={ELECTION_STAFF}><ElectionAdminPage /></ProtectedRoute>} />
             <Route
               path="/profile"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={['cr', 'acr', 'fin_sec', 'dev', 'electoral_committee']}>
                   <ProfilePage />
                 </ProtectedRoute>
               }

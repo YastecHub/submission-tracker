@@ -56,6 +56,8 @@ export default function StudentLoginPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [matric, setMatric] = useState('');
+  // JUPEB students have no matric number yet: they register with the email seeded for them.
+  const [noMatric, setNoMatric] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -126,11 +128,11 @@ export default function StudentLoginPage() {
         toast('Password updated. You are signed in.', 'success');
         navigate(returnTo, { replace: true });
       } else if (!codeSent) {
-        await requestRegistrationCode(matric, email);
+        await requestRegistrationCode(noMatric ? '' : matric, email);
         setCodeSent(true);
         return;
       } else {
-        await register(matric, email, code, password);
+        await register(noMatric ? '' : matric, email, code, password);
         navigate(returnTo, { replace: true });
       }
     } catch (caught: unknown) {
@@ -203,7 +205,20 @@ export default function StudentLoginPage() {
           </form>
         ) : (
         <form onSubmit={submit} className="space-y-4 mt-5">
-          <div><label htmlFor="student-matric-number" className={labelClass}>Matric number</label><input id="student-matric-number" required disabled={codeSent} name="studentMatricNumber" inputMode="numeric" autoComplete="off" placeholder="e.g. 251106026" className="input-base uppercase" value={matric} onChange={(e) => setMatric(e.target.value)} /></div>
+          {mode === 'login' ? (
+            <div><label htmlFor="student-matric-number" className={labelClass}>Matric number or email</label><input id="student-matric-number" required name="studentMatricNumber" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="e.g. 251106026" className="input-base" value={matric} onChange={(e) => setMatric(e.target.value)} /></div>
+          ) : !noMatric ? (
+            <div>
+              <label htmlFor="student-matric-number" className={labelClass}>Matric number</label>
+              <input id="student-matric-number" required disabled={codeSent} name="studentMatricNumber" inputMode="numeric" autoComplete="off" placeholder="e.g. 251106026" className="input-base uppercase" value={matric} onChange={(e) => setMatric(e.target.value)} />
+              {!codeSent && <button type="button" className="text-xs text-accent mt-1.5 min-h-8" onClick={() => { setNoMatric(true); setError(''); }}>No matric number yet (e.g. JUPEB)?</button>}
+            </div>
+          ) : (
+            <div className="bg-surface-2 border border-nx rounded-lg px-3 py-2.5 text-sm">
+              Registering with the email your class rep added for you.
+              {!codeSent && <button type="button" className="block text-xs text-accent mt-1 min-h-8" onClick={() => { setNoMatric(false); setError(''); }}>I have a matric number</button>}
+            </div>
+          )}
           {mode === 'register' && <div><label htmlFor="student-email" className={labelClass}>Email</label><input id="student-email" required disabled={codeSent} type="email" autoComplete="email" className="input-base" value={email} onChange={(e) => setEmail(e.target.value)} /></div>}
           {mode === 'register' && codeSent && <div><label htmlFor="student-verification-code" className={labelClass}>Verification code</label><input id="student-verification-code" required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code" className="input-base tracking-widest" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} /></div>}
           {(mode === 'login' || codeSent) && (
@@ -216,7 +231,7 @@ export default function StudentLoginPage() {
               )}
             </div>
           )}
-          {mode === 'register' && !codeSent && <p className="text-xs text-dim">Your matric number must exist in class records. We will send a verification code to your email.</p>}
+          {mode === 'register' && !codeSent && <p className="text-xs text-dim">{noMatric ? 'Use exactly the email your class rep registered for you. We will send a verification code there.' : 'Your matric number must exist in class records. We will send a verification code to your email.'}</p>}
           {mode === 'register' && codeSent && <p className="text-xs text-dim">Enter the 6-digit code sent to {email}. It expires in 10 minutes.</p>}
           <button type="submit" disabled={loading || (mode === 'register' && codeSent && code.length !== 6)} className="btn-primary w-full">{loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : codeSent ? 'Verify and create account' : 'Send verification code'}</button>
           {mode === 'register' && codeSent && <button type="button" className="btn-ghost w-full" onClick={() => { setCodeSent(false); setCode(''); setPassword(''); setShowPassword(false); setError(''); }}>Change details</button>}

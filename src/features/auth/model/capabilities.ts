@@ -7,6 +7,15 @@ import type { UserRole } from '../../../types';
  */
 export const CLASS_ROLES: readonly UserRole[] = ['cr', 'acr', 'fin_sec', 'dev'];
 
+/** Where each staff role lands after signing in. The electoral committee only has elections. */
+export function homePathFor(role: UserRole | string | undefined | null): string {
+  return role === 'electoral_committee' ? '/elections' : '/dashboard';
+}
+
+export function canAccessElections(role: UserRole | string | undefined | null): boolean {
+  return role === 'dev' || role === 'electoral_committee';
+}
+
 export function isClassRep(role: UserRole | string | undefined | null): role is UserRole {
   return !!role && (CLASS_ROLES as readonly string[]).includes(role);
 }
