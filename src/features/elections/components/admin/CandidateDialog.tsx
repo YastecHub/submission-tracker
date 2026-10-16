@@ -10,15 +10,17 @@ const MANIFESTO_MAX = 1500;
 const labelClass = 'block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider';
 
 /** Add a candidate, or fix one (name, photo, manifesto stay editable until results are published). */
-export default function CandidateDialog({ election, positionId, candidate, onSaved, onClose }: {
+export default function CandidateDialog({ election, positionId, candidate, profileOnly = false, onSaved, onClose }: {
   election: AdminElection;
   positionId: string;
   candidate?: AdminCandidate;
+  /** The committee edits the profile only (name, nickname, photo, manifesto), never the matric number or position. */
+  profileOnly?: boolean;
   onSaved: (next: AdminElection) => void;
   onClose: () => void;
 }) {
   const panelRef = useDialogFocus(onClose);
-  const inSetup = election.status === 'draft';
+  const inSetup = election.status === 'draft' && !profileOnly;
   const { busy, run } = useAction();
   const [form, setForm] = useState({
     displayName: candidate?.displayName ?? '',

@@ -57,7 +57,8 @@ function Details({ election, onChange }: { election: AdminElection; onChange: (n
 export default function SetupPanel({ election, role, onChange }: { election: AdminElection; role: string; onChange: (next: AdminElection) => void }) {
   const isDev = role === 'dev';
   const editable = isDev && election.status === 'draft';
-  const canFixProfiles = isDev && election.status !== 'published';
+  // The developer and the electoral committee can both fix a candidate's name, photo and manifesto.
+  const canFixProfiles = (isDev || role === 'electoral_committee') && election.status !== 'published';
   const { busy, run } = useAction();
   const [newPosition, setNewPosition] = useState('');
   const [dialog, setDialog] = useState<{ positionId: string; candidate?: AdminCandidate } | null>(null);
@@ -142,7 +143,7 @@ export default function SetupPanel({ election, role, onChange }: { election: Adm
       </section>
 
       {dialog && (
-        <CandidateDialog election={election} positionId={dialog.positionId} candidate={dialog.candidate}
+        <CandidateDialog election={election} positionId={dialog.positionId} candidate={dialog.candidate} profileOnly={!isDev}
           onSaved={(next) => { onChange(next); setDialog(null); }} onClose={() => setDialog(null)} />
       )}
       {confirm && (

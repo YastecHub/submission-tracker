@@ -206,12 +206,23 @@ export default function StudentLoginPage() {
         ) : (
         <form onSubmit={submit} className="space-y-4 mt-5">
           {mode === 'login' ? (
-            <div><label htmlFor="student-matric-number" className={labelClass}>Matric number or email</label><input id="student-matric-number" required name="studentMatricNumber" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="e.g. 251106026" className="input-base" value={matric} onChange={(e) => setMatric(e.target.value)} /></div>
+            <div><label htmlFor="student-matric-number" className={labelClass}>Matric number or email</label><input id="student-matric-number" required name="studentMatricNumber" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="e.g. 251106026" className="input-base" value={matric} onChange={(e) => setMatric(e.target.value)} />{/^\s*jupeb/i.test(matric) ? <p className="text-xs text-accent mt-1.5">JUPEB students: type your email here instead of &quot;JUPEB&quot;.</p> : <p className="text-xs text-dim mt-1.5">JUPEB students: sign in with your email.</p>}</div>
           ) : !noMatric ? (
             <div>
               <label htmlFor="student-matric-number" className={labelClass}>Matric number</label>
-              <input id="student-matric-number" required disabled={codeSent} name="studentMatricNumber" inputMode="numeric" autoComplete="off" placeholder="e.g. 251106026" className="input-base uppercase" value={matric} onChange={(e) => setMatric(e.target.value)} />
-              {!codeSent && <button type="button" className="text-xs text-accent mt-1.5 min-h-8" onClick={() => { setNoMatric(true); setError(''); }}>No matric number yet (e.g. JUPEB)?</button>}
+              <input id="student-matric-number" required disabled={codeSent} name="studentMatricNumber" inputMode="numeric" autoComplete="off" placeholder="e.g. 251106026" className="input-base uppercase" value={matric}
+                onChange={(e) => {
+                  // Many JUPEB students type "JUPEB" here: take them to the email sign-up instead.
+                  if (/^\s*jupeb/i.test(e.target.value)) { setNoMatric(true); setMatric(''); setError(''); return; }
+                  setMatric(e.target.value);
+                }} />
+              {!codeSent && (
+                <button type="button" onClick={() => { setNoMatric(true); setError(''); }}
+                  className="mt-2 w-full min-h-11 flex items-center justify-between gap-2 rounded-lg border border-dashed border-[color:var(--nx-accent)] px-3 py-2 text-left text-sm font-medium text-accent hover:bg-surface-2">
+                  <span><span className="underline underline-offset-4">JUPEB student? Tap here</span> <span className="text-dim font-normal">(no matric number yet)</span></span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="bg-surface-2 border border-nx rounded-lg px-3 py-2.5 text-sm">
