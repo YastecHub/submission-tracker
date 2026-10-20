@@ -18,6 +18,21 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return view;
 }
 
+function keysMatch(keyBuffer: ArrayBuffer | null | undefined, expectedKeyBase64: string): boolean {
+  if (!keyBuffer) return false;
+  try {
+    const expectedBytes = urlBase64ToUint8Array(expectedKeyBase64);
+    const actualBytes = new Uint8Array(keyBuffer);
+    if (actualBytes.length !== expectedBytes.length) return false;
+    for (let i = 0; i < actualBytes.length; i++) {
+      if (actualBytes[i] !== expectedBytes[i]) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -62,13 +77,17 @@ export default function Navbar() {
         toast('Notifications are only available in the installed app or production site', 'error');
         return;
       }
-      const existing = await reg.pushManager.getSubscription();
-      const subscription =
-        existing ??
-        (await reg.pushManager.subscribe({
+      let subscription = await reg.pushManager.getSubscription();
+      if (subscription && !keysMatch(subscription.options?.applicationServerKey, VAPID_PUBLIC_KEY)) {
+        await subscription.unsubscribe().catch(() => {});
+        subscription = null;
+      }
+      if (!subscription) {
+        subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        }));
+        });
+      }
       await api.post('/api/auth/push-subscription', { subscription });
       toast('Notifications enabled!', 'success');
     } catch (err) {

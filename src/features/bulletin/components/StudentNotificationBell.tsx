@@ -20,6 +20,21 @@ function urlBase64ToUint8Array(value: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+function keysMatch(keyBuffer: ArrayBuffer | null | undefined, expectedKeyBase64: string): boolean {
+  if (!keyBuffer) return false;
+  try {
+    const expectedBytes = urlBase64ToUint8Array(expectedKeyBase64);
+    const actualBytes = new Uint8Array(keyBuffer);
+    if (actualBytes.length !== expectedBytes.length) return false;
+    for (let i = 0; i < actualBytes.length; i++) {
+      if (actualBytes[i] !== expectedBytes[i]) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function supportsPush(): boolean {
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
@@ -80,6 +95,11 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
           if (active) setState('disabled');
           return;
         }
+        if (!keysMatch(subscription.options?.applicationServerKey, config.publicKey)) {
+          await subscription.unsubscribe().catch(() => {});
+          if (active) setState('disabled');
+          return;
+        }
         const status = await getStudentPushSubscriptionStatus(subscription.endpoint, token);
         if (active) setState(status.subscribed ? 'enabled' : 'disabled');
       } catch {
@@ -104,12 +124,17 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
       }
       const registration = await getActiveServiceWorker();
       if (!registration) throw new Error('Service worker unavailable');
-      const subscription =
-        (await registration.pushManager.getSubscription()) ??
-        (await registration.pushManager.subscribe({
+      let subscription = await registration.pushManager.getSubscription();
+      if (subscription && !keysMatch(subscription.options?.applicationServerKey, publicKey)) {
+        await subscription.unsubscribe().catch(() => {});
+        subscription = null;
+      }
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(publicKey),
-        }));
+        });
+      }
       await saveStudentPushSubscription(subscription.toJSON(), token);
       setState('enabled');
       toast('Bulletin notifications enabled.', 'success');
@@ -126,7 +151,10 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
     try {
       const registration = await getActiveServiceWorker();
       const subscription = await registration?.pushManager.getSubscription();
-      if (subscription) await deleteStudentPushSubscription(subscription.endpoint, token);
+      if (subscription) {
+        await deleteStudentPushSubscription(subscription.endpoint, token).catch(() => {});
+        await subscription.unsubscribe().catch(() => {});
+      }
       setState('disabled');
       toast('Bulletin notifications disabled on this device.', 'success');
     } catch {
