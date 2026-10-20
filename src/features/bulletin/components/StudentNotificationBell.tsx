@@ -209,7 +209,19 @@ export default function StudentNotificationBell({ unreadCount, token }: { unread
           <p className="text-xs text-dim">Notifications are blocked in this browser’s site settings.</p>
         )}
         {state === 'unsupported' && (
-          <p className="text-xs text-dim">This browser does not support push notifications.</p>
+          <div className="text-xs text-muted space-y-1.5 p-2.5 rounded bg-surface-2 border border-nx text-left">
+            <p className="font-semibold text-default flex items-center gap-1.5">
+              <span>📱</span> iPhone / iPad Setup
+            </p>
+            <p className="leading-relaxed">
+              On iOS, Apple requires NEXIUM to be added to your home screen before notifications can be turned on:
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-dim">
+              <li>Tap <strong>Share</strong> (📤) at the bottom of Safari</li>
+              <li>Select <strong>&ldquo;Add to Home Screen&rdquo;</strong> (➕)</li>
+              <li>Open NEXIUM from your home screen and turn notifications on here</li>
+            </ol>
+          </div>
         )}
         {state === 'unconfigured' && (
           <p className="text-xs text-dim">Push notifications are not available yet.</p>
