@@ -12,6 +12,7 @@ import SemesterCard from '../features/gpa/components/SemesterCard';
 import { catalogForSlot } from '../features/gpa/model/courses';
 import { downloadText, exportRecordCsv } from '../features/gpa/model/csv';
 import { LEVELS, nextOpenSlot } from '../features/gpa/model/gpa';
+import { studentFirstName } from '../utils/studentName';
 
 function SyncStatus() {
   const { online, pendingSyncCount, semesters } = useGpa();
@@ -112,7 +113,7 @@ export default function GpaOverviewPage() {
   }
 
   if (semesters.length === 0) {
-    const firstName = student?.fullName.split(/\s+/)[0] ?? 'there';
+    const firstName = studentFirstName(student?.fullName, 'there');
     return (
       <main className="max-w-3xl mx-auto px-4 py-8">
         {header}

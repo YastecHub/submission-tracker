@@ -4,7 +4,9 @@ import AnnouncementCard from '../features/bulletin/components/AnnouncementCard';
 import { useBulletinFeed } from '../features/bulletin/hooks/useBulletinFeed';
 import DashboardCgpaCard from '../features/gpa/components/DashboardCgpaCard';
 import HomeElectionCard from '../features/elections/components/HomeElectionCard';
+import BirthdayHomeCards from '../features/birthdays/components/BirthdayHomeCards';
 import { GpaProvider } from '../features/gpa/hooks/GpaProvider';
+import { studentFirstName } from '../utils/studentName';
 
 export default function StudentHomePage() {
   const { student, token } = useStudentAuth();
@@ -12,7 +14,7 @@ export default function StudentHomePage() {
   const announcements = feed.data?.announcements ?? [];
   const urgent = announcements.filter((item) => item.priority === 'urgent');
   const latest = announcements.filter((item) => item.priority !== 'urgent').slice(0, 4);
-  const firstName = student?.fullName.split(/\s+/)[0] ?? 'Student';
+  const firstName = studentFirstName(student?.fullName);
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-8">
@@ -30,6 +32,8 @@ export default function StudentHomePage() {
           )}
         </div>
       </section>
+
+      {token && student && <BirthdayHomeCards token={token} studentId={student.id} />}
 
       {token && <HomeElectionCard token={token} />}
 
@@ -78,7 +82,7 @@ export default function StudentHomePage() {
 
       <section aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading" className="text-xl font-semibold tracking-tight mb-4">Quick actions</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <Link to="/student/news" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">Nexium Bulletin</span><span className="text-sm text-muted">Browse every class update →</span>
           </Link>
@@ -90,6 +94,9 @@ export default function StudentHomePage() {
           </Link>
           <Link to="/transparency" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
             <span className="font-semibold">Class transparency</span><span className="text-sm text-muted">Review the class ledger →</span>
+          </Link>
+          <Link to="/student/birthday" className="card-interactive p-4 sm:p-5 min-h-24 sm:min-h-28 flex flex-col justify-between">
+            <span className="font-semibold">My birthday 🎂</span><span className="text-sm text-muted">Fill in or edit the birthday form →</span>
           </Link>
         </div>
       </section>

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useStudentAuth } from '../context/StudentAuthContext';
+import { studentFirstName } from '../utils/studentName';
 
 const STUDENT_POINTS = ['Class announcements on Nexium Bulletin', 'Your private GPA and CGPA tracker', 'Payment tickets and the class ledger'];
 const CLASS_REP_POINTS = ['Submissions and QR confirmation', 'Payments, receipts and tickets', 'Ledger and Bulletin publishing'];
@@ -76,7 +77,7 @@ export default function HomePage() {
             <span className="text-xl font-semibold tracking-tight mt-2">I&apos;m a student</span>
             <Points items={STUDENT_POINTS} />
             <span className="btn-primary mt-6 w-full justify-center text-center">
-              {student ? `Continue as ${student.fullName.split(/\s+/)[0]}` : 'Student sign in or register'}
+              {student ? `Continue as ${studentFirstName(student.fullName)}` : 'Student sign in or register'}
             </span>
           </Link>
 

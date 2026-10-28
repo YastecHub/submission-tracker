@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useStudentAuth } from '../../../context/StudentAuthContext';
 import { getBulletinUnreadCount } from '../api/bulletin';
 import StudentNotificationBell from './StudentNotificationBell';
+import { studentFirstName } from '../../../utils/studentName';
 
 const navItems = [
   { to: '/student', label: 'Home', shortLabel: 'Home', end: true },
@@ -23,7 +24,7 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
   const { student, token, logout } = useStudentAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
-  const firstName = student?.fullName.trim().split(/\s+/)[0] || 'Student';
+  const firstName = studentFirstName(student?.fullName);
 
   const loadUnread = useCallback(() => {
     if (!token) return;

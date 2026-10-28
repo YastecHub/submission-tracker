@@ -51,6 +51,8 @@ const StudentElectionPage = React.lazy(() => import('./pages/StudentElectionPage
 const StudentBallotPage = React.lazy(() => import('./pages/StudentBallotPage'));
 const ElectionsAdminPage = React.lazy(() => import('./pages/ElectionsAdminPage'));
 const ElectionAdminPage = React.lazy(() => import('./pages/ElectionAdminPage'));
+const StudentBirthdayPage = React.lazy(() => import('./pages/StudentBirthdayPage'));
+const BirthdaysAdminPage = React.lazy(() => import('./pages/BirthdaysAdminPage'));
 const ELECTION_STAFF = ['dev', 'electoral_committee'] as const;
 
 const enableAnalytics = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
@@ -83,6 +85,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="news" element={<BulletinFeedPage />} />
               <Route path="news/:slug" element={<BulletinArticlePage />} />
               <Route path="tickets" element={<StudentTicketsPage />} />
+              <Route path="birthday" element={<StudentBirthdayPage />} />
               <Route path="elections" element={<StudentElectionsPage />} />
               <Route path="elections/:id" element={<StudentElectionPage />} />
               <Route path="elections/:id/vote" element={<StudentBallotPage />} />
@@ -115,6 +118,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               path="/dashboard/bulletin"
               element={<ProtectedRoute><BulletinManagementPage /></ProtectedRoute>}
             />
+            <Route path="/dashboard/birthdays" element={<ProtectedRoute><BirthdaysAdminPage /></ProtectedRoute>} />
             <Route
               path="/dashboard/bulletin/new"
               element={<ProtectedRoute><BulletinComposerPage /></ProtectedRoute>}

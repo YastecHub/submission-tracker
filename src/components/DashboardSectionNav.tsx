@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { canAccessElections } from '../features/auth/model/capabilities';
 
-export type DashboardSection = 'submissions' | 'payments' | 'ledger' | 'bulletin';
+export type DashboardSection = 'submissions' | 'payments' | 'ledger' | 'bulletin' | 'birthdays';
 
 const sections: Array<{ id: DashboardSection; label: string; to: string }> = [
   { id: 'submissions', label: 'Submissions', to: '/dashboard?section=submissions' },
   { id: 'payments', label: 'Payments', to: '/dashboard?section=payments' },
   { id: 'ledger', label: 'Ledger', to: '/dashboard?section=ledger' },
   { id: 'bulletin', label: 'Bulletin', to: '/dashboard/bulletin' },
+  { id: 'birthdays', label: 'Birthdays', to: '/dashboard/birthdays' },
 ];
 
 export default function DashboardSectionNav({
