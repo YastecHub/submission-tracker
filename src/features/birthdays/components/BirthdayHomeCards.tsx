@@ -1,21 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRemoteData } from '../../../hooks/useRemoteData';
 import { getMyBirthday } from '../api/birthdays';
 import FlowerShower from './FlowerShower';
-
-function todayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-}
-
-function flowersShown(studentId: string): boolean {
-  try { return localStorage.getItem(`nexium:flowers:${studentId}`) === todayKey(); } catch { return false; }
-}
-
-function rememberFlowers(studentId: string): void {
-  try { localStorage.setItem(`nexium:flowers:${studentId}`, todayKey()); } catch { /* shown again next time: harmless */ }
-}
 
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? '';
@@ -24,29 +11,21 @@ function joinNames(names: string[]): string {
 
 /**
  * Birthday cards on the student home page:
- *  - the student's own birthday: a banner, and flowers the first time they open the app that day;
+ *  - the student's own birthday: a banner (the flowers themselves pop up from the student shell);
  *  - classmates celebrating today (those who agreed to share it);
  *  - a prompt to fill in the birthday form, until it is filled in.
  */
-export default function BirthdayHomeCards({ token, studentId }: { token: string; studentId: string }) {
+export default function BirthdayHomeCards({ token }: { token: string }) {
   const load = useCallback((signal: AbortSignal) => getMyBirthday(token, signal), [token]);
   const { data } = useRemoteData(load);
+  // The flowers pop up by themselves from the student shell; this button brings them back.
   const [showFlowers, setShowFlowers] = useState(false);
-
-  useEffect(() => {
-    if (data?.isMyBirthday && !flowersShown(studentId)) setShowFlowers(true);
-  }, [data?.isMyBirthday, studentId]);
-
-  const closeFlowers = useCallback(() => {
-    rememberFlowers(studentId);
-    setShowFlowers(false);
-  }, [studentId]);
 
   if (!data) return null;
 
   return (
     <>
-      {showFlowers && <FlowerShower name={data.greetingName} onDone={closeFlowers} />}
+      {showFlowers && <FlowerShower name={data.greetingName} onDone={() => setShowFlowers(false)} />}
 
       {data.isMyBirthday && (
         <section className="card-base p-5 mb-6 border-[color:var(--nx-accent)] bg-[color:var(--nx-accent-soft)]" aria-label="Your birthday">

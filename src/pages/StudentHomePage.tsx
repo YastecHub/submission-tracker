@@ -33,7 +33,7 @@ export default function StudentHomePage() {
         </div>
       </section>
 
-      {token && student && <BirthdayHomeCards token={token} studentId={student.id} />}
+      {token && <BirthdayHomeCards token={token} />}
 
       {token && <HomeElectionCard token={token} />}
 

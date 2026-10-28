@@ -5,6 +5,9 @@ import { homePathFor, isClassRep } from '../features/auth/model/capabilities';
 import { useToast } from '../context/ToastContext';
 import api from '../api/axios';
 import { getActiveServiceWorker } from '../pwa/serviceWorker';
+import BirthdayFlowers from '../features/birthdays/components/BirthdayFlowers';
+import { getStaffBirthday } from '../features/birthdays/api/birthdays';
+import { staffToken } from '../features/elections/model/election';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
@@ -110,7 +113,12 @@ export default function Navbar() {
       ? 'Electoral Committee'
       : 'Class Representative';
 
+  const sessionToken = user ? staffToken() : null;
+
   return (
+    <>
+    {/* Class reps (and anyone on staff) get their birthday flowers here too. */}
+    {sessionToken && <BirthdayFlowers load={getStaffBirthday} sessionKey={sessionToken.slice(-16)} />}
     <nav className="bg-surface border-b border-nx px-4 py-3 flex items-center justify-between">
       <Link to={homePathFor(user?.role)} className="text-base font-semibold tracking-tight flex items-center gap-2">
         <img src="/icon.svg" alt="" className="w-7 h-7 rounded-md" />
@@ -186,5 +194,6 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+    </>
   );
 }

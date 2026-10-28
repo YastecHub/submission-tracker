@@ -4,6 +4,8 @@ import { useStudentAuth } from '../../../context/StudentAuthContext';
 import { getBulletinUnreadCount } from '../api/bulletin';
 import StudentNotificationBell from './StudentNotificationBell';
 import { studentFirstName } from '../../../utils/studentName';
+import BirthdayFlowers from '../../birthdays/components/BirthdayFlowers';
+import { getMyBirthday } from '../../birthdays/api/birthdays';
 
 const navItems = [
   { to: '/student', label: 'Home', shortLabel: 'Home', end: true },
@@ -54,8 +56,11 @@ export default function StudentShell({ children }: { children?: ReactNode }) {
     navigate('/student/login');
   }
 
+  const loadBirthday = useCallback(() => getMyBirthday(token!), [token]);
+
   return (
     <div className="page-base pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+      {token && <BirthdayFlowers load={loadBirthday} sessionKey={token.slice(-16)} />}
       <header className="sticky top-0 z-40 bg-[color:rgba(9,9,11,0.94)] backdrop-blur border-b border-nx">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2 lg:gap-4">
           <Link to="/student" className="flex items-center gap-2 font-semibold tracking-tight shrink-0">

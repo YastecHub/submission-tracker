@@ -26,6 +26,11 @@ export async function saveMyBirthday(token: string, form: {
 
 // ---- Class reps and developer ------------------------------------------------
 
+/** Is it the signed-in staff member's birthday? (Matched to their student account by email.) */
+export async function getStaffBirthday() {
+  return (await api.get<{ isMyBirthday: boolean; greetingName: string }>('/api/birthdays/staff-me')).data;
+}
+
 export async function getBirthdayOverview(signal?: AbortSignal) {
   return (await api.get<BirthdayOverview>('/api/birthdays/admin', { signal })).data;
 }
