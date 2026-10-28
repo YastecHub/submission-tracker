@@ -7,6 +7,7 @@ import EventCard from '../components/EventCard';
 import PaymentEventCard from '../components/PaymentEventCard';
 import ConfirmModal from '../components/ConfirmModal';
 import ExtendDeadlineModal from '../components/ExtendDeadlineModal';
+import EditPaymentEventModal from '../components/EditPaymentEventModal';
 import PreviousSessionArchive from '../components/PreviousSessionArchive';
 import DashboardLedger from './DashboardLedger';
 import { useAuth } from '../context/AuthContext';
@@ -93,6 +94,7 @@ export default function DashboardPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [pendingExtend, setPendingExtend] = useState<PendingExtend | null>(null);
+  const [editingPayment, setEditingPayment] = useState<PaymentEvent | null>(null);
   const [extendLoading, setExtendLoading] = useState(false);
   const mutationInFlight = useRef(false);
 
@@ -591,6 +593,7 @@ export default function DashboardPage() {
                           event={event}
                           onToggleClose={(id) => requestToggleClose(id, 'payment')}
                           onExtend={(id) => requestExtend(id, 'payment')}
+                          onEdit={(id) => setEditingPayment(paymentEvents.find((item) => item.id === id) ?? null)}
                           onDelete={(id) => requestDelete(id, 'payment')}
                           canManage={canManagePaymentEvent(user?.role, user?.id, event.createdBy)}
                         />
@@ -615,6 +618,7 @@ export default function DashboardPage() {
                         event={event}
                         onToggleClose={(id) => requestToggleClose(id, 'payment')}
                         onExtend={(id) => requestExtend(id, 'payment')}
+                          onEdit={(id) => setEditingPayment(paymentEvents.find((item) => item.id === id) ?? null)}
                         onDelete={(id) => requestDelete(id, 'payment')}
                         canManage={canManagePaymentEvent(user?.role, user?.id, event.createdBy)}
                       />
@@ -656,6 +660,18 @@ export default function DashboardPage() {
           loading={actionLoading}
           onConfirm={handleConfirmAction}
           onCancel={() => setPendingAction(null)}
+        />
+      )}
+
+      {editingPayment && (
+        <EditPaymentEventModal
+          event={editingPayment}
+          onCancel={() => setEditingPayment(null)}
+          onSaved={(message) => {
+            setEditingPayment(null);
+            void paymentEventState.refresh(true);
+            toast(message, 'success');
+          }}
         />
       )}
 

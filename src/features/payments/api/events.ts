@@ -14,4 +14,8 @@ export const extendPaymentEvent = async (id: string, deadline: string) =>
 export const togglePaymentEvent = async (id: string) =>
   (await api.patch<{ isClosed: boolean }>(`/api/payment-events/${id}/close`)).data;
 
+/** Edit any detail of a payment (price, bank, account, title, description, deadline). */
+export const updatePaymentEvent = async (id: string, changes: Record<string, unknown>) =>
+  (await api.patch<PaymentEvent>(`/api/payment-events/${id}`, changes)).data;
+
 export const deletePaymentEvent = (id: string) => api.delete(`/api/payment-events/${id}`);

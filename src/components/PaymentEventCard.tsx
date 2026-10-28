@@ -8,10 +8,11 @@ interface Props {
   onToggleClose: (id: string) => void;
   onExtend: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
   canManage?: boolean;
 }
 
-export default function PaymentEventCard({ event, onToggleClose, onExtend, onDelete, canManage = true }: Props) {
+export default function PaymentEventCard({ event, onToggleClose, onExtend, onDelete, onEdit, canManage = true }: Props) {
   const { toast } = useToast();
   const isExpired = new Date() > new Date(event.deadline);
   const isClosed = event.isClosed || isExpired;
@@ -130,10 +131,15 @@ export default function PaymentEventCard({ event, onToggleClose, onExtend, onDel
             >
               {isClosed ? 'Reopen…' : 'Extend…'}
             </button>
+            {onEdit && (
+              <button type="button" onClick={() => onEdit(event.id)} className="btn-secondary !py-2 !text-sm">
+                Edit details
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onDelete(event.id)}
-              className="btn-ghost !py-2 !text-sm text-danger col-span-2"
+              className={`btn-ghost !py-2 !text-sm text-danger ${onEdit ? '' : 'col-span-2'}`}
             >
               Delete
             </button>
