@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import type { Level } from '../types';
+import { CURRENT_CLASS_LEVEL } from '../utils/session';
 import { createSubmission } from '../features/submissions/api/submissions';
 import { usePublicSubmissionEvent } from '../features/submissions/hooks/usePublicSubmissionEvent';
 
@@ -13,7 +14,7 @@ export default function SubmissionForm() {
 
   const eventState = usePublicSubmissionEvent(slug!);
   const event = eventState.data;
-  const [form, setForm] = useState({ fullName: '', matricNumber: '', level: '' });
+  const [form, setForm] = useState({ fullName: '', matricNumber: '', level: CURRENT_CLASS_LEVEL as string });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const submitInFlight = useRef(false);

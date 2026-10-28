@@ -1,6 +1,9 @@
 // Cutoff timestamp separating 100 Level (previous academic session) from 200 Level (current session)
 export const SESSION_200L_START = new Date('2026-09-30T12:00:00.000Z');
 
+/** The class's current level: forms pre-select it (students can still change it). Update each new session. */
+export const CURRENT_CLASS_LEVEL = '200L' as const;
+
 /**
  * Determines whether a submission or payment event belongs to the 100 Level academic session.
  * All records created before the 200L launch date are classified as 100L.

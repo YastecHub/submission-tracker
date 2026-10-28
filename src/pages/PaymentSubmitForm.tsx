@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import type { Level } from '../types';
+import { CURRENT_CLASS_LEVEL } from '../utils/session';
 import { createPaymentReceipt } from '../features/payments/api/receipts';
 import { usePublicPaymentEvent } from '../features/payments/hooks/usePublicPaymentEvent';
 import { useObjectUrl } from '../hooks/useObjectUrl';
@@ -16,7 +17,7 @@ export default function PaymentSubmitForm() {
 
   const eventState = usePublicPaymentEvent(slug!);
   const event = eventState.data;
-  const [level, setLevel] = useState('');
+  const [level, setLevel] = useState<string>(CURRENT_CLASS_LEVEL);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const previewUrl = useObjectUrl(receiptFile);
   const [submitting, setSubmitting] = useState(false);
