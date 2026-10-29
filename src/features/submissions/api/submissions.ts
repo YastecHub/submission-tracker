@@ -21,6 +21,10 @@ export const listSubmissions = async (id: string, page: number, search: string, 
 export const confirmAllSubmissions = async (id: string) =>
   (await api.patch<{ confirmedCount: number }>(`/api/submissions/${id}/confirm-all`)).data;
 
+/** Confirms the selected submissions (only pending ones are confirmed). */
+export const confirmSelectedSubmissions = async (ids: string[]) =>
+  (await api.post<{ confirmed: number; skipped: number }>('/api/submissions/confirm-selected', { ids })).data;
+
 export const exportSubmissions = (id: string) =>
   api.get<Blob>(`/api/submissions/${id}/export`, { responseType: 'blob' });
 

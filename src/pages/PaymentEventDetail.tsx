@@ -6,7 +6,9 @@ import Navbar from '../components/Navbar';
 import { useToast } from '../context/ToastContext';
 import type { PaymentEvent, PaymentReceipt } from '../types';
 import { useReceiptList } from '../features/payments/hooks/useReceiptList';
-import { claimTicket, reviewReceipt } from '../features/payments/api/actions';
+import { claimTicket, confirmSelectedReceipts, reviewReceipt } from '../features/payments/api/actions';
+import BulkSelectionBar from '../components/BulkSelectionBar';
+import ConfirmModal from '../components/ConfirmModal';
 import { ReceiptReviewModal, type ReceiptAction } from '../features/payments/components/ReceiptReviewModal';
 import { TicketScannerModal, type ClaimResult } from '../features/payments/components/TicketScannerModal';
 import { useAuth } from '../context/AuthContext';
@@ -65,6 +67,9 @@ export default function PaymentEventDetail() {
   const [exporting, setExporting] = useState(false);
   const [updatingTickets, setUpdatingTickets] = useState(false);
   const actionInFlight = useRef(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const claimInFlight = useRef(false);
   const combinedPicnicMode = isPicnicPaymentEvent(id);
   const canManage = canManagePaymentEvent(user?.role, user?.id, event?.createdBy);
@@ -131,6 +136,37 @@ export default function PaymentEventDetail() {
     if (receiptState.data && !receiptState.loading && page > totalPages) setPage(totalPages);
   }, [receiptState.data, receiptState.loading, page, totalPages]);
   const stats = receiptStats;
+
+  // A selection belongs to the rows on screen: changing page, search or filter clears it.
+  useEffect(() => { setSelected(new Set()); }, [page, debouncedSearch, statusFilter]);
+  const pendingOnPage = receipts.filter((receipt) => receipt.status === 'pending');
+  const matchedOnPage = pendingOnPage.filter((receipt) => receipt.amountCheckStatus === 'matched');
+  const selectedReceipts = pendingOnPage.filter((receipt) => selected.has(receipt.id));
+  const selectedNeedingLook = selectedReceipts.filter((receipt) => receipt.amountCheckStatus !== 'matched').length;
+
+  function toggleSelected(id: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function confirmSelection() {
+    setBulkLoading(true);
+    try {
+      const result = await confirmSelectedReceipts(selectedReceipts.map((receipt) => receipt.id));
+      const extra = result.failed ? ` ${result.failed} could not be confirmed; try those again.` : '';
+      toast(`${result.confirmed} payment${result.confirmed === 1 ? '' : 's'} confirmed.${extra}`, result.failed ? 'info' : 'success');
+      setSelected(new Set());
+      void fetchAllReceipts();
+    } catch (err: unknown) {
+      toast(axios.isAxiosError(err) ? err.response?.data?.error ?? 'Confirming failed.' : 'Confirming failed.', 'error');
+    } finally {
+      setBulkLoading(false);
+      setBulkConfirming(false);
+    }
+  }
 
   async function handleAction() {
     if (!actionModal || actionInFlight.current) return;
@@ -321,7 +357,7 @@ export default function PaymentEventDetail() {
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className={`max-w-5xl mx-auto px-4 py-8 ${selected.size > 0 ? "pb-40" : ""}`}>
         <Link to="/dashboard?section=payments" className="btn-ghost !px-0 mb-4">
           ← Back to dashboard
         </Link>
@@ -495,9 +531,29 @@ export default function PaymentEventDetail() {
           </div>
         ) : (
           <div className="space-y-3">
+            {canManage && pendingOnPage.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-sm" aria-label="Select receipts">
+                <span className="text-dim mr-1">Select:</span>
+                <button type="button" className="btn-secondary !py-1.5 !px-3 !text-xs" onClick={() => setSelected(new Set(pendingOnPage.map((receipt) => receipt.id)))}>
+                  All pending on this page ({pendingOnPage.length})
+                </button>
+                {matchedOnPage.length > 0 && (
+                  <button type="button" className="btn-secondary !py-1.5 !px-3 !text-xs" onClick={() => setSelected(new Set(matchedOnPage.map((receipt) => receipt.id)))}>
+                    Amount matched ({matchedOnPage.length})
+                  </button>
+                )}
+                {selected.size > 0 && <button type="button" className="btn-ghost !py-1.5 !px-3 !text-xs" onClick={() => setSelected(new Set())}>Clear</button>}
+              </div>
+            )}
             {receipts.map((receipt) => (
-              <div key={receipt.id} className="card-base p-4">
+              <div key={receipt.id} className={`card-base p-4 ${selected.has(receipt.id) ? 'border-[color:var(--nx-accent)] bg-[color:var(--nx-accent-soft)]' : ''}`}>
                 <div className="flex gap-3 sm:gap-4 items-start">
+                  {canManage && receipt.status === 'pending' && (
+                    <label className="flex items-center justify-center w-8 h-16 sm:h-20 -ml-1 cursor-pointer shrink-0">
+                      <span className="sr-only">Select {receipt.fullName}</span>
+                      <input type="checkbox" className="w-5 h-5 accent-[color:var(--nx-accent)]" checked={selected.has(receipt.id)} onChange={() => toggleSelected(receipt.id)} />
+                    </label>
+                  )}
                   <button
                     onClick={() => setLightboxUrl(receipt.receiptUrl)}
                     className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-nx hover:opacity-80 transition-opacity"
@@ -578,6 +634,28 @@ export default function PaymentEventDetail() {
               </div>
             ))}
           </div>
+        )}
+
+        {canManage && (
+          <BulkSelectionBar
+            count={selectedReceipts.length}
+            summary={selectedNeedingLook ? `${selectedNeedingLook} of them did not pass the amount check. Look at those receipts first.` : 'All selected passed the amount check.'}
+            actionLabel={`Confirm ${selectedReceipts.length}`}
+            busy={bulkLoading}
+            onAction={() => setBulkConfirming(true)}
+            onClear={() => setSelected(new Set())}
+          />
+        )}
+        {bulkConfirming && (
+          <ConfirmModal
+            title={`Confirm ${selectedReceipts.length} payment${selectedReceipts.length === 1 ? '' : 's'}?`}
+            message={`Each one is confirmed as if you did it one by one: it's added to the class ledger${event.hasTickets ? ', a ticket is issued' : ''} and the student is notified.${selectedNeedingLook ? ` ${selectedNeedingLook} of them did not pass the amount check.` : ''}`}
+            confirmLabel={`Confirm ${selectedReceipts.length}`}
+            variant="warning"
+            loading={bulkLoading}
+            onConfirm={() => void confirmSelection()}
+            onCancel={() => setBulkConfirming(false)}
+          />
         )}
 
         {totalPages > 1 && (

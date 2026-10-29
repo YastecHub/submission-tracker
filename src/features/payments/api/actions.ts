@@ -5,6 +5,11 @@ export function reviewReceipt(id: string, action: 'confirm' | 'reject', note: st
   return api.patch<PaymentReceipt>(`/api/payment-receipts/${id}/${action}`, { note: note.trim() || undefined });
 }
 
+/** Confirms several receipts at once (only pending ones are confirmed). */
+export async function confirmSelectedReceipts(ids: string[]) {
+  return (await api.post<{ confirmed: number; skipped: number; failed: number }>('/api/payment-receipts/confirm-selected', { ids }, { timeout: 120_000 })).data;
+}
+
 export async function claimTicket(code: string) {
   return (await api.post<{
     alreadyClaimed: boolean;

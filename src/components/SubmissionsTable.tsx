@@ -7,6 +7,24 @@ interface Props {
   loading?: boolean;
   pageOffset?: number;
   canConfirm?: boolean;
+  /** When given, pending rows get a tick box so several can be confirmed at once. */
+  selectedIds?: Set<string>;
+  onToggleSelected?: (id: string) => void;
+}
+
+function SelectBox({ submission, selectedIds, onToggleSelected }: Pick<Props, 'selectedIds' | 'onToggleSelected'> & { submission: Submission }) {
+  if (!selectedIds || !onToggleSelected || submission.isConfirmed) return null;
+  return (
+    <label className="flex items-center justify-center w-8 h-8 -m-1 cursor-pointer shrink-0">
+      <span className="sr-only">Select {submission.fullName}</span>
+      <input
+        type="checkbox"
+        className="w-5 h-5 accent-[color:var(--nx-accent)]"
+        checked={selectedIds.has(submission.id)}
+        onChange={() => onToggleSelected(submission.id)}
+      />
+    </label>
+  );
 }
 
 function SkeletonRows({ canConfirm }: { canConfirm: boolean }) {
@@ -57,7 +75,8 @@ function SkeletonRows({ canConfirm }: { canConfirm: boolean }) {
   );
 }
 
-export default function SubmissionsTable({ submissions, onConfirmed, loading, pageOffset = 0, canConfirm = true }: Props) {
+export default function SubmissionsTable({ submissions, onConfirmed, loading, pageOffset = 0, canConfirm = true, selectedIds, onToggleSelected }: Props) {
+  const selectable = Boolean(selectedIds && onToggleSelected);
   if (loading) return <SkeletonRows canConfirm={canConfirm} />;
 
   if (submissions.length === 0) {
@@ -81,7 +100,8 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
             minute: '2-digit',
           });
           return (
-            <li key={s.id} className="px-4 py-4 flex items-start justify-between gap-3">
+            <li key={s.id} className={`px-4 py-4 flex items-start justify-between gap-3 ${selectedIds?.has(s.id) ? 'bg-[color:var(--nx-accent-soft)]' : ''}`}>
+              {selectable && <div className="w-6 pt-0.5 shrink-0"><SelectBox submission={s} selectedIds={selectedIds} onToggleSelected={onToggleSelected} /></div>}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-xs text-dim font-mono">{pageOffset + i + 1}.</span>
@@ -115,6 +135,7 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-surface-2 border-b border-nx">
+              {selectable && <th className="w-10 px-4 py-3"><span className="sr-only">Select</span></th>}
               <th className="text-left px-4 py-3 font-semibold text-muted">#</th>
               <th className="text-left px-4 py-3 font-semibold text-muted">Full Name</th>
               <th className="text-left px-4 py-3 font-semibold text-muted">Matric No.</th>
@@ -133,7 +154,8 @@ export default function SubmissionsTable({ submissions, onConfirmed, loading, pa
                 minute: '2-digit',
               });
               return (
-                <tr key={s.id} className="border-b border-nx hover:bg-surface-2 transition">
+                <tr key={s.id} className={`border-b border-nx hover:bg-surface-2 transition ${selectedIds?.has(s.id) ? 'bg-[color:var(--nx-accent-soft)]' : ''}`}>
+                  {selectable && <td className="px-4 py-3"><SelectBox submission={s} selectedIds={selectedIds} onToggleSelected={onToggleSelected} /></td>}
                   <td className="px-4 py-3 text-dim">{pageOffset + i + 1}</td>
                   <td className="px-4 py-3 font-medium">{s.fullName}</td>
                   <td className="px-4 py-3 text-muted font-mono text-xs">{s.matricNumber}</td>

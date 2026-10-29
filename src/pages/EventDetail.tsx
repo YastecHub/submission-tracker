@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SubmissionsTable from '../components/SubmissionsTable';
 import QRScanner from '../components/QRScanner';
-import { confirmAllSubmissions, exportSubmissions } from '../features/submissions/api/submissions';
+import BulkSelectionBar from '../components/BulkSelectionBar';
+import ConfirmModal from '../components/ConfirmModal';
+import { confirmAllSubmissions, confirmSelectedSubmissions, exportSubmissions } from '../features/submissions/api/submissions';
 import { useSubmissionDetail } from '../features/submissions/hooks/useSubmissionDetail';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -47,7 +49,41 @@ export default function EventDetail() {
   const [showScanner, setShowScanner] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [confirmingAll, setConfirmingAll] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [askBulkConfirm, setAskBulkConfirm] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const handleConfirmed = () => { void refresh(); };
+
+  // A selection belongs to the rows on screen: changing page or search clears it.
+  useEffect(() => { setSelected(new Set()); }, [currentPage, search]);
+  const pendingOnPage = submissions.filter((submission) => !submission.isConfirmed);
+  const selectedPending = pendingOnPage.filter((submission) => selected.has(submission.id));
+
+  function toggleSelected(submissionId: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(submissionId)) next.delete(submissionId); else next.add(submissionId);
+      return next;
+    });
+  }
+
+  async function confirmSelection(): Promise<void> {
+    setBulkLoading(true);
+    try {
+      const result = await confirmSelectedSubmissions(selectedPending.map((submission) => submission.id));
+      toast(`${result.confirmed} submission${result.confirmed === 1 ? '' : 's'} confirmed.`, 'success');
+      setSelected(new Set());
+      await refresh();
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+        : null;
+      toast(msg ?? 'Confirming failed.', 'error');
+    } finally {
+      setBulkLoading(false);
+      setAskBulkConfirm(false);
+    }
+  }
 
   async function handleExport(): Promise<void> {
     setExporting(true);
@@ -108,7 +144,7 @@ export default function EventDetail() {
         />
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className={`max-w-5xl mx-auto px-4 py-8 ${selected.size > 0 ? 'pb-40' : ''}`}>
         {error && <div role="alert" className="alert-danger mb-4">Unable to load submissions. <button className="btn-secondary" onClick={() => void retry()}>Try again</button></div>}
         <Link to="/dashboard?section=submissions" className="btn-ghost !px-0 mb-4">
           ← Back to dashboard
@@ -198,8 +234,20 @@ export default function EventDetail() {
           </div>
         </div>
 
+        {canManage && !tableLoading && pendingOnPage.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-sm mb-3" aria-label="Select submissions">
+            <span className="text-dim mr-1">Select:</span>
+            <button type="button" className="btn-secondary !py-1.5 !px-3 !text-xs" onClick={() => setSelected(new Set(pendingOnPage.map((submission) => submission.id)))}>
+              All pending on this page ({pendingOnPage.length})
+            </button>
+            {selected.size > 0 && <button type="button" className="btn-ghost !py-1.5 !px-3 !text-xs" onClick={() => setSelected(new Set())}>Clear</button>}
+          </div>
+        )}
+
         <div className="card-base overflow-hidden">
           <SubmissionsTable
+            selectedIds={canManage ? selected : undefined}
+            onToggleSelected={canManage ? toggleSelected : undefined}
             submissions={submissions}
             onConfirmed={handleConfirmed}
             loading={tableLoading}
@@ -236,6 +284,27 @@ export default function EventDetail() {
               </button>
             </div>
           </div>
+        )}
+        {canManage && (
+          <BulkSelectionBar
+            count={selectedPending.length}
+            summary="Each student is notified that their submission was verified."
+            actionLabel={`Confirm ${selectedPending.length}`}
+            busy={bulkLoading}
+            onAction={() => setAskBulkConfirm(true)}
+            onClear={() => setSelected(new Set())}
+          />
+        )}
+        {askBulkConfirm && (
+          <ConfirmModal
+            title={`Confirm ${selectedPending.length} submission${selectedPending.length === 1 ? '' : 's'}?`}
+            message="They will be marked as confirmed and each student gets a notification."
+            confirmLabel={`Confirm ${selectedPending.length}`}
+            variant="warning"
+            loading={bulkLoading}
+            onConfirm={() => void confirmSelection()}
+            onCancel={() => setAskBulkConfirm(false)}
+          />
         )}
       </main>
     </div>
